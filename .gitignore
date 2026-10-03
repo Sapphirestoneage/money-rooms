@@ -4,3 +4,9 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+
+# Filled import templates hold real balances and income. Never commit them.
+*-filled.csv
+my-*.csv
+household-*.csv
+private/
