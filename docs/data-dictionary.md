@@ -166,7 +166,7 @@ Spending means **consumption only**. Debt payments live on debt rows. Saving and
 | Kind | Fact |
 | Row | A category from `data/spending-categories.json`, and an optional name of the person's own (`label`, like "Rent"). Several rows can share a category, each with its own `start` and `end`, for a cost that changes on a date. The engine adds up every row active in a year |
 | Unit | Dollars |
-| Entered as | One total, or by category. Any row can add a start or an end, and a category can hold more than one amount. Transactions are Later |
+| Entered as | A list of rows, each in a category. One total is a single row under Everything else. Any row can add a start or an end, and a category can hold more than one amount. Transactions are Later |
 | Stored as | Annual amount per category (smoothed, accrual basis) |
 | Cadence | `start`, `end` (date, age, or `retirement`) |
 | Continues in retirement | `yes`, `no`, or `changes` (with a retirement amount). Defaulted per category |

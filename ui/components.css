@@ -897,3 +897,79 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* ---- Dense rows ---- */
+
+.rows > .dense-row,
+.rows > .group-header {
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.dense-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+}
+
+.dense-row__main {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dense-row__main:hover .dense-row__name {
+  text-decoration: underline;
+}
+
+.dense-row__line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.dense-row__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dense-row__value {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
+}
+
+.dense-row__value--needed {
+  color: var(--color-attention);
+  font-weight: var(--weight-regular);
+}
+
+.dense-row__detail {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
+.dense-row--open {
+  display: block;
+  padding: var(--space-3) 0 var(--space-4);
+}
+
+.dense-row__editor-title {
+  font-weight: var(--weight-medium);
+  margin-bottom: var(--space-2);
+}
+
+.dense-row--open > * + * {
+  margin-top: var(--space-3);
+}

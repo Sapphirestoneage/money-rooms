@@ -155,11 +155,16 @@ The entry screen's five sections (About you, Income, Spending, Accounts, Debts) 
 ### Group header
 Inside Accounts and Debts, rows are grouped under a small heading with the group's count and subtotal on the right ("Credit cards: 4 items, $15,829"). Accounts group as Cash (checking, savings), Investing (brokerage), and Retirement (401(k)s, IRAs, HSA). Debts group as Credit cards (personal and business), Student loans, then Other debts. Empty groups are not shown. The groups live in `data/entry-groups.json` and the subtotals come from the engine. Income and spending are not grouped.
 
+### Dense row
+Every item in Income, Spending, Accounts, and Debts shows as one line: its name on the left, its key number on the right, and the number's kind badge. A second line in smaller muted text appears only when there is something to say ("17%, $40/mo" on a debt, "starts Jan 2027" on an income). An item that still needs its number says so in place of the number ("Needs an amount"). Rows are at least 44px tall and are separated by a divider, with no other gap.
+
+Tapping a row opens its fields in place. Done folds it back and returns focus to the row. Only one row is open at a time: opening another closes the first, and what was typed is already saved. A new item opens straight into its fields with the cursor in the first one. The row is a real button with `aria-expanded`, and the open editor is a labeled group. Remove sits beside Done.
+
 ### Unconfirmed income line
 On the result screen, when any income is marked not confirmed, a gentle flag sits above the other flags: "Includes income not yet confirmed: Town contract." with one action, "Change my numbers". On the entry screen each income has "Is this income confirmed?" with two choices.
 
 ### Dated spending
-Under each spending amount, a text-style button ("Starts or ends on a date", underlined, still a 44px target) shows that row's start and end choices, the same wording income uses, plus "Add another amount" and "Remove". A row that has a start or an end always shows them, and its amount line says when it counts ("starting July 2027"). A second amount in a category is its own row, labeled with its name or "amount 2".
+Spending is a list of rows, added from a list of categories ("Add spending"). One total is a single row under Everything else. Opening a row shows its amount and its start and end choices, the same wording income uses, plus "Add another amount" for a cost that changes on a date. A row with a start or an end says when it counts on its second line ("starts Jul 2027").
 
 ### Promo fields
 On a debt whose rate is 0% (or that already has a promo), the card shows "This rate" with two choices: "Does not end" and "Ends after a month". Choosing the second shows the month and year the promo lasts through and the rate after it. A 0% rate with no end shows a gentle flag, and so does a rate-after that is still a typical rate or blank.

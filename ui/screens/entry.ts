@@ -11,9 +11,13 @@ import maya from "../../tests/households/maya.json";
 import {
   STATE_CODES,
   accountGroups,
+  accountState,
   addMonths,
   entrySummary,
   firstSectionNeedingAttention,
+  fromAnnual,
+  incomeState,
+  spendingState,
   weeksThroughEndOf,
   amountFromPercentOfPay,
   assetFromPreset,
@@ -57,6 +61,7 @@ import {
 } from "../../engine";
 import { collapsibleSection } from "../components/collapsible-section";
 import { confirmPanel } from "../components/confirm-panel";
+import { denseRow, denseRowEditor } from "../components/dense-row";
 import { gentleFlag } from "../components/gentle-flag";
 import { groupHeader } from "../components/group-header";
 import { kindBadge, type EditableKind } from "../components/kind-badge";
@@ -203,6 +208,38 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     }, 0);
   };
 
+  /** The one row whose fields are open for editing, if any. */
+  let openRow: string | null = null;
+  /** A row that was just opened: the cursor goes to its first field after the refresh. */
+  let pendingEditor: string | null = null;
+  const openTheRow = (id: string): void => {
+    openRow = id;
+    pendingEditor = id;
+    schedule();
+  };
+  /** "2027-01" as "Jan 2027". */
+  const shortMonth = (ym: string): string => {
+    const p = parseYearMonth(ym);
+    return `${(MONTH_NAMES[p.month - 1] ?? "").slice(0, 3)} ${p.year}`;
+  };
+  /** A row opened for editing: its fields, then Done and Remove. Done folds it back and returns focus to the row. */
+  const editorShell = (id: string, name: string, fields: HTMLElement[], flags: HTMLElement[], onRemove: () => void, extra: HTMLElement[] = []): HTMLElement =>
+    denseRowEditor({
+      id,
+      name,
+      fields,
+      flags,
+      actions: [
+        ...extra,
+        el("button", { type: "button", class: "button button--quiet", onClick: () => { openRow = null; onRemove(); schedule(); } }, "Remove"),
+      ],
+      onDone: () => {
+        openRow = null;
+        pendingFocusKey = `row:${id}`;
+        schedule();
+      },
+    });
+
   /** Which sections are open. On arrival, only the first one that needs attention. */
   const openSections = new Set<EntrySectionId>();
   {
@@ -270,11 +307,16 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     // Put everything back.
     [...root.querySelectorAll("details")].forEach((d, i) => { if (openDetails[i]) d.open = true; });
     window.scrollTo(0, scrollY);
-    if (focusKey) {
+    if (pendingEditor !== null) {
+      const editor = [...root.querySelectorAll<HTMLElement>("[data-editor]")].find((n) => n.dataset.editor === pendingEditor);
+      pendingEditor = null;
+      (editor?.querySelector<HTMLElement>("input, select") ?? editor?.querySelector<HTMLElement>("button"))?.focus({ preventScroll: true });
+      editor?.scrollIntoView({ block: "nearest" });
+    } else if (focusKey) {
       const target = [...root.querySelectorAll<HTMLElement>("[data-key]")].find((n) => n.dataset.key === focusKey);
       if (target) {
         target.focus({ preventScroll: !isNewRow });
-        if (isNewRow) target.scrollIntoView({ block: "center" });
+        if (isNewRow) target.scrollIntoView({ block: "nearest" });
       }
     }
   }
@@ -326,14 +368,34 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   // ---- Income ----------------------------------------------------------------
   function income(): HTMLElement[] {
     const answer = h().self.income;
-    const body = el("div", { class: "stack" });
+    const body = el("div", { class: "rows" });
 
     if (answer.kind === "none") {
       body.append(el("p", { class: "empty-state" }, "No income right now. That counts as answered."));
     } else if (answer.kind === "unanswered" || answer.rows.length === 0) {
       body.append(el("p", { class: "empty-state" }, "No income yet. Add your first stream."));
     } else {
-      for (const s of answer.rows) body.append(streamEditor(s));
+      for (const s of answer.rows) {
+        if (openRow === s.id) {
+          body.append(streamEditor(s));
+          continue;
+        }
+        const missing = incomeState(s) === "missing";
+        const detail: string[] = [];
+        if (s.start && s.start > asOf().slice(0, 7)) detail.push(`starts ${shortMonth(s.start)}`);
+        if (s.end.kind === "date") detail.push(`through ${shortMonth(s.end.date)}`);
+        else if (s.end.kind === "age") detail.push(`until age ${s.end.age}`);
+        if (s.notConfirmed) detail.push("not confirmed");
+        body.append(denseRow({
+          id: s.id,
+          name: s.label ?? INCOME_TYPES.find((t) => t.type === s.type)?.label ?? s.type,
+          value: missing ? "Needs an amount" : `${dollars(s.grossAnnual.value)}/yr`,
+          needsAnswer: missing,
+          badge: missing ? null : kindBadge(s.grossAnnual.confidence),
+          detail: detail.join(", "),
+          onOpen: () => openTheRow(s.id),
+        }));
+      }
     }
 
     const addType = select(INCOME_TYPES.map((t) => ({ value: t.type, label: t.label })), undefined, (type: IncomeType) => {
@@ -348,6 +410,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       };
       if (type === "salary" || type === "hourly") stream.payFrequency = { ...userValue("biweekly" as const, asOf()), confidence: "roughly" };
       h().self.income = { kind: "rows", rows: [...rows, stream] };
+      openRow = stream.id;
       pendingFocusKey = `${stream.id}|${type === "unemployment" ? "Benefit amount" : "Gross pay"}`;
       ctx.save();
       schedule();
@@ -581,54 +644,28 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       fields.push(field(isUnemployment ? "Benefits end year" : "End year", endYear));
     }
 
-    const remove = el("button", { type: "button", class: "button button--quiet", onClick: () => {
+    return editorShell(s.id, s.label ? `${s.label} (${typeLabel.toLowerCase()})` : typeLabel, fields, [], () => {
       const inc = h().self.income;
       if (inc.kind !== "rows") return;
       const rows = inc.rows.filter((r) => r.id !== s.id);
       h().self.income = rows.length ? { kind: "rows", rows } : { kind: "unanswered" };
       ctx.save();
-      schedule();
-    } }, "Remove");
-
-    return el(
-      "div",
-      { class: "card" },
-      el("div", { class: "card__title" }, el("h2", {}, s.label ? `${s.label} (${typeLabel.toLowerCase()})` : typeLabel), el("div", { class: "row-actions" }, remove)),
-      el("div", { class: "field-grid" }, ...fields),
-    );
+    });
   }
 
   // ---- Spending --------------------------------------------------------------
-  let spendingMode: "total" | "categories" = (() => {
-    const a = h().spending;
-    if (a.kind === "rows" && a.rows.some((r) => r.id !== "total")) return "categories";
-    return "total";
-  })();
-  /** Spending rows whose start and end fields are showing. */
-  const openDates = new Set<string>();
-
   function spending(): HTMLElement[] {
     const currentRows = (): SpendingRow[] => {
       const sp = h().spending;
       return sp.kind === "rows" ? sp.rows : [];
     };
-    const body = el("div", { class: "stack" });
-
-    const modeRow = el(
-      "div",
-      { class: "choice-row", role: "radiogroup", "aria-label": "How to enter spending" },
-      ...(["total", "categories"] as const).map((mode) => {
-        const input = el("input", { type: "radio", name: "spending-mode", value: mode, checked: spendingMode === mode });
-        input.addEventListener("change", () => { spendingMode = mode; schedule(); });
-        return el("label", {}, input, el("span", {}, mode === "total" ? "One total" : "By category"));
-      }),
-    );
-    body.append(modeRow);
-
     const setRows = (next: SpendingRow[]) => {
       h().spending = next.length ? { kind: "rows", rows: next } : { kind: "unanswered" };
       ctx.save();
     };
+    const categories = loadSpendingCategories();
+    const categoryLabel = (id: string) => categories.find((c) => c.id === id)?.label ?? id;
+    const nameOf = (r: SpendingRow) => (r.id === "total" ? "Everything you spend" : r.label ?? categoryLabel(r.category));
 
     const planMonth = asOf().slice(0, 7);
     const planYear = parseYearMonth(planMonth).year;
@@ -640,188 +677,152 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       return out;
     };
 
-    /** When a row counts, in words: "starting July 2027, through June 2030". */
-    const when = (r: SpendingRow | undefined): string => {
-      if (!r) return "";
+    /** When a row counts, in a few words: "starts Jul 2027, through Jun 2030". */
+    const when = (r: SpendingRow): string => {
       const parts: string[] = [];
-      if (r.start) {
-        const from = parseYearMonth(r.start);
-        parts.push(`starting ${MONTH_NAMES[from.month - 1]} ${from.year}`);
-      }
-      if (r.end?.kind === "date") {
-        const through = parseYearMonth(r.end.date);
-        parts.push(`through ${MONTH_NAMES[through.month - 1]} ${through.year}`);
-      } else if (r.end?.kind === "age") parts.push(`until age ${r.end.age}`);
+      if (r.start) parts.push(`starts ${shortMonth(r.start)}`);
+      if (r.end?.kind === "date") parts.push(`through ${shortMonth(r.end.date)}`);
+      else if (r.end?.kind === "age") parts.push(`until age ${r.end.age}`);
       else if (r.end?.kind === "retirement") parts.push("until you retire");
       return parts.join(", ");
     };
 
-    interface BlockOptions {
-      /** Entering a category amount replaces a single total. */
-      dropTotal: boolean;
-      /** The category another amount would be added to, or null when adding is not offered. */
-      addTo: string | null;
-    }
+    /** One spending row opened: its amount, when it starts and ends, and its actions. */
+    const editor = (row: SpendingRow): HTMLElement => {
+      fieldScope = `spending:${row.id}`;
+      const badge = badgeSlot(() => row.annual, (v) => { row.annual = v; });
+      const fields: HTMLElement[] = [
+        money({
+          label: "Amount",
+          annual: row.annual.value > 0 || row.start !== undefined || row.end !== undefined ? row.annual.value : null,
+          cadences: ["month", "year"],
+          initialCadence: "month",
+          badge: badge.node,
+          rough: () => isRough(row.annual.confidence),
+          onChange: (annual) => {
+            // The row stays while it is being edited. Remove takes it away.
+            row.annual = userValue(annual ?? 0, asOf(), row.annual.confidence === "known" ? "known" : "roughly");
+            ctx.save();
+            badge.refresh();
+          },
+        }),
+      ];
+      const changed = () => {
+        ctx.save();
+        schedule();
+      };
 
-    /** One spending row: its amount, and (on request) when it starts and ends. */
-    const rowBlock = (label: string, id: string, make: (annual: number) => SpendingRow, o: BlockOptions): HTMLElement => {
-      fieldScope = `spending:${id}`;
-      const find = () => currentRows().find((r) => r.id === id);
-      const badge = badgeSlot(() => find()?.annual, (v) => { const r = find(); if (r) r.annual = v; });
-      const amount = money({
-        label,
-        annual: find()?.annual.value ?? null,
-        cadences: ["month", "year"],
-        initialCadence: "month",
-        badge: badge.node,
-        rough: () => isRough(find()?.annual.confidence),
-        note: () => when(find()),
-        onChange: (annual) => {
-          const existing = find();
-          let rows = o.dropTotal ? currentRows().filter((r) => r.id !== "total") : currentRows();
-          if (existing) {
-            const dated = existing.start !== undefined || existing.end !== undefined;
-            // A dated row may be $0 (nothing until a month, then an amount). An undated $0 row is just blank.
-            if ((annual === null || annual <= 0) && !dated) rows = rows.filter((r) => r.id !== id);
-            else existing.annual = userValue(annual ?? 0, asOf(), existing.annual.confidence === "known" ? "known" : "roughly");
-          } else if (annual !== null && annual > 0) rows.push(make(annual));
-          setRows(rows);
-          badge.refresh();
+      const startSelect = select(
+        [{ value: "now", label: "Already counts" }, { value: "later", label: "Starts in a coming month" }],
+        row.start ? "later" : "now",
+        (v) => {
+          if (v === "later") row.start = addMonths(planMonth, 1);
+          else delete row.start;
+          changed();
         },
-      });
-
-      const parts: (HTMLElement | null)[] = [amount];
-      const row = find();
-      const dated = row !== undefined && (row.start !== undefined || row.end !== undefined);
-      const open = row !== undefined && (dated || openDates.has(id));
-
-      if (!dated) {
-        const hint = el("div", { class: "muted", "aria-live": "polite" });
-        const toggle = el("button", { type: "button", class: "button button--text", "aria-expanded": String(open) }, open ? "Hide dates" : "Starts or ends on a date");
-        toggle.addEventListener("click", () => {
-          if (!find()) {
-            hint.textContent = "Enter an amount first.";
-            return;
-          }
-          if (openDates.has(id)) openDates.delete(id);
-          else openDates.add(id);
-          schedule();
-        });
-        parts.push(el("div", {}, toggle, hint));
-      }
-
-      if (open && row) {
-        const changed = () => {
-          openDates.add(id);
+      );
+      fields.push(field("This spending starts", startSelect));
+      if (row.start) {
+        const from = parseYearMonth(row.start);
+        const setStart = () => {
+          row.start = `${startYear.value}-${startMonth.value}`;
           ctx.save();
-          schedule();
         };
-        const fields: HTMLElement[] = [];
-
-        const startSelect = select(
-          [{ value: "now", label: "Already counts" }, { value: "later", label: "Starts in a coming month" }],
-          row.start ? "later" : "now",
-          (v) => {
-            if (v === "later") row.start = addMonths(planMonth, 1);
-            else delete row.start;
-            changed();
-          },
-        );
-        fields.push(field("This spending starts", startSelect));
-        if (row.start) {
-          const from = parseYearMonth(row.start);
-          const setStart = () => {
-            row.start = `${startYear.value}-${startMonth.value}`;
-            changed();
-          };
-          const startMonth = select(monthOptions, two(from.month), setStart);
-          const startYear = select(yearOptions(from.year), String(from.year), setStart);
-          fields.push(field("Starts in", startMonth), field("Start year", startYear));
-        }
-
-        const endSelect = select(
-          [{ value: "none", label: "Does not end" }, { value: "date", label: "Through a month" }, { value: "age", label: "Until an age" }, { value: "retirement", label: "Until I retire" }],
-          row.end?.kind ?? "none",
-          (v) => {
-            if (v === "none") delete row.end;
-            else row.end = v === "date" ? { kind: "date", date: addMonths(row.start ?? planMonth, 11) } : v === "age" ? { kind: "age", age: 65 } : { kind: "retirement" };
-            changed();
-          },
-        );
-        fields.push(field("This spending ends", endSelect));
-        if (row.end?.kind === "date") {
-          const through = parseYearMonth(row.end.date);
-          const setEnd = () => {
-            row.end = { kind: "date", date: `${endYear.value}-${endMonth.value}` };
-            changed();
-          };
-          const endMonth = select(monthOptions, two(through.month), setEnd);
-          const endYear = select(yearOptions(through.year), String(through.year), setEnd);
-          fields.push(field("Counts through", endMonth), field("End year", endYear));
-        }
-        if (row.end?.kind === "age") {
-          const endAge = el("input", { class: "input", type: "number", min: 16, max: 100, step: 1, value: row.end.age });
-          endAge.addEventListener("input", () => {
-            const v = Number(endAge.value);
-            if (v >= 16 && v <= 100) {
-              row.end = { kind: "age", age: v };
-              ctx.save();
-            }
-          });
-          endAge.addEventListener("change", () => schedule());
-          fields.push(field("Ends at age", endAge));
-        }
-        parts.push(...fields);
-
-        const actions: HTMLElement[] = [];
-        const category = o.addTo;
-        if (category !== null) {
-          actions.push(el("button", { type: "button", class: "button button--quiet button--small", onClick: () => {
-            const last = find();
-            const next: SpendingRow = {
-              id: rowId("sp"),
-              category,
-              annual: userValue(0, asOf(), "roughly"),
-              start: last?.end?.kind === "date" ? addMonths(last.end.date, 1) : addMonths(planMonth, 1),
-            };
-            setRows([...currentRows(), next]);
-            openDates.add(next.id);
-            schedule();
-          } }, "Add another amount"));
-        }
-        actions.push(el("button", { type: "button", class: "button button--quiet button--small", onClick: () => {
-          setRows(currentRows().filter((r) => r.id !== id));
-          openDates.delete(id);
-          schedule();
-        } }, "Remove"));
-        parts.push(el("div", { class: "row-actions" }, ...actions));
-        if (category !== null) parts.push(el("p", { class: "muted" }, "Amounts in the same category add together. End the old amount where the new one starts."));
+        const startMonth = select(monthOptions, two(from.month), setStart);
+        const startYear = select(yearOptions(from.year), String(from.year), setStart);
+        fields.push(field("Starts in", startMonth), field("Start year", startYear));
       }
 
-      return el("div", { class: "stack" }, ...parts);
+      const endSelect = select(
+        [{ value: "none", label: "Does not end" }, { value: "date", label: "Through a month" }, { value: "age", label: "Until an age" }, { value: "retirement", label: "Until I retire" }],
+        row.end?.kind ?? "none",
+        (v) => {
+          if (v === "none") delete row.end;
+          else row.end = v === "date" ? { kind: "date", date: addMonths(row.start ?? planMonth, 11) } : v === "age" ? { kind: "age", age: 65 } : { kind: "retirement" };
+          changed();
+        },
+      );
+      fields.push(field("This spending ends", endSelect));
+      if (row.end?.kind === "date") {
+        const through = parseYearMonth(row.end.date);
+        const setEnd = () => {
+          row.end = { kind: "date", date: `${endYear.value}-${endMonth.value}` };
+          ctx.save();
+        };
+        const endMonth = select(monthOptions, two(through.month), setEnd);
+        const endYear = select(yearOptions(through.year), String(through.year), setEnd);
+        fields.push(field("Counts through", endMonth), field("End year", endYear));
+      }
+      if (row.end?.kind === "age") {
+        const endAge = el("input", { class: "input", type: "number", min: 16, max: 100, step: 1, value: row.end.age });
+        endAge.addEventListener("input", () => {
+          const v = Number(endAge.value);
+          if (v >= 16 && v <= 100) {
+            row.end = { kind: "age", age: v };
+            ctx.save();
+          }
+        });
+        fields.push(field("Ends at age", endAge));
+      }
+
+      const another = row.id === "total" ? null : el("button", { type: "button", class: "button button--quiet", onClick: () => {
+        // A second amount in the same category, for a cost that changes on a date.
+        const next: SpendingRow = {
+          id: rowId("sp"),
+          category: row.category,
+          annual: userValue(0, asOf(), "roughly"),
+          start: row.end?.kind === "date" ? addMonths(row.end.date, 1) : addMonths(planMonth, 1),
+        };
+        setRows([...currentRows(), next]);
+        openRow = next.id;
+        pendingFocusKey = `spending:${next.id}|Amount`;
+        schedule();
+      } }, "Add another amount");
+
+      return editorShell(
+        row.id,
+        nameOf(row),
+        fields,
+        another ? [el("p", { class: "muted" }, "Amounts in the same category add together. End the old amount where the new one starts.")] : [],
+        () => setRows(currentRows().filter((r) => r.id !== row.id)),
+        another ? [another] : [],
+      );
     };
 
-    if (spendingMode === "total") {
-      body.append(
-        rowBlock("Everything you spend", "total", (annual) => ({ id: "total", category: "everythingElse", annual: userValue(annual, asOf(), "roughly") }), { dropTotal: false, addTo: null }),
-        el("p", { class: "muted" }, "Spending means consumption only. Debt payments and saving are counted elsewhere, so they are not double counted."),
-      );
-    } else {
-      const grid = el("div", { class: "field-grid" });
-      for (const c of loadSpendingCategories()) {
-        const rows = currentRows().filter((r) => r.category === c.id && r.id !== "total");
-        const firstId = rows[0]?.id ?? `cat-${c.id}`;
-        const make = (id: string) => (annual: number): SpendingRow => ({ id, category: c.id, annual: userValue(annual, asOf(), "roughly") });
-        if (rows.length === 0) grid.append(rowBlock(c.label, firstId, make(firstId), { dropTotal: true, addTo: c.id }));
-        for (const [i, r] of rows.entries()) {
-          const label = r.label && r.label.toLowerCase() !== c.label.toLowerCase() ? `${c.label}: ${r.label}` : i === 0 ? c.label : `${c.label}, amount ${i + 1}`;
-          grid.append(rowBlock(label, r.id, make(r.id), { dropTotal: true, addTo: c.id }));
-        }
+    const list = el("div", { class: "rows" });
+    const rows = currentRows();
+    if (rows.length === 0) list.append(el("p", { class: "empty-state" }, "No spending yet. Add a category, or put one total under Everything else."));
+    for (const r of rows) {
+      if (openRow === r.id) {
+        list.append(editor(r));
+        continue;
       }
-      body.append(grid);
+      const missing = spendingState(r) === "missing";
+      list.append(denseRow({
+        id: r.id,
+        name: nameOf(r),
+        value: missing ? "Needs an amount" : `${dollars(fromAnnual(r.annual.value, "month"))}/mo`,
+        needsAnswer: missing,
+        badge: missing ? null : kindBadge(r.annual.confidence),
+        detail: when(r),
+        onOpen: () => openTheRow(r.id),
+      }));
     }
 
-    return [body];
+    const add = select(categories.map((c) => ({ value: c.id, label: c.label })), undefined, (category: string) => {
+      const row: SpendingRow = { id: rowId("sp"), category, annual: userValue(0, asOf(), "roughly") };
+      setRows([...currentRows(), row]);
+      openRow = row.id;
+      pendingFocusKey = `spending:${row.id}|Amount`;
+      schedule();
+    }, "Add spending");
+    add.setAttribute("aria-label", "Add spending");
+
+    return [
+      list,
+      el("div", { class: "row-actions" }, add),
+      el("p", { class: "muted" }, "Spending means consumption only. Debt payments and saving are counted elsewhere, so they are not double counted."),
+    ];
   }
 
   // ---- Accounts --------------------------------------------------------------
@@ -833,7 +834,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const answer = h().accounts;
     const noun = side === "asset" ? "accounts" : "debts";
     const mine = answer.kind === "rows" ? answer.rows.filter((a) => a.side === side) : [];
-    const body = el("div", { class: "stack" });
+    const body = el("div", { class: "rows" });
     if (answer.kind === "none") body.append(el("p", { class: "empty-state" }, `No ${noun}. That counts as answered.`));
     else if (mine.length === 0) body.append(el("p", { class: "empty-state" }, side === "asset" ? "No accounts yet. Add your first one." : "No debts listed."));
     else {
@@ -842,7 +843,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         body.append(groupHeader(g.label, g.count, dollars(g.subtotal)));
         for (const id of g.accountIds) {
           const a = mine.find((x) => x.id === id);
-          if (a) body.append(accountEditor(a));
+          if (a) body.append(openRow === a.id ? accountEditor(a) : accountRow(a));
         }
       }
     }
@@ -878,6 +879,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
             account = debtFromPreset(key, id, balance, { rate, minimumPaymentAnnual: estimate, actualPaymentAnnual: { ...estimate } }, asOf());
           }
           h().accounts = { kind: "rows", rows: [...rows, account] };
+          openRow = id;
           pendingFocusKey = `${id}|${preset.side === "asset" ? "Balance" : "Balance owed"}`;
           pickerOpen = null;
           ctx.save();
@@ -886,6 +888,30 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       : null;
 
     return [body, actions, picker];
+  }
+
+  /** An account or debt folded to one line: name, balance, and for a debt its rate and payment. */
+  function accountRow(a: Account): HTMLElement {
+    const missing = accountState(a) === "missing";
+    const hasBalance = a.balance.value !== null && a.balance.confidence !== "lookUp" && a.balance.confidence !== "notForMe";
+    const detail: string[] = [];
+    if (a.side === "debt") {
+      if (a.rate.source === "preset" && a.rate.confidence === "lookUp") detail.push("needs its interest rate");
+      else if (a.promo) {
+        const after = a.promo.rateAfter.confidence === "lookUp" ? "then a rate still needed" : `then ${percent(a.promo.rateAfter.value)}`;
+        detail.push(`${percent(a.promo.rate.value)} through ${shortMonth(a.promo.endDate.value)}, ${after}`);
+      } else detail.push(percent(a.rate.value));
+      detail.push(`${dollars(fromAnnual(a.actualPaymentAnnual.value, "month"))}/mo${a.actualPaymentAnnual.source === "preset" ? " (estimate)" : ""}`);
+    }
+    return denseRow({
+      id: a.id,
+      name: a.name?.value ?? getAccountPreset(a.preset).label,
+      value: hasBalance ? dollars(a.balance.value ?? 0) : "Needs a balance",
+      needsAnswer: missing,
+      badge: hasBalance ? kindBadge(a.balance.confidence) : null,
+      detail: detail.join(", "),
+      onOpen: () => openTheRow(a.id),
+    });
   }
 
   /** Keeps a debt's estimated payment in step with its balance and rate until the person enters a real one. */
@@ -1052,22 +1078,13 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       }
     }
 
-    const remove = el("button", { type: "button", class: "button button--quiet", onClick: () => {
+    return editorShell(a.id, a.name?.value ?? preset.label, fields, flags, () => {
       const acc = h().accounts;
       if (acc.kind !== "rows") return;
       const rows = acc.rows.filter((r) => r.id !== a.id);
       h().accounts = rows.length ? { kind: "rows", rows } : { kind: "unanswered" };
       ctx.save();
-      schedule();
-    } }, "Remove");
-
-    return el(
-      "div",
-      { class: "card" },
-      el("div", { class: "card__title" }, el("h2", {}, a.name?.value ?? preset.label), el("div", { class: "row-actions" }, remove)),
-      el("div", { class: "field-grid" }, ...fields),
-      flags.length ? el("div", { class: "stack card__flags" }, ...flags) : null,
-    );
+    });
   }
 
   // ---- Sharpeners ------------------------------------------------------------
