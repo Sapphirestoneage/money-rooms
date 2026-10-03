@@ -50,3 +50,21 @@ describe("the rules registry", () => {
     expect(toRef(rule("fed.niit")).lastVerified).toBe("2026-10-03");
   });
 });
+
+describe("stale rules (decision F7)", () => {
+  it("lists a used rule checked more than 15 months before the plan date, and never throws", () => {
+    const ledger = new RuleLedger();
+    ledger.get("fed.seniorDeduction");
+    const ref = ledger.refs().find((r) => r.id === "fed.seniorDeduction")!;
+    expect(ref.lastVerified).not.toBeNull();
+    expect(ledger.stale("2026-12-01", 15)).toEqual([]);
+    expect(ledger.stale("2028-06-01", 15).map((r) => r.id)).toEqual(["fed.seniorDeduction"]);
+  });
+
+  it("ignores unverified rules (they are flagged on their own)", () => {
+    const ledger = new RuleLedger();
+    ledger.getUnverified("ss.spousalAndSurvivor");
+    expect(ledger.stale("2040-01-01", 15)).toEqual([]);
+    expect(ledger.unverified().map((r) => r.id)).toEqual(["ss.spousalAndSurvivor"]);
+  });
+});

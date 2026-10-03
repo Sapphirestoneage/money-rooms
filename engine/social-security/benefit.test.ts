@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadSocialSecurityParams } from "../model";
+import { spousalFactor, survivorFactor } from "./benefit";
 import {
   annualBenefit,
   averageIndexedMonthlyEarnings,
@@ -87,5 +88,32 @@ describe("annual benefit and the earnings record estimate", () => {
       startAge: 22,
     });
     expect(record).toEqual([72000, 72000, 72000, 72000, 73080]);
+  });
+});
+
+describe("spousal and survivor factors (decision H9; schedules unverified until Eli confirms them)", () => {
+  const spousal = { firstMonths: 36, ratePerMonthFirst: 25 / 36, ratePerMonthBeyond: 5 / 12 };
+  const survivor = { earliestAge: 60, reductionAtEarliestAgePct: 28.5 };
+
+  it("pays the full spousal share at full retirement age and never adds delayed credits", () => {
+    expect(spousalFactor(1970, { years: 67, months: 0 }, spousal, p)).toBe(1);
+    expect(spousalFactor(1970, { years: 70, months: 0 }, spousal, p)).toBe(1);
+  });
+
+  it("reduces the spousal share on its own schedule, not the retirement one", () => {
+    // 36 months early: 36 x 25/36 of 1% = 25%.
+    expect(spousalFactor(1970, { years: 64, months: 0 }, spousal, p)).toBeCloseTo(0.75, 6);
+    // 60 months early (claiming at 62): 25% plus 24 x 5/12 of 1% = 35%.
+    expect(spousalFactor(1970, { years: 62, months: 0 }, spousal, p)).toBeCloseTo(0.65, 6);
+    // The retirement reduction at 62 for a 1970 birth is 30%, so the two schedules differ.
+    expect(spousalFactor(1970, { years: 62, months: 0 }, spousal, p)).not.toBeCloseTo(0.7, 6);
+  });
+
+  it("reduces the survivor share in a straight line from full retirement age down to 60", () => {
+    expect(survivorFactor(1970, { years: 67, months: 0 }, survivor, p)).toBe(1);
+    expect(survivorFactor(1970, { years: 60, months: 0 }, survivor, p)).toBeCloseTo(0.715, 6);
+    expect(survivorFactor(1970, { years: 63, months: 6 }, survivor, p)).toBeCloseTo(1 - 0.285 * 0.5, 6);
+    // Claiming before 60 is treated as 60.
+    expect(survivorFactor(1970, { years: 58, months: 0 }, survivor, p)).toBeCloseTo(0.715, 6);
   });
 });

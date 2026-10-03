@@ -153,6 +153,16 @@ export class RuleLedger {
     return [...this.used.values()].map(toRef);
   }
 
+  /**
+   * The rules used whose last check is older than the given number of months before a date
+   * (the rules update routine's 15-month trigger). Flagged on every result, never refused (decision F7).
+   */
+  stale(asOf: string, months: number): RuleRef[] {
+    const limit = new Date(`${asOf.slice(0, 10)}T00:00:00Z`);
+    limit.setUTCMonth(limit.getUTCMonth() - months);
+    return this.refs().filter((r) => r.lastVerified !== null && Date.parse(`${r.lastVerified}T00:00:00Z`) < limit.getTime());
+  }
+
   /** The rules used whose source has not been checked (lastVerified is null). */
   unverified(): RuleRef[] {
     return this.refs().filter((r) => r.lastVerified === null);

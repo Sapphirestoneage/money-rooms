@@ -34,6 +34,10 @@ import {
   claimingFactor,
   estimateEarningsRecord,
   primaryInsuranceAmount,
+  spousalFactor,
+  survivorFactor,
+  type SpousalReductionSchedule,
+  type SurvivorReductionSchedule,
 } from "../social-security/benefit";
 import { computeFederalTax, type FederalTaxResult } from "../tax/federal";
 import { bracketTop, computeFederalTaxM2, type FederalTaxM2Result } from "../tax/federal-m2";
@@ -305,6 +309,9 @@ interface DebtState {
 
 type AccountState = AssetState | DebtState;
 
+/** The rules update routine's trigger: a rule older than this is flagged on every result that uses it. */
+export const STALE_RULE_MONTHS = 15;
+
 const DEFAULTS = {
   highInterest: engineDefaults.highInterestThresholdPercent.value,
   workStartAge: engineDefaults.assumedWorkStartAge.value,
@@ -561,10 +568,19 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   const pSsStartYear = partner ? pBirth!.year + pClaimingAge.years : Infinity;
   if (partner && !partner.socialSecurity.earningsRecord) flags.add("Your partner's Social Security is estimated from their income. Enter their ssa.gov record to sharpen it.");
   /** Spousal and survivor rules (spec 2.5), read through the one door for an unverified rule. */
-  type SpousalRule = { spousalMaxShareOfOtherPia: number; spousalRequiresOtherClaimed: boolean; spousalReducedBeforeOwnFra: boolean; survivorShareOfDeceasedBenefit: number; survivorTakesLargerOfTwo: boolean };
+  type SpousalRule = {
+    spousal: { maxShareOfWorkerPia: number; requiresWorkerClaimed: boolean; delayedCreditsApply: boolean; reductionBeforeOwnFra: SpousalReductionSchedule };
+    survivor: SurvivorReductionSchedule & { maxShareOfDeceasedBenefit: number; takesLargerOfTwo: boolean };
+  };
   const spousal = partner && !ssOverride ? ledger.getUnverified<SpousalRule>("ss.spousalAndSurvivor") : null;
-  const SPOUSAL_FLAG = "Spousal or survivor Social Security changes this plan. That rule has not been verified against ssa.gov yet (rules registry ss.spousalAndSurvivor), so treat those years as rough.";
-  /** Each person's Social Security for a year: own benefit, the spousal top-up once both have claimed, and the survivor rule after the first plan-to age. */
+  const SPOUSAL_FLAG = "Spousal or survivor Social Security changes this plan. That rule's reduction schedules have not been verified against ssa.gov yet (rules registry ss.spousalAndSurvivor), so treat those years as rough.";
+  /**
+   * Each person's Social Security for a year (spec 2.5, decision H9): the own benefit; the spousal top-up once both
+   * have claimed, up to half the worker's full-retirement-age benefit, reduced on the spousal schedule for the
+   * claimant's own early claiming and never raised by delayed credits; and the survivor rule after the first
+   * plan-to age, up to the deceased's full benefit, reduced if the survivor's own claiming age is before their
+   * full retirement age (as early as 60). The survivor start is a known simplification until mortality is modeled.
+   */
   const socialSecurityFor = (y: number): { self: number; partner: number } => {
     const selfAlive = y <= selfLastYear;
     const pAlive = y <= partnerLastYear;
@@ -572,22 +588,24 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     let p = y >= pSsStartYear && pAlive ? pSsAnnual : 0;
     if (!spousal) return { self: s, partner: p };
     const r = spousal.value;
-    const share = r.spousalMaxShareOfOtherPia / 100;
+    const share = r.spousal.maxShareOfWorkerPia / 100;
     const bothClaimed = y >= ssStartYear && y >= pSsStartYear;
-    if (selfAlive && pAlive && (bothClaimed || !r.spousalRequiresOtherClaimed)) {
-      const spousalSelf = y >= ssStartYear && !hh.socialSecurity.claimZero?.value ? annualBenefit(share * pPia, r.spousalReducedBeforeOwnFra ? Math.min(1, factor) : 1, band.socialSecurityPolicy) : 0;
-      const spousalPartner = y >= pSsStartYear && !pClaimZero ? annualBenefit(share * pia, r.spousalReducedBeforeOwnFra ? Math.min(1, pFactor) : 1, band.socialSecurityPolicy) : 0;
+    if (selfAlive && pAlive && (bothClaimed || !r.spousal.requiresWorkerClaimed)) {
+      const selfSpousalFactor = r.spousal.delayedCreditsApply ? factor : spousalFactor(birth.year, claimingAge, r.spousal.reductionBeforeOwnFra, ssParams);
+      const partnerSpousalFactor = r.spousal.delayedCreditsApply ? pFactor : spousalFactor(pBirth!.year, pClaimingAge, r.spousal.reductionBeforeOwnFra, ssParams);
+      const spousalSelf = y >= ssStartYear && !hh.socialSecurity.claimZero?.value ? annualBenefit(share * pPia, selfSpousalFactor, band.socialSecurityPolicy) : 0;
+      const spousalPartner = y >= pSsStartYear && !pClaimZero ? annualBenefit(share * pia, partnerSpousalFactor, band.socialSecurityPolicy) : 0;
       if (spousalSelf > s + 0.5) { s = spousalSelf; flags.add(SPOUSAL_FLAG); }
       if (spousalPartner > p + 0.5) { p = spousalPartner; flags.add(SPOUSAL_FLAG); }
     }
-    if (r.survivorTakesLargerOfTwo) {
-      const survivorShare = r.survivorShareOfDeceasedBenefit / 100;
+    if (r.survivor.takesLargerOfTwo) {
+      const survivorShare = r.survivor.maxShareOfDeceasedBenefit / 100;
       if (!selfAlive && pAlive && y >= pSsStartYear && !pClaimZero) {
-        const inherited = survivorShare * ssAnnual;
+        const inherited = survivorShare * ssAnnual * survivorFactor(pBirth!.year, pClaimingAge, r.survivor, ssParams);
         if (inherited > p + 0.5) { p = inherited; flags.add(SPOUSAL_FLAG); }
       }
       if (!pAlive && selfAlive && y >= ssStartYear && !hh.socialSecurity.claimZero?.value) {
-        const inherited = survivorShare * pSsAnnual;
+        const inherited = survivorShare * pSsAnnual * survivorFactor(birth.year, claimingAge, r.survivor, ssParams);
         if (inherited > s + 0.5) { s = inherited; flags.add(SPOUSAL_FLAG); }
       }
     }
@@ -1476,6 +1494,9 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         : {}),
     });
   }
+
+  // Rules checked more than 15 months before the plan date are flagged on every result, never refused (decision F7).
+  for (const r of ledger.stale(hh.asOf, STALE_RULE_MONTHS)) flags.add(`The rule "${r.name}" was last checked against its source on ${r.lastVerified}, more than ${STALE_RULE_MONTHS} months ago. Its numbers may have changed.`);
 
   const last = rows[rows.length - 1];
   return {
