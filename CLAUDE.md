@@ -15,7 +15,7 @@ Eli is the product owner. He has an accounting and audit background and is learn
 ## Architecture rules (non-negotiable)
 
 - `engine/` contains pure functions only: data in, results out. No DOM, no styling, no storage calls.
-- `ui/` never does math. If a screen needs a number, the engine provides it.
+- `ui/` never performs financial calculations. Display formatting (abbreviating, parsing typed amounts, rounding for display) and chart layout math are allowed. If a screen needs a financial number, the engine provides it.
 - Every stored value lives in one place. Never duplicate a fact into a second store.
 - Store parts, compute totals. Never persist a value the engine can derive.
 - All engine math is in real (today's) dollars. Nominal conversion happens only at display time.

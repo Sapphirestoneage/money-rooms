@@ -85,6 +85,8 @@ Then the order depends on the savings strategy:
 
 **The emergency reserve** is 6 months of that year's spending: working spending in working years, retirement spending in retired years. Level 2 (Resilience) will later replace the flat 6 months with the Rule of 5 target.
 
+**Accounts the engine adds.** When the waterfall needs an account the person has not listed (a Roth IRA, a Roth 401(k), a taxable brokerage, an HSA, or a traditional 401(k) for the match), the engine adds an empty one from that preset, with the preset's allocation and fee. Each added account is marked in the output and flagged on the result screen. Nothing is added to the person's stored data.
+
 **Roth 401(k).** Roth 401(k) contributions go to their own account at the Roth 401(k) preset's fee. When drawing from Roth money, the Roth 401(k) is drawn before the Roth IRA (higher fee first).
 
 **M1 limitation (flagged).** Roth withdrawals are treated as tax- and penalty-free at any age. In reality only contributions are; earnings withdrawn before 59 and a half are taxed and penalized. M2 applies the ordering rules using contribution basis. Until then, early-retirement results that lean on Roth money are optimistic, and the result screen says so when a plan draws Roth money before 59 and a half.
@@ -131,11 +133,36 @@ Tax tables live in `data/tax/<year>.json`, sourced from the IRS and state revenu
 | `estate` | Balance at plan-to age, per band |
 | `shortfall` | First shortfall year and amount, if any |
 | `traces` | For each headline number, the inputs that produced it |
+| `waterfall` (per year) | The step log: each savings waterfall step that took money that year, in order, with its amount, the tax it saved, and what was left after it |
+| `fromReserve` (per year) | How much of that year's cash withdrawals came out of the emergency reserve itself |
+| `flags` | Plain sentences for the result screen: accounts the engine added, estimates in use, and M1 limitations a plan leans on |
+| `accounts` | Every account in the timeline, marking the ones the engine added |
 
-`traces` is what makes every number on screen auditable. A person can tap the FI date and see which inputs moved it most.
+`traces` is what makes every number on screen auditable. A person can tap the FI date and see which inputs moved it most. In M1 the FI date trace is measured directly: each input is nudged in a plain way (spending 10% more, stocks 1 point lower, no Social Security), the search is rerun, and the inputs are ranked by how many years the date moves. Other headline numbers explain their inputs in words; ranked traces for them come later.
 
 ---
 
-## 8. Not in M1
+## 8. Data files the engine reads
+
+The engine contains no rates, limits, or rule parameters. It reads them from these files, each validated when loaded.
+
+| File | Holds |
+|---|---|
+| `data/account-presets.json` | Account types and the fields each one fills |
+| `data/spending-categories.json` | Categories, essential or discretionary, and whether each continues in retirement |
+| `data/assumption-sets.json` | Returns, inflation, income growth, the Social Security policy band, plan-to age bounds |
+| `data/life-phases.json` | Life phase ages and discretionary multipliers (D17) |
+| `data/tax/2026.json` | Federal brackets, standard deduction, FICA, self-employment tax, the penalty, contribution limits, and every state's brackets |
+| `data/social-security/2026.json` | Bend points, the benefit formula, full retirement ages, early and delayed claiming factors |
+| `data/engine-defaults.json` | Rule parameters: the high-interest threshold (O2), the emergency reserve months (E13), the assumed work start age for the Social Security estimate, the penalty-free age, and the estimated minimum payment for a debt that has none entered |
+| `data/rules-registry.json` | M2's rules with sources and tripwires. Not read by the M1 engine: its entries are unverified until M2 |
+
+M1 takes contribution limits from `data/tax/2026.json`, where they are sourced and dated. Section 4 names the rules registry as their home; that move happens in M2, when the registry's entries are verified.
+
+**Test-only settings.** A hand tie-out can impose a fixed Social Security amount and a retirement healthcare line through the timeline's `testSettings` input, and can pass a substitute tax table. The app never sets them. See `tests/tie-out-conventions.md`.
+
+---
+
+## 9. Not in M1
 
 Sequence-of-returns risk and historical backtesting (M6). Scenario blocks (M5). Goal buckets in the projection (M5). Partner and household of two (shape exists, logic later). Payoff method comparisons (M5). Monthly cash timing (Money Calendar view).

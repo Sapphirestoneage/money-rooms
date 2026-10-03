@@ -17,3 +17,19 @@ Each file in `households/` is a complete person with inputs and expected results
 Until a household's `expected` values are filled in, its test checks only that the engine runs and returns a result in each band.
 
 **The households are also the example data** shown in the app ("loud and proud"), so every example a person sees is one that's been checked.
+
+## The example file format
+
+Each file in `households/` uses a short entry format: plain numbers, `"end": "retirement"` or `"age:30"`, debt payments per month. The loader `householdFromExample` (in `engine/model/examples.ts`) turns a file into a stored household with metadata on every value, and converts a 401(k) dollar amount into a percent of pay. The same loader feeds the examples offered in the app.
+
+## Workpapers and the tie-out tools
+
+| Path | What it is |
+|---|---|
+| `workpapers/maya-checkpoints.csv`, `workpapers/maya-checkpoints-taxfree.csv` | Eli's hand-calculated rows for Maya: 20 years, 29 columns each |
+| `tie-out-conventions.md` | The method the workpaper and the engine agree on, item by item |
+| `tie-out/maya-tie-out.ts` | The test-only settings, the mapping from engine output to workpaper columns, and the tolerance |
+| `tie-out/compare-maya.ts` | Prints the comparison: `npm run tie-out:compare` |
+| `tie-out/print-maya.ts` | Prints Maya under the app's own defaults: `npm run tie-out` |
+| `households.test.ts` | Runs every household in every band, and Maya against both workpaper files |
+| `ui-rules.test.ts` | Fails if any UI file defines a color outside `ui/tokens.css` |

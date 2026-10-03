@@ -68,6 +68,7 @@ Every settled decision, with its date and reason, so nothing gets relitigated by
 | E14 | Mid-year growth: an account's net flow during the year earns half the annual rate (flow x rate / 2), not half-year compounding. Debt payments follow the same rule. | Locked | Two-way | 2026-10-03 | The spec, the engine, and the workpaper now say the same thing. |
 | E15 | Workplace contributions are stored as a percent of pay and keep their account type (traditional or Roth) in every strategy. The match top-up applies only below the match cap and goes to the same account type. | Locked | One-way | 2026-10-03 | Payroll elections are percents, so they scale with raises. |
 | E16 | Roth 401(k) money sits in its own account at that preset's fee and is drawn before the Roth IRA (higher fee first). M1 treats all Roth withdrawals as tax and penalty free and flags plans that draw Roth money before 59 and a half; M2 applies basis ordering. | Locked | Two-way | 2026-10-03 | Flag the optimism until the real rule exists. |
+| E17 | A new debt never defaults silently. Its rate is the preset's typical rate marked roughly, or it must be entered before a plan runs. Its payment is an estimate (each month's interest plus 1% of the balance) marked roughly and flagged until the real one is entered. | Locked | Two-way | 2026-10-03 | A silent $0 payment made a debt look free. |
 
 ## Meaning and presentation
 

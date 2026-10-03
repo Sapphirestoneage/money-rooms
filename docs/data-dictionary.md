@@ -211,11 +211,13 @@ Assets and debts share one list. Net worth is computed.
 | Promo | Promo rate, promo end date, rate after | None |
 | Minimum payment | Entered monthly, stored annual | Required. Until entered, the app shows an estimate (each month's interest plus 1% of the balance), marked `roughly` and flagged. It is never silently zero |
 | Actual payment | Entered monthly, stored annual | Equal to minimum |
-| Personal or business | Pick list | `personal` |
+| Personal or business | Pick list, stored as `purpose`: `personal` or `business` | `personal` |
 | Interest deductible | Yes or no | From preset |
 | Forgiveness path | `none`, `idr`, `pslf` | Later |
 
 **Validation.** Balance not negative (side carries the sign). Payment at least covers interest, or the app flags that the balance will grow. A 0% promo requires an end date. Tax bucket must match the preset family (a Roth 401(k) can't be `taxable`).
+
+**Accounts the engine adds are never stored.** When a savings strategy needs an account the person has not listed, the engine uses an empty one from the preset for that run and flags it (engine spec section 4). The person's stored list is not changed.
 
 **Entry order (flow, not data).** List accounts first, then balances. People know what accounts they have before they know the amounts.
 
@@ -235,6 +237,8 @@ Assets and debts share one list. Net worth is computed.
 | Feeds | The HSA step of the savings waterfall (engine spec section 4); HSA contribution limit |
 
 Eligibility means being covered by a high-deductible health plan. The app explains that in plain words and asks yes or no.
+
+**Inferred eligibility.** Entering an HSA payroll contribution counts as eligible, even if this question is still at its default of no. Nobody is asked the same thing twice.
 
 ---
 
@@ -279,7 +283,7 @@ Social Security is a small model, not a single field.
 | Claiming age | Decision | Age in years and months | Full retirement age |
 | Policy | Assumption | Percent of scheduled benefit paid | Likely 100%; adjustable down to the current-law floor |
 
-The benefit is **computed**. Zero is not a band. A person can choose zero as an explicit override, and the app shows what that choice costs in extra working years.
+The benefit is **computed**. Zero is not a band. A person can choose zero as an explicit override, stored as the decision `claimZero` (yes or no, default no), and the app shows what that choice costs in extra working years.
 
 ### 4.5 Plan-to age
 
@@ -361,7 +365,27 @@ Not an input in M1. The skeleton's question is "when can I stop?", so retirement
 
 ---
 
-## 7. Level one checklist
+## 7. The household record
+
+Everything above is stored together as one household.
+
+| Field | Stored as | Meaning |
+|---|---|---|
+| `schemaVersion` | A whole number, currently 1 | The version of this dictionary's shape the household was saved in. Export files carry it, and import refuses a newer version than the app knows |
+| `asOf` | `YYYY-MM-DD` | The plan date. The projection starts in this month (decision E8) |
+| `self`, `partner` | A person | Birth date, filing status, state, income, HSA eligibility, and the Social Security parts the person owns. `partner` is shape only in M1 (D18) |
+| `spending`, `accounts` | Lists | Each is unanswered, answered "none", or answered with rows |
+| `assumptions` | A set name plus overrides | The set's numbers are never copied in (D2) |
+| `savingsStrategy` | Pick list | Section 4.6 |
+| `goals` | List | Later |
+
+**Export and import.** A household exports as a JSON file with a format name, a format version, the export date, and the household. Import checks the shape before anything changes and lists every problem in plain words.
+
+**Older saved data is upgraded on load and on import.** When a field's stored shape changes (as workplace contributions did, from dollars to a percent of pay), the old shape is converted, so nothing a person saved stops working.
+
+---
+
+## 8. Level one checklist
 
 The minimum set for M1. Everything else has a default.
 

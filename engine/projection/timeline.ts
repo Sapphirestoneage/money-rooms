@@ -58,7 +58,7 @@ export interface CompleteHousehold {
   socialSecurity: Household["self"]["socialSecurity"];
 }
 
-/** Narrows a household, or throws naming what is still unanswered (data dictionary section 7). */
+/** Narrows a household, or throws naming what is still unanswered (data dictionary section 8). */
 export function requireComplete(h: Household): CompleteHousehold {
   const missing: string[] = [];
   if (!h.self.birthDate) missing.push("birth date");

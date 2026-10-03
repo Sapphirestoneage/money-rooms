@@ -1,5 +1,5 @@
 /**
- * The entry screen: the level-one checklist (data dictionary section 7), with
+ * The entry screen: the level-one checklist (data dictionary section 8), with
  * "I don't" answers, roughly values, and presets. It writes stored parts only.
  * Nothing here calculates: normalization and estimates come from the engine.
  * Every value shown carries its kind badge.

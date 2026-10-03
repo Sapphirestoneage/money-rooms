@@ -1,5 +1,5 @@
 /**
- * Building a household (data dictionary section 7, the level-one checklist).
+ * Building a household (data dictionary section 8, the level-one checklist).
  */
 
 import { defaultHouseholdAssumptions } from "./assumptions";

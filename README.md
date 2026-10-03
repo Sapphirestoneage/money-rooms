@@ -30,7 +30,7 @@ Money Rooms is built in layers. Each layer only reads from the layers below it.
 1. **Each layer reads only from the layers below it.** A screen can read the engine. The engine never reads a screen.
 2. **Every fact is entered once and stored once.** Rooms are views of the same data, never copies of it.
 3. **Store the parts, compute the totals.** Birth date, not age. Income streams, not total income.
-4. **Screens never calculate.** All math lives in `engine/`.
+4. **Screens never perform financial calculations.** All financial math lives in `engine/`. Display formatting and chart layout are the only arithmetic a screen does.
 5. **Every number traces back to its inputs.** If a number can't be traced, it doesn't ship.
 6. **Real dollars inside.** The engine works in today's dollars. Nominal is a display toggle only.
 7. **Every value has a date.** Anything that can change gets an as-of date, or a start and end.
@@ -40,10 +40,10 @@ Money Rooms is built in layers. Each layer only reads from the layers below it.
 | Folder | What lives there |
 |---|---|
 | `docs/` | The specs: data dictionary, engine spec, decisions, design system, style guide, roadmap |
-| `data/` | Field values that aren't code: account presets, assumption sets, spending categories, tax tables |
-| `engine/` | The projection. No screen code, no styling |
+| `data/` | Field values that aren't code: account presets, assumption sets, spending categories, life phases, tax tables (`tax/`), Social Security parameters (`social-security/`), engine rule defaults (`engine-defaults.json`), and the M2 rules registry |
+| `engine/` | The projection. No screen code, no styling. `engine/model/` holds the data model in code: the types for every dictionary field, value metadata helpers, and the loaders that read and validate `data/` |
 | `ui/` | Screens, components, and the design tokens |
-| `tests/` | Example households with known answers, checked on every change |
+| `tests/` | Example households with known answers, checked on every change. `workpapers/` holds the hand-calculated checkpoint rows and `tie-out/` the comparison tools |
 
 ## Working on this project
 
@@ -64,6 +64,9 @@ Money Rooms is built in layers. Each layer only reads from the layers below it.
 | [`design-system.md`](docs/design-system.md) | How does everything look? |
 | [`style-guide.md`](docs/style-guide.md) | How does everything read? |
 | [`kickoff-prompt.md`](docs/kickoff-prompt.md) | The message that starts a Claude Code session on M1 |
+| [`m1-conventions.md`](docs/m1-conventions.md) | Which small method choices does the M1 engine make, so a hand calculation can match it? |
+| [`deploy.md`](docs/deploy.md) | How does the app get pushed to GitHub and published? |
+| [`m2-spec.md`](docs/m2-spec.md), [`m3-spec.md`](docs/m3-spec.md), [`levels/`](docs/levels/) | What do the later milestones and levels build? (Specs only) |
 
 ---
 
