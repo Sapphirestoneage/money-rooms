@@ -127,3 +127,13 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | G3 | Milestones beyond FI: walk-away money, start a business, sabbatical, plus the FIRE spectrum (Coast, Barista, Lean, Flex, Slow, FI, Fat), each with a date. | Locked | One-way | 2026-10-02 | Next-stage paths matter more than one finish line. |
 | G4 | Lean FI uses the FAT step of the Level 2 staircase. Slow FI means enjoying the journey: the most extra spending or least work that still hits FI by a chosen age. Flex FI arrives with M6. | Locked | Two-way | 2026-10-02 | |
 | G5 | Defaults: coast age 65, part-time income $20,000, Fat FI 1.5x spending, Flex trim 10%, Slow FI target = FI date + 5 years, walk-away 12 months. | Proposed | Two-way | 2026-10-02 | Placeholders, all editable. |
+
+## Level 5 decisions (added 2026-10-02)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| Y1 | Legacy has two editions: money (estate after heirs' taxes, basics checklist, giving) and Hamiltonian (legacy projects with money and time). The bucket list is the bridge: any dream can be tagged legacy. | Locked | One-way | 2026-10-02 | Once you can do anything, legacy is the next big thing. |
+| Y2 | Legacy FI: a milestone where the plan stays funded and pays for every legacy project. A breathing-room slider sets the margin. | Locked | Two-way | 2026-10-02 | You want freedom to build a legacy, and that freedom has a price. |
+| Y3 | A freedom budget shows hours freed after FI, with legacy projects placed in it. | Locked | Two-way | 2026-10-02 | Legacy costs time as well as money. |
+| Y4 | Hamilton references use only Hamilton's public-domain writings, never the musical's lyrics; theming is optional and off by default. | Locked | Two-way | 2026-10-02 | Keeps the brand clean. |
+| Y5 | Defaults: breathing room 10% of the FI number, heir tax rate 22%. | Proposed | Two-way | 2026-10-02 | Placeholders, editable. |

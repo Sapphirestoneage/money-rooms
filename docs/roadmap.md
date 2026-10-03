@@ -48,6 +48,8 @@ Scenario blocks, goal buckets in the projection, the dream and surplus views, pa
 
 Level content spec: [`levels/level-3-life-plans.md`](levels/level-3-life-plans.md). Milestone dates (section 5) can ship earlier, in M3.
 
+Level content spec: [`levels/level-5-legacy.md`](levels/level-5-legacy.md). Estate math builds on M2.
+
 ## M6. Risk
 
 Sequence-of-returns risk and historical backtesting (Big ERN's territory), the remaining phenomena behind feature switches.
