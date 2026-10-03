@@ -39,6 +39,8 @@ export interface YearIncome {
   nonTaxable: number;
   /** Everything, before taxes and deductions. */
   grossTotal: number;
+  /** Cash actually coming in: gross less business expenses on self-employment. */
+  netTotal: number;
 }
 
 /** The growth type an income type looks up in the assumption set. Rental (Later) uses "other". */
@@ -70,7 +72,7 @@ export function streamGrowth(stream: IncomeStream, band: BandNumbers): number {
 }
 
 export function incomeForYear(streams: readonly IncomeStream[], ctx: YearContext, band: BandNumbers): YearIncome {
-  const out: YearIncome = { streams: [], wages: 0, selfEmploymentNet: 0, otherTaxable: 0, nonTaxable: 0, grossTotal: 0 };
+  const out: YearIncome = { streams: [], wages: 0, selfEmploymentNet: 0, otherTaxable: 0, nonTaxable: 0, grossTotal: 0, netTotal: 0 };
   for (const s of streams) {
     if (!streamActive(s, ctx)) continue;
     const g = streamGrowth(s, band) / 100;
@@ -80,6 +82,7 @@ export function incomeForYear(streams: readonly IncomeStream[], ctx: YearContext
     const net = isSe ? Math.max(0, gross - expenses) : gross;
     out.streams.push({ id: s.id, type: s.type, gross, net });
     out.grossTotal += gross;
+    out.netTotal += net;
     switch (s.type) {
       case "salary":
       case "hourly":

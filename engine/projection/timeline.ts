@@ -381,7 +381,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       return { fedR, stR, total: fedR.total + stR.tax, marginal: (fedR.marginalRate + stR.marginalRate) / 100 };
     };
     const cashIn = (pretaxExtra: number, hsaExtra: number, pretaxWithdrawal: number) =>
-      inc.grossTotal - enteredWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal).total + ss;
+      inc.netTotal - enteredWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal).total + ss;
 
     // Step 8: surplus or shortfall.
     let pretaxExtra = 0;
@@ -517,7 +517,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 
     // Final taxes and take-home for the year (annualized).
     const tx = taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal);
-    const takeHome = inc.grossTotal - enteredWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - tx.total;
+    const takeHome = inc.netTotal - enteredWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - tx.total;
     const gap = takeHome + ss - spend.total - scheduledDebt;
 
     // Employer match on total employee workplace contributions (pretax plus Roth), attributed to the first matcher.
@@ -635,5 +635,5 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 }
 
 function emptyIncome(): YearIncome {
-  return { streams: [], wages: 0, selfEmploymentNet: 0, otherTaxable: 0, nonTaxable: 0, grossTotal: 0 };
+  return { streams: [], wages: 0, selfEmploymentNet: 0, otherTaxable: 0, nonTaxable: 0, grossTotal: 0, netTotal: 0 };
 }

@@ -28,3 +28,5 @@ Numbers that are rule parameters live in `data/engine-defaults.json`, not in cod
 | C20 | Household of one | Partner fields are ignored in M1 (D18). | Locked |
 | C21 | Early-withdrawal penalty on Roth | None in M1 (see C9). The spec's withdrawal order mentions the penalty only for pretax. | Proposed |
 | C22 | Tax loop in the waterfall | Each pre-tax step guesses the extra contribution, measures the tax saved at that guess, adds it back, repeats until the change is under $1 or the limit is reached, then takes one exact step at the current marginal rate (E10). Federal and state marginal rates are added together for that step. | Locked (E10) |
+| C23 | HSA eligibility inferred | Entering an HSA payroll deduction counts as HSA eligible even if the eligibility question is still at its default of no. | Proposed |
+| C24 | Business expenses | Self-employment business expenses reduce both the income that is taxed and the cash that comes in. Take-home is net of them. | Proposed |

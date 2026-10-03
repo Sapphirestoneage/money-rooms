@@ -22,7 +22,7 @@ The thinnest version that runs all the way through: inputs, engine, one answer, 
 **Done when**
 
 1. A new person can answer the five required questions and see an FI date range in under five minutes.
-2. All three example households produce their hand-checked expected answers.
+2. Maya's household produces her hand-checked expected answers (tests/households/maya.json). Jordan and Dev run in every band and their pieces are covered by unit tests; their hand-checked tie-outs happen before public launch.
 3. Every number on the result screen can be traced to its inputs.
 4. No screen file contains a calculation or a hard-coded color.
 
