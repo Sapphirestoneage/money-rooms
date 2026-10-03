@@ -78,3 +78,14 @@ Every settled decision, with its date and reason, so nothing gets relitigated by
 | O2 | High-interest debt threshold for the savings order (proposed 8%). | Savings order |
 | O3 | Healthcare cost sources before and after 65. | Healthcare line values |
 | O4 | Which Social Security floor to show: retirement fund alone (lower) or combined funds? | Low band value |
+
+## M2 decisions (added 2026-10-02)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| N1 | Every early-access and tax strategy is in scope, each as a toggle that shows its effect in years and dollars. | Locked | One-way | 2026-10-02 | No consumer calculator models these together. That is the product. |
+| N2 | Show Gross FI (4% rule) and Net FI (optimized lifetime projection) side by side, with the difference in dollars and years. | Locked | One-way | 2026-10-02 | People optimize for a number; Money Rooms finds what the number actually is. |
+| N3 | Optimizer objective is selectable: earliest FI, most spending, least lifetime tax, biggest estate. The others become limits. | Locked | One-way | 2026-10-02 | |
+| N4 | Any year's choice can be locked by hand; the optimizer plans around locks. | Locked | One-way | 2026-10-02 | Flexible scenarios, like taking the ACA credit one year and converting the next. |
+| N5 | Every rule lives in data/rules-registry.json with source, link, sunset, watch status, and last-verified date. Plans flag rules that are sunsetting or under watch. | Locked | One-way | 2026-10-02 | Tripwires: the rules change, and the app has to say when a plan depends on one that might. |
+| N6 | The optimizer searches over a small set of policy knobs, running the full projection for each. | Proposed | Two-way | 2026-10-02 | How professional planning tools do it; a true solver over 60 years is slow and fragile. |

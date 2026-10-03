@@ -1,0 +1,147 @@
+{
+  "_meta": {
+    "description": "Every tax and benefit rule the engine uses. The engine reads rules only from here. See docs/m2-spec.md section 6 (tripwires).",
+    "version": 1,
+    "drafted": "2026-10-02",
+    "verification": "Values were gathered from published summaries of the official sources named in each entry. Before M2 uses any entry, Claude Code must open the official source, confirm the value, replace 'url' with the official link, and set 'lastVerified'. Entries with lastVerified null are not to be used.",
+    "statuses": "current | sunsetting | watch | stale"
+  },
+  "rules": [
+    {
+      "id": "fed.standardDeduction.2026",
+      "name": "Standard deduction",
+      "value": { "single": 16100, "marriedJoint": 32200, "headOfHousehold": 24150, "marriedSeparate": 16100 },
+      "effective": [2026], "sunset": null,
+      "source": "IRS Revenue Procedure 2025-32",
+      "url": null, "lastVerified": null, "status": "current",
+      "watch": "Next year's values published each October",
+      "affects": ["B1", "B2", "A5"]
+    },
+    {
+      "id": "fed.ltcgZeroTop.2026",
+      "name": "Top of the 0% long-term capital gains bracket (taxable income)",
+      "value": { "single": 49450, "marriedJoint": 98900 },
+      "effective": [2026], "sunset": null,
+      "source": "IRS Revenue Procedure 2025-32; IRC §1(h)",
+      "url": null, "lastVerified": null, "status": "current",
+      "watch": "Values derived from summaries; confirm every filing status against the revenue procedure",
+      "affects": ["A5", "B3"]
+    },
+    {
+      "id": "fed.brackets.2026",
+      "name": "Federal ordinary income brackets",
+      "value": "Full tables to be entered from the revenue procedure",
+      "effective": [2026], "sunset": null,
+      "source": "IRS Revenue Procedure 2025-32",
+      "url": null, "lastVerified": null, "status": "current",
+      "watch": "Rates made permanent by the One Big Beautiful Bill Act (2025); thresholds indexed yearly",
+      "affects": ["B1", "B2", "E1"]
+    },
+    {
+      "id": "limits.2026",
+      "name": "Contribution limits",
+      "value": { "401kElective": 24500, "catchUp50": 8000, "superCatchUp60to63": 11250, "ira": 7500, "iraCatchUp50": 1100, "hsaSelf": 4400, "hsaFamily": 8750, "hsaCatchUp55": 1000 },
+      "effective": [2026], "sunset": null,
+      "source": "IRS Notice 2025-67",
+      "url": null, "lastVerified": null, "status": "current",
+      "watch": "Next year's limits published each fall. Roth catch-up requirement for higher earners begins 2026 (SECURE 2.0)",
+      "affects": ["E1", "E4", "C4"]
+    },
+    {
+      "id": "access.sepp72t",
+      "name": "72(t) substantially equal periodic payments",
+      "value": { "methods": ["rmd", "fixedAmortization", "fixedAnnuitization"], "maxRate": "greater of 5% or 120% of the federal mid-term rate", "duration": "longer of 5 years or until age 59½", "modificationPenalty": "10% retroactively on all prior payments, plus interest", "oneTimeSwitchToRmdMethod": true },
+      "effective": ["2023-"], "sunset": null,
+      "source": "IRS Notice 2022-6; IRC §72(t)(2)(A)(iv)",
+      "url": null, "lastVerified": null, "status": "current",
+      "watch": "Federal mid-term rate changes monthly",
+      "affects": ["A3"]
+    },
+    {
+      "id": "access.ruleOf55",
+      "name": "Rule of 55",
+      "value": { "age": 55, "publicSafetyAge": 50, "appliesTo": "the plan of the employer separated from, in or after the year of the birthday; not IRAs, not earlier employers' plans", "planMustAllow": true },
+      "effective": ["ongoing"], "sunset": null,
+      "source": "IRC §72(t)(2)(A)(v) and §72(t)(10)",
+      "url": null, "lastVerified": null, "status": "current", "watch": null,
+      "affects": ["A4"]
+    },
+    {
+      "id": "access.rothOrdering",
+      "name": "Roth IRA ordering and five-year rules",
+      "value": { "order": ["regular contributions", "conversions, oldest first (taxable part first)", "earnings"], "conversionClock": "Separate five-year period per conversion, starting January 1 of the conversion year; penalty applies only under 59½", "earningsClock": "Five years from the first Roth IRA contribution, plus age 59½, for qualified (tax-free) earnings" },
+      "effective": ["ongoing"], "sunset": null,
+      "source": "IRS Publication 590-B, Ordering Rules for Distributions",
+      "url": null, "lastVerified": null, "status": "current", "watch": null,
+      "affects": ["A1", "A2"]
+    },
+    {
+      "id": "health.acaPtc.2026",
+      "name": "ACA premium tax credit",
+      "value": { "eligibleIncomePctFpl": [100, 400], "medicaidExpansionLowerBoundPctFpl": 138, "cliffAbove400": true, "requiredContributionTable": "to be entered from the IRS applicable percentage table" },
+      "effective": [2026], "sunset": null,
+      "source": "IRC §36B; IRS applicable percentage table for 2026",
+      "url": null, "lastVerified": null, "status": "watch",
+      "watch": "Enhanced subsidies (no cliff, lower contributions) expired 2025-12-31. Bills to restore or extend them have been introduced. Check monthly.",
+      "affects": ["C1", "C2"]
+    },
+    {
+      "id": "health.irmaa.2026",
+      "name": "Medicare IRMAA tiers",
+      "value": { "firstTierMagiAbove": { "single": 109000, "marriedJoint": 218000 }, "lookbackYears": 2, "partBStandardMonthly": 202.90, "fullTierTable": "to be entered from SSA POMS" },
+      "effective": [2026], "sunset": null,
+      "source": "SSA POMS HI 01101.020; CMS 2026 Medicare Parts A and B premiums fact sheet",
+      "url": null, "lastVerified": null, "status": "current",
+      "watch": "New tiers each November",
+      "affects": ["C3"]
+    },
+    {
+      "id": "ss.taxationThresholds",
+      "name": "Taxation of Social Security benefits (provisional income)",
+      "value": { "single": [25000, 34000], "marriedJoint": [32000, 44000], "maxTaxablePct": 85, "indexed": false },
+      "effective": ["ongoing"], "sunset": null,
+      "source": "IRC §86",
+      "url": null, "lastVerified": null, "status": "current", "watch": null,
+      "affects": ["B6"]
+    },
+    {
+      "id": "fed.seniorDeduction",
+      "name": "Senior deduction (age 65+)",
+      "value": { "perPerson": 6000, "phaseOutStartMagi": { "single": 75000, "marriedJoint": 150000 }, "phaseOutRate": 0.06 },
+      "effective": [2025, 2026, 2027, 2028], "sunset": 2028,
+      "source": "One Big Beautiful Bill Act (2025)",
+      "url": null, "lastVerified": null, "status": "sunsetting",
+      "watch": "Scheduled to end after 2028 unless extended",
+      "affects": ["B7"]
+    },
+    {
+      "id": "ss.trustFund.2026",
+      "name": "Social Security trust fund outlook",
+      "value": { "oasiDepletion": "2032 Q4", "oasiPayablePct": 78, "combinedDepletion": 2034, "combinedPayablePct": 83 },
+      "effective": [2026], "sunset": null,
+      "source": "2026 Social Security Trustees Report (released 2026-06-09)",
+      "url": "https://www.ssa.gov/news/en/press/releases/2026-06-09.html",
+      "lastVerified": "2026-10-02", "status": "watch",
+      "watch": "Next Trustees Report; any legislation changing benefits or revenue",
+      "affects": ["D4"]
+    },
+    {
+      "id": "rmd.startAge",
+      "name": "Required minimum distribution start age",
+      "value": { "bornThrough1950": 72, "born1951to1959": 73, "born1960orLater": 75 },
+      "effective": ["ongoing"], "sunset": null,
+      "source": "SECURE 2.0 Act §107",
+      "url": null, "lastVerified": null, "status": "current", "watch": null,
+      "affects": ["B5"]
+    },
+    {
+      "id": "fed.niit",
+      "name": "Net investment income tax",
+      "value": { "rate": 0.038, "magiAbove": { "single": 200000, "marriedJoint": 250000 }, "indexed": false },
+      "effective": ["ongoing"], "sunset": null,
+      "source": "IRC §1411",
+      "url": null, "lastVerified": null, "status": "current", "watch": null,
+      "affects": ["B8"]
+    }
+  ]
+}

@@ -28,9 +28,9 @@ The thinnest version that runs all the way through: inputs, engine, one answer, 
 
 ---
 
-## M2. Full tax depth
+## M2. Net FI and the strategy engine
 
-Capital gains and basis, ACA subsidies, Roth conversions, full state brackets, required distributions, and an optimized withdrawal order. This is where the continuous projection starts beating rule-of-thumb targets.
+Full spec: [`m2-spec.md`](m2-spec.md). Full tax depth, every early-access strategy as a toggle, ACA and IRMAA, the optimizer with selectable objectives, year-by-year locks, Gross FI vs Net FI, and the rules registry with tripwires.
 
 ## M3. The Ledger and the flow
 
