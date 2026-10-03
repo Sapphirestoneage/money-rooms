@@ -113,6 +113,10 @@ export interface TimelineOptions {
   conventions?: EngineConventions;
   /** M2 only: the drawdown policy. Defaults to the conventional order with no strategies. */
   policy?: DrawdownPolicy;
+  /** Stress test: rules treated as gone (sunsetting ones that end early). */
+  disabledRules?: readonly string[];
+  /** Spending scaled by this factor every year (1 = as entered). The "most spending" objective searches it. */
+  spendingScale?: number;
 }
 
 /**
@@ -338,7 +342,8 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   // ---- M2 conventions, policy, and the rules ledger ---------------------
   const m2 = opts.conventions === "m2";
   const policy = opts.policy ?? defaultPolicy();
-  const ledger = new RuleLedger();
+  const ledger = new RuleLedger(opts.disabledRules ?? []);
+  const spendingScale = opts.spendingScale ?? 1;
   const householdSize = hh.drawdown.acaHouseholdSize?.value ?? 1;
   const medicaidExpansion = hh.drawdown.medicaidExpansionState?.value ?? null;
   const reserveMonths = (m2 && policy.limits.cashBufferMonths !== null ? policy.limits.cashBufferMonths : DEFAULTS.reserveMonths);
@@ -563,7 +568,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       return healthcareLine({ age, magiAca, magiTwoYearsBack: magiTwoBack, householdSize, filingStatus: hh.filingStatus, medicaidExpansion, ledger });
     };
     healthcare = healthcareFor(magiHistory.get(y - 1) ?? 0);
-    const spendTotal = () => spend.total + healthcare.total;
+    const spendTotal = () => spend.total * spendingScale + healthcare.total;
 
     // Taxes as a function of the pre-tax extras and the taxable withdrawals.
     type TaxView = { fedR: FederalTaxResult | FederalTaxM2Result; stR: StateTaxResult; total: number; marginal: number; agi: number };

@@ -115,6 +115,12 @@ export function toRef(r: Rule): RuleRef {
  */
 export class RuleLedger {
   private readonly used = new Map<string, Rule>();
+  /** Rules treated as gone, for the stress test ("as if the senior deduction ended"). */
+  private readonly disabled: ReadonlySet<string>;
+
+  constructor(disabledRuleIds: readonly string[] = []) {
+    this.disabled = new Set(disabledRuleIds);
+  }
 
   /** Reads a verified rule and remembers that it was used. */
   get<T = unknown>(id: string): T {
@@ -126,7 +132,7 @@ export class RuleLedger {
   /** Reads a rule only if it applies this year; returns null otherwise (and still records a sunsetting rule that was checked). */
   getIfApplies<T = unknown>(id: string, year: number): T | null {
     const r = rule<T>(id);
-    if (!ruleAppliesIn(r, year)) return null;
+    if (this.disabled.has(id) || !ruleAppliesIn(r, year)) return null;
     this.used.set(id, r);
     return r.value;
   }
