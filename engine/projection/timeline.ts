@@ -313,6 +313,10 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     incomeByYear.set(y, inc);
     covered[y] = Math.min(inc.wages + inc.selfEmploymentNet, fed.fica.socialSecurityWageBase);
   }
+  // The past is back-filled from this year's entered income whatever retirement year is being tested,
+  // so testing "stop now" does not wipe out the earnings record (found by the age-70 edge case, 2026-10-04).
+  const incomeNow = incomeForYear(hh.income, { ...ctxFor(year0), retirementYear: Infinity }, band);
+  const coveredNow = Math.min(incomeNow.wages + incomeNow.selfEmploymentNet, fed.fica.socialSecurityWageBase);
 
   // ---- Social Security ----------------------------------------------------
   const record = hh.socialSecurity.earningsRecord
@@ -321,7 +325,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         projected: covered,
         birthYear: birth.year,
         firstProjectionYear: year0,
-        assumedPastAnnual: covered[year0] ?? 0,
+        assumedPastAnnual: coveredNow,
         startAge: DEFAULTS.workStartAge,
       });
   const pia = primaryInsuranceAmount(averageIndexedMonthlyEarnings(record, ssParams), ssParams);
