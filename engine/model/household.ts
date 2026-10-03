@@ -12,6 +12,8 @@ export function emptyPerson(asOf: IsoDate): Person {
     // 3.2: default single, confidence roughly. Source "preset" marks it as a default, not an entry.
     filingStatus: { ...presetValue("single" as const, asOf), confidence: "roughly" },
     income: { kind: "unanswered" },
+    // 3.7: default no, roughly.
+    hsaEligible: { ...presetValue(false, asOf), confidence: "roughly" },
     socialSecurity: {},
   };
 }
@@ -25,6 +27,8 @@ export function emptyHousehold(asOf: IsoDate): Household {
     spending: { kind: "unanswered" },
     accounts: { kind: "unanswered" },
     assumptions: defaultHouseholdAssumptions(),
+    // 4.6: default enteredOnly, roughly. What professional planning software does by default.
+    savingsStrategy: { ...presetValue("enteredOnly" as const, asOf), confidence: "roughly" },
     goals: [],
   };
 }

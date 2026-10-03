@@ -219,6 +219,21 @@ Assets and debts share one list. Net worth is computed.
 
 **Feeds.** Starting balances; net worth; growth by asset class; withdrawal order and drawdown taxes; debt payoff schedule and the jump in the gap at payoff; payoff methods (Later); liquidity and emergency fund coverage.
 
+### 3.7 HSA eligibility
+
+| Column | Value |
+|---|---|
+| Kind | Fact |
+| Unit | Yes or no |
+| Stored as | Boolean |
+| Cadence | Value with dated changes |
+| Default | No, confidence `roughly` |
+| Source | User |
+| Relevance | Always asked once income exists |
+| Feeds | The HSA step of the savings waterfall (engine spec section 4); HSA contribution limit |
+
+Eligibility means being covered by a high-deductible health plan. The app explains that in plain words and asks yes or no.
+
 ---
 
 ## 4. Assumptions
@@ -274,6 +289,19 @@ The benefit is **computed**. Zero is not a band. A person can choose zero as an 
 | Range | 85 to 100 |
 
 This is the one place caution is intentional: outliving money is far worse than leaving some behind. The default is labeled as a safety choice, not a forecast.
+
+### 4.6 Savings strategy
+
+| Column | Value |
+|---|---|
+| Kind | Decision |
+| Unit | Pick list: `maxTaxSavingsNow`, `maxTaxFreeGrowth`, `enteredOnly` |
+| Default | `enteredOnly`, confidence `roughly` |
+| Source | User |
+| Relevance | Always |
+| Feeds | The order of the savings waterfall (engine spec section 4, decisions E10 and E11) |
+
+`enteredOnly` is what professional planning software does by default: it uses the contributions the person entered and sends the rest of the surplus to taxable. The other two strategies fill accounts to their legal limits. M2 adds "optimizer decides".
 
 ---
 
@@ -349,5 +377,7 @@ The minimum set for M1. Everything else has a default.
 | 10 | Social Security | No | Estimated, 100% policy, full retirement age |
 | 11 | Plan-to age | No | 95 |
 | 12 | Retirement spending | No | Baseline plus phases |
+| 13 | HSA eligibility | No | No |
+| 14 | Savings strategy | No | Entered only |
 
 Five answers produce a first FI date. Everything else sharpens it.

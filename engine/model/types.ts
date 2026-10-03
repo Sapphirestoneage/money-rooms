@@ -331,6 +331,9 @@ export interface GoalBucket {
 // The person and the household
 // ---------------------------------------------------------------------------
 
+/** 4.6. Decision. Sets the order of the savings waterfall (E10, E11). */
+export type SavingsStrategy = "maxTaxSavingsNow" | "maxTaxFreeGrowth" | "enteredOnly";
+
 export interface Person {
   /** 3.1. Required. Always known. */
   birthDate?: Value<YearMonth>;
@@ -340,6 +343,8 @@ export interface Person {
   state?: Value<StateCode>;
   /** 3.4. Required to answer. */
   income: ListAnswer<IncomeStream>;
+  /** 3.7. Covered by a high-deductible health plan. Defaults to no, roughly. */
+  hsaEligible: Value<boolean>;
   socialSecurity: PersonSocialSecurity;
 }
 
@@ -356,6 +361,8 @@ export interface Household {
   /** 3.6. Required to answer. */
   accounts: ListAnswer<Account>;
   assumptions: HouseholdAssumptions;
+  /** 4.6. Defaults to enteredOnly, roughly. */
+  savingsStrategy: Value<SavingsStrategy>;
   /** Later. */
   goals: GoalBucket[];
 }

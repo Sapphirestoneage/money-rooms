@@ -17,6 +17,8 @@ describe("empty household", () => {
     expect(h.accounts).toEqual({ kind: "unanswered" });
     expect(h.assumptions).toEqual({ set: "historical", overrides: {} });
     expect(h.partner).toBeUndefined();
+    expect(h.self.hsaEligible).toMatchObject({ value: false, confidence: "roughly", source: "preset" });
+    expect(h.savingsStrategy).toMatchObject({ value: "enteredOnly", confidence: "roughly", source: "preset" });
   });
 
   it("lists the five required answers as missing", () => {
