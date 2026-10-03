@@ -195,7 +195,7 @@ export function whatIfsScreen(ctx: WhatIfsContext): HTMLElement {
     const extra = el("input", { class: "input", type: "number", min: 0, step: 10, value: extraMonthly, "aria-label": "Extra a month toward debts" });
     extra.addEventListener("change", () => { extraMonthly = Math.max(0, Number(extra.value)); payoff = null; render(); });
     const table = payoff
-      ? el("div", { class: "table-wrap" }, el(
+      ? el("div", { class: "table-wrap", tabindex: 0, role: "region", "aria-label": "Payoff methods compared" }, el(
           "table",
           { class: "compare-table" },
           el("thead", {}, el("tr", {}, el("th", {}, "Method"), el("th", {}, "Order"), el("th", {}, "Debt free in"), el("th", {}, "Interest"), el("th", {}, "Stress-months"))),
