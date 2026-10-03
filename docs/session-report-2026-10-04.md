@@ -87,10 +87,10 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 6. The engine's default policy under m2 draws in the conventional order with no strategies, so the app's headline date now includes Roth earnings penalties, capital gains tax, and marketplace premiums. Maya's app-default likely date moved from 40 (m1) to 41 (m2). Is that the right default, or should the optimizer's best plan be the headline?
 7. `data/healthcare.json` placeholders: benchmark silver premium $7,200 a year, Part D $480, supplement and out of pocket $1,200. All marked lookUp. Open question O3 still needs a source.
 8. Accessibility judgment calls 1 to 5 in `docs/accessibility-audit-2026-10.md`: the preset picker's list roles, chart label contrast, and the darker theme's new brand shades.
-11. The CI gate (`deploy.yml` and `ci.yml` on `foundations`): the deploy now also runs the Maya tie-out as a gate. Is that the right bar, and should the bundle-size check from `docs/performance-budget.md` join it?
-12. The rules update routine asks who owns the November check and whether a rule verified more than 15 months ago should be refused or only flagged.
-9. Households of two: should a married filing status with no partner be an error (the dictionary's validation) or the flag it is now? And is the survivor rule's start (the year after the first plan-to age) acceptable until mortality is modeled?
-10. Spousal and survivor benefits: the registry entry `ss.spousalAndSurvivor` (50% spousal, reduced by the claimant's own factor; 100% survivor; larger of the two) was typed from memory. Please check it against ssa.gov; the real reduction schedules differ from the retirement one.
+9. The CI gate (`deploy.yml` and `ci.yml` on `foundations`): the deploy now also runs the Maya tie-out as a gate. Is that the right bar, and should the bundle-size check from `docs/performance-budget.md` join it?
+10. The rules update routine asks who owns the November check and whether a rule verified more than 15 months ago should be refused or only flagged.
+11. Households of two: should a married filing status with no partner be an error (the dictionary's validation) or the flag it is now? And is the survivor rule's start (the year after the first plan-to age) acceptable until mortality is modeled?
+12. Spousal and survivor benefits: the registry entry `ss.spousalAndSurvivor` (50% spousal, reduced by the claimant's own factor; 100% survivor; larger of the two) was typed from memory. Please check it against ssa.gov; the real reduction schedules differ from the retirement one.
 
 ## 6. Skipped or unverified
 
@@ -183,7 +183,3 @@ From `docs/readiness.md`, in order:
 **Instructions found in fetched content:** none. No page or tool output fetched during the build contained instructions aimed at it.
 
 **Edge-case verdicts (Phase 0d).** All sensible except two: the age-70 retire-now case showed $0 Social Security (fixed, commit 250e776), and age 100 gives an empty timeline rather than a message (the entry screen's 16-to-100 validation should stop it).
-
-**Instructions found in fetched content:** none. No page or tool output fetched during the build contained instructions aimed at it.
-
-**Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.
