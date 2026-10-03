@@ -1,0 +1,43 @@
+{
+  "_meta": {
+    "description": "Named assumption sets. All rates are real (after inflation) except inflation itself. Each value is [low, likely, high].",
+    "version": 1,
+    "updated": "2026-10-02",
+    "status": "PLACEHOLDER VALUES. Verify every number against its named source before release, and record the citation in 'citations'.",
+    "noHiddenPadding": "Likely is an honest best guess. Caution lives only in the low band."
+  },
+  "default": "historical",
+  "sets": {
+    "historical": {
+      "label": "Historical (Trinity Study, Big ERN data)",
+      "description": "Long-run US market history, the data the Trinity Study and Early Retirement Now's safe withdrawal series are built on.",
+      "returns": {
+        "stocks": [4.0, 6.5, 8.5],
+        "bonds":  [0.0, 2.0, 3.0],
+        "cash":   [-1.0, 0.5, 1.5]
+      },
+      "inflation": [2.0, 3.0, 4.0],
+      "incomeGrowth": {
+        "salary":       [0.0, 1.5, 3.0],
+        "hourly":       [0.0, 1.5, 3.0],
+        "selfEmployed": [0.0, 0.0, 3.0],
+        "sideGig":      [0.0, 0.0, 3.0],
+        "allowance":    [0.0, 0.0, 0.0],
+        "other":        [0.0, 0.0, 0.0]
+      },
+      "socialSecurityPolicy": [0.78, 1.0, 1.0],
+      "citations": []
+    },
+    "mmm": {
+      "label": "Mr. Money Mustache (Shockingly Simple Math)",
+      "description": "The deliberately modest assumption behind MMM's savings-rate table: about 5% real on a stock-heavy portfolio.",
+      "inherits": "historical",
+      "returns": {
+        "stocks": [3.0, 5.0, 7.0]
+      },
+      "citations": []
+    }
+  },
+  "socialSecurityNotes": "Low value 0.78 reflects the 2026 Trustees Report: the retirement (OASI) fund projected depleted in Q4 2032 with 78% of benefits payable. Combined funds: 2034, 83%. See decisions.md O4.",
+  "planToAge": { "default": 95, "min": 85, "max": 100 }
+}

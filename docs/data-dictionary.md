@@ -1,0 +1,353 @@
+# Data dictionary: Level one
+
+The data dictionary is the chart of accounts for Money Rooms. It defines every piece of information the app stores, how it's stored, and what depends on it.
+
+**If a field isn't here, it doesn't exist.** New fields get added to this document first, then built.
+
+This version covers **level one**: everything the walking skeleton (milestone M1) needs to produce an FI date with a best, likely, and worst range. Fields marked *Later* are defined now so their shape is settled, but they aren't built in M1.
+
+---
+
+## 1. How every field is described
+
+| Column | Meaning |
+|---|---|
+| **Kind** | Who owns the answer. **Fact**: reality (checkable against a statement). **Assumption**: the world (nobody can know it, so it gets a range). **Goal**: the person (what they want). **Decision**: the person (a choice the engine can test, like claiming age). |
+| **Unit** | The specific measure: dollars, percent per year, month and year, a pick list. |
+| **Entered as** | The formats a person can type it in. Can differ from how it's stored. |
+| **Stored as** | The single normalized form the engine reads. |
+| **Cadence** | How it behaves over time: one-off, or a value with start and end dates. |
+| **Default** | What the engine uses if the field is blank. "Required" means it must be *answered*, which can include "I don't have this." |
+| **Source** | Where the value comes from: user, statement, preset, assumption set, or computed. |
+| **Confidence** | How sure the value is (see section 2). |
+| **Validation** | Controls on the entry: what's impossible or suspicious. |
+| **Relevance** | When the field exists for this person. |
+| **Feeds** | What the engine uses it for. This is the start of the dependency graph. |
+
+---
+
+## 2. Rules that apply to every field
+
+**2.1 Every value carries metadata.**
+
+| Metadata | Values |
+|---|---|
+| `asOf` | The date the value was true |
+| `source` | `user`, `statement`, `preset`, `assumptionSet`, `computed` |
+| `confidence` | `known`, `lookUp`, `roughly`, `computed`, `notForMe` |
+
+`known`: the person is sure. `lookUp`: they can find it, and the app says where. `roughly`: a placeholder estimate. `computed`: the engine derived it, with inputs linked. `notForMe`: doesn't apply, and counts as complete.
+
+**2.2 Store parts, compute totals.** No total, net, ratio, or age is ever stored. Total income, net worth, the gap, age, and tax rates are always computed.
+
+**2.3 Real dollars.** All money is stored in today's dollars. Assumptions are real rates. Nominal values are produced only at display time, using the inflation assumption.
+
+**2.4 Annual normalization.** Recurring money is stored as an annual amount. Entry and display formats are free (per hour, per paycheck, per month, per year).
+
+**2.5 Lists, not single fields.** Income, spending, accounts, and goals are lists of rows. Each row has a stable `id`.
+
+**2.6 Dates for anything that changes.** Rows that can start, stop, or change rate carry `start` and `end`. `end` can be a date, an age, or the event `retirement`.
+
+**2.7 Household of two.** Every person-level field exists for `self` and optionally `partner`. M1 builds `self` only, but the shape supports two from day one.
+
+**2.8 Every question has an "I don't" answer.** No question forces a number on someone it doesn't apply to.
+
+**2.9 Presets fill fields, people override.** Choosing a type (like "Roth IRA") fills its fields from `data/`. Any filled value can be changed, and the change is recorded with `source: user`.
+
+---
+
+## 3. Facts
+
+### 3.1 Birth date
+
+| Column | Value |
+|---|---|
+| Kind | Fact |
+| Unit | Month and year |
+| Stored as | `YYYY-MM` |
+| Cadence | One-off |
+| Default | None. Required |
+| Source | User |
+| Confidence | Always `known` |
+| Validation | Not in the future. Implied age 16 to 100 |
+| Relevance | Always |
+| Feeds | Every age in the timeline; plan-to age horizon; age 50 catch-up contributions; 59½ penalty-free access; 65 Medicare; Social Security claiming; required distributions; life phases |
+
+Age is never stored. It's computed from birth date and the projection year.
+
+### 3.2 Filing status
+
+| Column | Value |
+|---|---|
+| Kind | Fact |
+| Unit | Pick list: `single`, `marriedJoint`, `marriedSeparate`, `headOfHousehold` |
+| Cadence | Value with dated changes |
+| Default | `single`, confidence `roughly` |
+| Source | User |
+| Validation | Married statuses require a partner record (Later) |
+| Relevance | Always |
+| Feeds | Federal brackets and standard deduction; contribution limits; Roth IRA eligibility; ACA subsidy (Later) |
+
+### 3.3 State of residence
+
+| Column | Value |
+|---|---|
+| Kind | Fact |
+| Unit | Pick list of US states and DC |
+| Cadence | Value with dated changes |
+| Default | None. Required |
+| Source | User |
+| Relevance | Always |
+| Feeds | State income tax; cost-of-living defaults (Later) |
+
+### 3.4 Income streams (list)
+
+One row per source of income. Total income is computed.
+
+| Column | Value |
+|---|---|
+| Kind | Fact |
+| Row type | Pick list: `salary`, `hourly`, `selfEmployed`, `sideGig`, `allowance`, `rental` (Later), `other` |
+| Unit | Dollars. `hourly` also stores hours per week |
+| Entered as | Gross, take-home, or both; per hour, per paycheck, per month, or per year |
+| Stored as | Annual gross dollars, plus `enteredTakeHome` if given |
+| Cadence | `start`, and `end` as a date, an age, or `retirement` |
+| Default | None. Required to answer: at least one stream, or "I don't have income right now" |
+| Source | User |
+| Confidence | `known` for salary by default; `roughly` for hourly, self-employed, and gigs unless marked otherwise |
+| Validation | Not negative. Hours per week 1 to 80. Take-home below gross. Gentle flag if spending far exceeds income |
+| Relevance | Always asked. Follow-up fields depend on type (below) |
+| Growth | Each row has its own real growth assumption, defaulted by type from the active assumption set |
+| Feeds | The gap; savings rate; federal and state tax; FICA or self-employment tax; Social Security earnings record; employer match; contribution limits; Roth IRA eligibility; ACA subsidy (Later); debt-to-income |
+
+**Gross, take-home, or both:**
+
+| Entered | Engine does | Confidence |
+|---|---|---|
+| Gross only | Computes taxes and deductions to get take-home | As entered |
+| Take-home only | Back-solves gross | `roughly` |
+| Both | Reconciles: gross minus computed taxes should equal take-home. The unexplained remainder is surfaced as likely pre-tax deductions ("About $340 a month leaves before your paycheck. Is that a 401(k)?") | Highest |
+
+**Follow-up fields by type:**
+
+| Type | Asks |
+|---|---|
+| `salary` | Pay frequency; employer match; pre-tax deductions |
+| `hourly` | Hours per week; pay frequency; employer match if any |
+| `selfEmployed` | Business expenses (annual); entity type (Later) |
+| `sideGig` | Business expenses (annual) |
+| `allowance` | End date |
+
+**Supporting fields:**
+
+| Field | Stored as | Default |
+|---|---|---|
+| Pay frequency | `weekly`, `biweekly`, `semimonthly`, `monthly` | `biweekly`, `roughly` |
+| Pre-tax deductions | List: type (`401k`, `403b`, `hsa`, `healthPremium`, `other`) and annual amount | None, or inferred from the gross and take-home reconciliation |
+| Employer match | Percent matched, and cap as percent of pay | None |
+
+### 3.5 Spending (list)
+
+Spending means **consumption only**. Debt payments live on debt rows. Saving and investing live on account rows. Counting them here would double count.
+
+| Column | Value |
+|---|---|
+| Kind | Fact |
+| Row | A category from `data/spending-categories.json` |
+| Unit | Dollars |
+| Entered as | One total, or by category. Transactions are Later |
+| Stored as | Annual amount per category (smoothed, accrual basis) |
+| Cadence | `start`, `end` (date, age, or `retirement`) |
+| Continues in retirement | `yes`, `no`, or `changes` (with a retirement amount). Defaulted per category |
+| Default | None. Required: a total or categories |
+| Source | User |
+| Confidence | `roughly` unless reconciled |
+| Validation | Not negative. Proof of cash (below) |
+| Growth | Real 0% (keeps pace with inflation) by default. Optional lifestyle creep (Later) |
+| Feeds | The gap; savings rate; emergency fund target; retirement baseline; affordability checks; hours-costed conversions |
+
+**Accrual, not cash.** A four-month bulk purchase or an annual subscription is spread evenly. The engine never sees lumpy months. The cash view (when money actually leaves) belongs to the Money Calendar, a Later view.
+
+**Proof of cash.** Income minus taxes minus saving minus debt payments implies a spending number. If it differs from entered spending by more than 15%, the app flags it gently and asks which is right. People usually underestimate spending.
+
+**One-total entry.** If only a total is given, it's stored as one `everythingElse` row with `continuesInRetirement: yes`. Categories can be split out later without losing the total.
+
+**Tags (Later).** Each spending entry can carry `why`: `planned` (default), `unavoidable`, or `mistake`. Tags cross categories: a speeding ticket stays in Transportation and is tagged `mistake`.
+
+### 3.6 Accounts: assets and debts (list)
+
+Assets and debts share one list. Net worth is computed.
+
+**Fields every account has:**
+
+| Field | Stored as | Default |
+|---|---|---|
+| Name | Text | From preset |
+| Institution | Text, optional | None |
+| Preset | A key from `data/account-presets.json` | Required |
+| Side | `asset` or `debt` | From preset |
+| Balance | Dollars, with `asOf` | Required to answer; `roughly` allowed |
+| Stress | 1 to 5, "how much does this weigh on you?" | Blank (not asked in round one) |
+
+**Asset fields:**
+
+| Field | Stored as | Default |
+|---|---|---|
+| Tax bucket | `cash`, `taxable`, `pretax`, `roth`, `hsa` | From preset |
+| Liquidity | `now`, `days`, `penaltyBefore59Half`, `restricted` | From preset |
+| Allocation | Percent stocks, bonds, cash | From preset, or quick picker: mostly stocks (90/10/0), balanced (60/40/0), mostly cash (0/0/100) |
+| Annual contribution | Dollars per year | 0, or computed from deductions |
+| Fees | Percent per year | From preset, editable |
+| Cost basis | Dollars | Later |
+| Holdings | List of tickers | Later |
+
+**Debt fields:**
+
+| Field | Stored as | Default |
+|---|---|---|
+| Rate | Percent per year | Required |
+| Promo | Promo rate, promo end date, rate after | None |
+| Minimum payment | Entered monthly, stored annual | Required |
+| Actual payment | Entered monthly, stored annual | Equal to minimum |
+| Personal or business | Pick list | `personal` |
+| Interest deductible | Yes or no | From preset |
+| Forgiveness path | `none`, `idr`, `pslf` | Later |
+
+**Validation.** Balance not negative (side carries the sign). Payment at least covers interest, or the app flags that the balance will grow. A 0% promo requires an end date. Tax bucket must match the preset family (a Roth 401(k) can't be `taxable`).
+
+**Entry order (flow, not data).** List accounts first, then balances. People know what accounts they have before they know the amounts.
+
+**Feeds.** Starting balances; net worth; growth by asset class; withdrawal order and drawdown taxes; debt payoff schedule and the jump in the gap at payoff; payoff methods (Later); liquidity and emergency fund coverage.
+
+---
+
+## 4. Assumptions
+
+Every assumption has a **low, likely, and high** value and a named **source**. The three values run as the three bands of the projection (worst, likely, best).
+
+**No hidden padding.** The likely value is an honest best guess. Caution lives only in the low band, in plain view.
+
+**Assumption sets.** Assumptions load together from a named set in `data/assumption-sets.json`. The default set is `historical`. Changing a single value records it as a user override.
+
+### 4.1 Return by asset class
+
+| Column | Value |
+|---|---|
+| Kind | Assumption |
+| Unit | Real percent per year, per asset class (`stocks`, `bonds`, `cash`) |
+| Default | From the active assumption set |
+| Feeds | Growth on every asset account, blended by its allocation, minus its fees |
+
+### 4.2 Inflation
+
+| Column | Value |
+|---|---|
+| Kind | Assumption |
+| Unit | Percent per year |
+| Feeds | Nominal display; real erosion of fixed nominal amounts (fixed-rate debt payments, any nominal pension) |
+
+Because the engine works in real dollars, inflation never touches returns or spending directly. It only matters for things that don't rise with prices.
+
+### 4.3 Income growth
+
+Real percent per year, set per income stream, defaulted by stream type from the active set.
+
+### 4.4 Social Security
+
+Social Security is a small model, not a single field.
+
+| Part | Kind | Stored as | Default |
+|---|---|---|---|
+| Earnings record | Fact | Annual covered earnings by year | Estimated from income streams; sharpened with the person's ssa.gov record |
+| Claiming age | Decision | Age in years and months | Full retirement age |
+| Policy | Assumption | Percent of scheduled benefit paid | Likely 100%; adjustable down to the current-law floor |
+
+The benefit is **computed**. Zero is not a band. A person can choose zero as an explicit override, and the app shows what that choice costs in extra working years.
+
+### 4.5 Plan-to age
+
+| Column | Value |
+|---|---|
+| Kind | Assumption |
+| Unit | Age in years |
+| Default | 95 |
+| Range | 85 to 100 |
+
+This is the one place caution is intentional: outliving money is far worse than leaving some behind. The default is labeled as a safety choice, not a forecast.
+
+---
+
+## 5. Goals
+
+### 5.1 Retirement spending
+
+Retirement spending is computed from three layers. Nobody types in a target.
+
+**Layer 1. Baseline.** Every current spending category with `continuesInRetirement` of `yes` or `changes`.
+
+**Layer 2. Life phases.** Tied to age, not years since retiring. Discretionary categories scale by phase. Essential categories don't. Healthcare is its own line.
+
+| Phase | Default ages | Discretionary multiplier |
+|---|---|---|
+| Go-go | Retirement to 74 | 100% |
+| Slow-go | 75 to 84 | 85% |
+| No-go | 85 and up | 70% |
+
+Phase ages and multipliers are proposed defaults (see `decisions.md`) and are editable.
+
+**Healthcare line.** Before 65, a pre-Medicare estimate (ACA-based in M2). From 65, a Medicare-based estimate. Values live in `data/` once sourced.
+
+**Layer 3. Goal buckets (Later, shape settled now).**
+
+| Field | Stored as |
+|---|---|
+| Name | Text |
+| Cost | Dollars, one-off or annual |
+| Age window | Start age and end age |
+| Priority | `must`, `want`, `dream` |
+
+When the plan is short, the engine trims `dream` first, then `want`, and protects `must`. When it has a surplus, it reports which additional goals are affordable and when. Price the Dream and Time Buckets are views of this list.
+
+### 5.2 Retirement age
+
+Not an input in M1. The skeleton's question is "when can I stop?", so retirement age is the **output** (the FI date). Later, a person can pin a target age, which turns the output into the gap.
+
+---
+
+## 6. Computed (never stored)
+
+| Value | Computed from |
+|---|---|
+| Age (any year) | Birth date |
+| Total income | Income streams |
+| Take-home | Income, deductions, taxes |
+| Taxes and effective rate | Income, filing status, state, deductions, tax tables |
+| The gap | Take-home minus spending minus debt payments |
+| Savings rate | Saving divided by take-home |
+| Net worth | Accounts |
+| Social Security benefit | Earnings record, claiming age, policy |
+| Retirement spending by year | Baseline, phases, healthcare, goals |
+| FI date (best, likely, worst) | Everything above, through the engine |
+
+---
+
+## 7. Level one checklist
+
+The minimum set for M1. Everything else has a default.
+
+| # | Input | Required | Default if blank |
+|---|---|---|---|
+| 1 | Birth date | Yes | None |
+| 2 | State | Yes | None |
+| 3 | Filing status | No | Single |
+| 4 | Income streams | Yes (or "none") | None |
+| 5 | Spending | Yes (total or categories) | None |
+| 6 | Accounts and balances | Yes (or "none") | None |
+| 7 | Returns | No | Historical set |
+| 8 | Inflation | No | Historical set |
+| 9 | Income growth | No | By stream type |
+| 10 | Social Security | No | Estimated, 100% policy, full retirement age |
+| 11 | Plan-to age | No | 95 |
+| 12 | Retirement spending | No | Baseline plus phases |
+
+Five answers produce a first FI date. Everything else sharpens it.

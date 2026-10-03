@@ -1,0 +1,32 @@
+{
+  "id": "dev",
+  "label": "Dev, 24, freelancer with debt",
+  "story": "Variable 1099 income plus a side gig, a credit card balance, and a loan from family that weighs on him more than the card does.",
+  "inputs": {
+    "birthDate": "2002-05",
+    "state": "NJ",
+    "filingStatus": "single",
+    "income": [
+      { "id": "design", "type": "selfEmployed", "grossAnnual": 58000, "businessExpensesAnnual": 4000, "end": "retirement" },
+      { "id": "tutoring", "type": "sideGig", "grossAnnual": 6000, "end": "age:30" }
+    ],
+    "spending": [
+      { "category": "accommodation", "annual": 14400 },
+      { "category": "food", "annual": 5400 },
+      { "category": "transportation", "annual": 1800 },
+      { "category": "everythingElse", "annual": 8400 }
+    ],
+    "accounts": [
+      { "id": "chk", "preset": "checking", "balance": 2200 },
+      { "id": "roth", "preset": "rothIRA", "balance": 3000 },
+      { "id": "card", "preset": "creditCard", "balance": 6800, "rate": 26.9, "minPaymentMonthly": 200, "stress": 3 },
+      { "id": "mom", "preset": "family", "balance": 5000, "rate": 0, "minPaymentMonthly": 100, "stress": 5 }
+    ]
+  },
+  "expected": {
+    "fiAge": { "best": null, "likely": null, "worst": null },
+    "estateAtPlanTo": { "likely": null },
+    "status": "Awaiting hand calculation"
+  },
+  "notes": "Exercises self-employment tax, a stream that ends before retirement, high-interest debt in the savings order, and (later) the peace-first payoff method."
+}

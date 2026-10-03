@@ -1,0 +1,27 @@
+{
+  "_meta": {
+    "description": "Default spending categories. Spending is consumption only: debt payments and saving live on account rows.",
+    "version": 1,
+    "updated": "2026-10-02",
+    "fields": "type: essential or discretionary (phases scale discretionary only). continuesInRetirement: yes, no, or changes. draftt: which DRAFTT letter this feeds in the later lens (null if 'everything else')."
+  },
+  "categories": [
+    { "id": "accommodation",  "label": "Housing",               "type": "essential",     "continuesInRetirement": "yes",     "draftt": "A" },
+    { "id": "utilities",      "label": "Utilities",             "type": "essential",     "continuesInRetirement": "yes",     "draftt": "A" },
+    { "id": "food",           "label": "Food and groceries",    "type": "essential",     "continuesInRetirement": "yes",     "draftt": "F" },
+    { "id": "transportation", "label": "Transportation",        "type": "essential",     "continuesInRetirement": "changes", "draftt": "T" },
+    { "id": "insurance",      "label": "Insurance",             "type": "essential",     "continuesInRetirement": "yes",     "draftt": null },
+    { "id": "healthcare",     "label": "Healthcare",            "type": "essential",     "continuesInRetirement": "changes", "draftt": null, "notes": "Replaced in retirement by the healthcare line." },
+    { "id": "therapy",        "label": "Therapy and mental health", "type": "essential", "continuesInRetirement": "yes",     "draftt": "T2" },
+    { "id": "phone",          "label": "Phone and internet",    "type": "essential",     "continuesInRetirement": "yes",     "draftt": null },
+    { "id": "subscriptions",  "label": "Subscriptions",         "type": "discretionary", "continuesInRetirement": "yes",     "draftt": null },
+    { "id": "personal",       "label": "Personal care and clothing", "type": "discretionary", "continuesInRetirement": "yes", "draftt": null },
+    { "id": "fun",            "label": "Fun and going out",     "type": "discretionary", "continuesInRetirement": "yes",     "draftt": null },
+    { "id": "travel",         "label": "Travel",                "type": "discretionary", "continuesInRetirement": "yes",     "draftt": null },
+    { "id": "giving",         "label": "Giving and family",     "type": "discretionary", "continuesInRetirement": "yes",     "draftt": null },
+    { "id": "pets",           "label": "Pets",                  "type": "essential",     "continuesInRetirement": "yes",     "draftt": null },
+    { "id": "education",      "label": "Education",             "type": "discretionary", "continuesInRetirement": "no",      "draftt": null },
+    { "id": "workCosts",      "label": "Work costs",            "type": "essential",     "continuesInRetirement": "no",      "draftt": null },
+    { "id": "everythingElse", "label": "Everything else",       "type": "discretionary", "continuesInRetirement": "yes",     "draftt": null }
+  ]
+}

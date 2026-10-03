@@ -1,0 +1,108 @@
+/*
+  Money Rooms design tokens.
+  The only place colors, type, spacing, and radii are defined.
+  Every component reads from these variables. Nothing else defines a color.
+*/
+
+:root {
+  /* Surfaces and text */
+  --color-paper: #EEF1EC;        /* page background */
+  --color-surface: #F7F8F5;      /* cards, fields */
+  --color-ink: #17252B;          /* primary text */
+  --color-ink-muted: #56676D;    /* secondary text, labels */
+  --color-rule: #C8D0C7;         /* borders, dividers */
+
+  /* Brand scale: slate to sea glass (also the cross-section strata) */
+  --color-brand-900: #26425A;
+  --color-brand-700: #3C5E75;
+  --color-brand-500: #557A8C;
+  --color-brand-300: #80A2A3;
+  --color-brand-100: #D6E3DF;
+
+  /* Attention: used for "needs a look," never for judgment */
+  --color-attention: #B9820C;
+  --color-attention-soft: #F4E6C4;
+
+  /* Number kinds (data dictionary section 2.1) */
+  --color-known: var(--color-brand-700);
+  --color-lookup: var(--color-brand-500);
+  --color-roughly: var(--color-attention);
+  --color-computed: var(--color-brand-300);
+  --color-notforme: var(--color-ink-muted);
+
+  /* Bands */
+  --color-band-best: #6E9C8A;
+  --color-band-likely: var(--color-brand-700);
+  --color-band-worst: #8C8FA6;   /* deliberately not red */
+
+  /* Type */
+  --font-sans: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-numbers: "Archivo", system-ui, sans-serif; /* always with tabular numerals */
+  --text-xs: 0.78rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-hero: clamp(2.5rem, 8vw, 4rem);
+  --leading-tight: 1.1;
+  --leading-body: 1.5;
+  --weight-regular: 400;
+  --weight-medium: 600;
+  --weight-bold: 750;
+
+  /* Spacing (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Shape */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-pill: 999px;
+  --border-width: 1px;
+
+  /* Layout */
+  --content-width: 720px;
+  --wide-width: 1080px;
+
+  /* Motion */
+  --duration-quick: 150ms;
+  --duration-normal: 250ms;
+  --easing: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-paper: #10181C;
+    --color-surface: #172228;
+    --color-ink: #E3E9E5;
+    --color-ink-muted: #96A6A9;
+    --color-rule: #2C3B41;
+    --color-brand-100: #22343C;
+    --color-attention: #E3B23F;
+    --color-attention-soft: #3A3018;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-paper: #10181C;
+  --color-surface: #172228;
+  --color-ink: #E3E9E5;
+  --color-ink-muted: #96A6A9;
+  --color-rule: #2C3B41;
+  --color-brand-100: #22343C;
+  --color-attention: #E3B23F;
+  --color-attention-soft: #3A3018;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-quick: 0ms;
+    --duration-normal: 0ms;
+  }
+}

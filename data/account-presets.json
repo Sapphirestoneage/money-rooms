@@ -1,0 +1,34 @@
+{
+  "_meta": {
+    "description": "Account presets. Picking a preset fills these fields; people can override any of them.",
+    "version": 1,
+    "updated": "2026-10-02",
+    "notes": "Allocation is percent stocks/bonds/cash. Fees are percent per year. Liquidity values: now, days, penaltyBefore59Half, restricted."
+  },
+  "presets": {
+    "checking":        { "label": "Checking",                 "side": "asset", "taxBucket": "cash",    "liquidity": "now",                 "allocation": [0, 0, 100],  "fees": 0 },
+    "savings":         { "label": "Savings or high-yield savings", "side": "asset", "taxBucket": "cash", "liquidity": "now",              "allocation": [0, 0, 100],  "fees": 0 },
+    "brokerage":       { "label": "Brokerage (taxable)",      "side": "asset", "taxBucket": "taxable", "liquidity": "days",                "allocation": [90, 10, 0],  "fees": 0.1 },
+    "trad401k":        { "label": "401(k) or 403(b), traditional", "side": "asset", "taxBucket": "pretax", "liquidity": "penaltyBefore59Half", "allocation": [90, 10, 0], "fees": 0.2 },
+    "roth401k":        { "label": "401(k), Roth",             "side": "asset", "taxBucket": "roth",    "liquidity": "penaltyBefore59Half", "allocation": [90, 10, 0],  "fees": 0.2 },
+    "tradIRA":         { "label": "IRA, traditional",         "side": "asset", "taxBucket": "pretax",  "liquidity": "penaltyBefore59Half", "allocation": [90, 10, 0],  "fees": 0.1 },
+    "rothIRA":         { "label": "IRA, Roth",                "side": "asset", "taxBucket": "roth",    "liquidity": "penaltyBefore59Half", "allocation": [90, 10, 0],  "fees": 0.1, "notes": "Contributions can be withdrawn anytime; growth is restricted before 59 and a half." },
+    "hsa":             { "label": "HSA",                      "side": "asset", "taxBucket": "hsa",     "liquidity": "restricted",          "allocation": [90, 10, 0],  "fees": 0.1 },
+    "creditCard":      { "label": "Credit card",              "side": "debt",  "interestDeductible": false, "typicalRate": 24 },
+    "businessCard":    { "label": "Business credit card",     "side": "debt",  "interestDeductible": true,  "typicalRate": 24, "businessDefault": true },
+    "studentFederal":  { "label": "Student loan, federal",    "side": "debt",  "interestDeductible": true,  "forgivenessEligible": true },
+    "studentPrivate":  { "label": "Student loan, private",    "side": "debt",  "interestDeductible": true,  "forgivenessEligible": false },
+    "auto":            { "label": "Car loan",                 "side": "debt",  "interestDeductible": false },
+    "mortgage":        { "label": "Mortgage",                 "side": "debt",  "interestDeductible": true },
+    "personal":        { "label": "Personal loan",            "side": "debt",  "interestDeductible": false },
+    "family":          { "label": "Loan from family or friends", "side": "debt", "interestDeductible": false, "notes": "Often 0% with a flexible schedule. A natural fit for the stress rating." },
+    "medical":         { "label": "Medical debt",             "side": "debt",  "interestDeductible": false },
+    "otherAsset":      { "label": "Other asset",              "side": "asset", "taxBucket": "taxable", "liquidity": "days",               "allocation": [0, 0, 100],  "fees": 0 },
+    "otherDebt":       { "label": "Other debt",               "side": "debt",  "interestDeductible": false }
+  },
+  "quickAllocations": {
+    "mostlyStocks": [90, 10, 0],
+    "balanced": [60, 40, 0],
+    "mostlyCash": [0, 0, 100]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "maya",
+  "label": "Maya, 25, salaried, starting out",
+  "story": "First job after college, a federal student loan, and a 401(k) with a match. Spends about what most people her age do.",
+  "inputs": {
+    "birthDate": "2001-03",
+    "state": "NY",
+    "filingStatus": "single",
+    "income": [
+      { "id": "job", "type": "salary", "grossAnnual": 72000, "payFrequency": "biweekly", "end": "retirement",
+        "employerMatch": { "matchPercent": 100, "capPercentOfPay": 4 },
+        "preTaxDeductions": [ { "type": "401k", "annual": 2880 } ] }
+    ],
+    "spending": [
+      { "category": "accommodation", "annual": 19200 },
+      { "category": "food", "annual": 6000 },
+      { "category": "transportation", "annual": 2400 },
+      { "category": "everythingElse", "annual": 9600 }
+    ],
+    "accounts": [
+      { "id": "chk", "preset": "checking", "balance": 3500 },
+      { "id": "hysa", "preset": "savings", "balance": 6000 },
+      { "id": "k401", "preset": "trad401k", "balance": 8200 },
+      { "id": "loan", "preset": "studentFederal", "balance": 24000, "rate": 5.5, "minPaymentMonthly": 260 }
+    ]
+  },
+  "expected": {
+    "fiAge": { "best": null, "likely": null, "worst": null },
+    "estateAtPlanTo": { "likely": null },
+    "status": "Awaiting hand calculation"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "jordan",
+  "label": "Jordan, 28, aggressive saver",
+  "story": "High savings rate, Roth IRA and brokerage, no debt. The classic FIRE profile, and the case where Social Security and the drawdown matter most.",
+  "inputs": {
+    "birthDate": "1998-08",
+    "state": "TX",
+    "filingStatus": "single",
+    "income": [
+      { "id": "job", "type": "salary", "grossAnnual": 115000, "payFrequency": "semimonthly", "end": "retirement",
+        "employerMatch": { "matchPercent": 50, "capPercentOfPay": 6 },
+        "preTaxDeductions": [ { "type": "401k", "annual": 23500 }, { "type": "hsa", "annual": 4300 } ] }
+    ],
+    "spending": [
+      { "category": "accommodation", "annual": 16800 },
+      { "category": "food", "annual": 5400 },
+      { "category": "transportation", "annual": 3000 },
+      { "category": "travel", "annual": 4000 },
+      { "category": "everythingElse", "annual": 7200 }
+    ],
+    "accounts": [
+      { "id": "chk", "preset": "checking", "balance": 5000 },
+      { "id": "hysa", "preset": "savings", "balance": 20000 },
+      { "id": "k401", "preset": "trad401k", "balance": 95000 },
+      { "id": "roth", "preset": "rothIRA", "balance": 41000 },
+      { "id": "hsa", "preset": "hsa", "balance": 12000 },
+      { "id": "brk", "preset": "brokerage", "balance": 30000 }
+    ]
+  },
+  "expected": {
+    "fiAge": { "best": null, "likely": null, "worst": null },
+    "estateAtPlanTo": { "likely": null },
+    "status": "Awaiting hand calculation"
+  },
+  "notes": "Contribution amounts are illustrative. Confirm against the 2026 limits in data/tax/2026.json once sourced."
+}
