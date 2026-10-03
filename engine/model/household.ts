@@ -3,7 +3,7 @@
  */
 
 import { defaultHouseholdAssumptions } from "./assumptions";
-import type { Household, IsoDate, Person } from "./types";
+import type { Household, IncomeType, IsoDate, Person } from "./types";
 import { presetValue } from "./values";
 
 /** A person with nothing answered yet, and the dictionary's defaults filled in. */
@@ -60,4 +60,15 @@ export function debtsNeedingRate(h: Household): { id: string; label: string }[] 
     }
   }
   return out;
+}
+
+/** Plain names for income types, used when a stream has no name of its own. */
+export const INCOME_TYPE_NAMES: Readonly<Record<IncomeType, string>> = {
+  salary: "Salary", hourly: "Hourly job", selfEmployed: "Self-employment", sideGig: "Side gig", unemployment: "Unemployment benefits", allowance: "Allowance", rental: "Rental", other: "Other income",
+};
+
+/** The names of income streams marked expected but not confirmed (data dictionary 3.4). */
+export function unconfirmedIncome(h: Household): string[] {
+  if (h.self.income.kind !== "rows") return [];
+  return h.self.income.rows.filter((s) => s.notConfirmed === true).map((s) => s.label ?? INCOME_TYPE_NAMES[s.type]);
 }

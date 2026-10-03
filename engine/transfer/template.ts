@@ -24,6 +24,7 @@ import type {
   YearMonth,
 } from "../model";
 import {
+  INCOME_TYPE_NAMES,
   STATE_CODES,
   annualFrom,
   assetFromPreset,
@@ -244,13 +245,15 @@ export function readTemplate(text: string, asOf: IsoDate): TemplatePreview {
   const groups: Record<"income" | "spending" | "account" | "debt", Map<string, Group>> = { income: new Map(), spending: new Map(), account: new Map(), debt: new Map() };
   /** Fields marked dontknow, so an item can tell "blank on purpose" from "never mentioned". */
   const unknown = new Set<string>();
+  /** Income items with a row marked roughly whose note says "not confirmed". */
+  const unconfirmed = new Set<string>();
   const skip = (line: number, label: string, reason: string) => preview.needsALook.push({ line, label, reason });
 
   for (let i = headerIndex + 1; i < table.length; i++) {
     const line = i + 1;
     const cells = (table[i] ?? []).map((c) => c.trim());
     if (cells.every((c) => c === "")) continue;
-    const [sectionRaw = "", item = "", fieldRaw = "", value = "", cadenceRaw = "", kindRaw = "", asOfRaw = ""] = cells;
+    const [sectionRaw = "", item = "", fieldRaw = "", value = "", cadenceRaw = "", kindRaw = "", asOfRaw = "", notes = ""] = cells;
     if (sectionRaw === "") continue; // a notes row
 
     const section = sectionRaw.toLowerCase() as TemplateSection;
@@ -276,6 +279,7 @@ export function readTemplate(text: string, asOf: IsoDate): TemplatePreview {
       skip(line, label, `kind "${kindRaw}" isn't known, roughly, lookup, or dontknow`);
       continue;
     }
+    if (section === "income" && kind === "roughly" && /not\s+confirmed/i.test(notes)) unconfirmed.add(item);
     if (kind === "dontknow") {
       preview.toLookUp.push({ line, label, reason: words(field) });
       unknown.add(`${section}|${item}|${field}`);
@@ -451,6 +455,7 @@ export function readTemplate(text: string, asOf: IsoDate): TemplatePreview {
     if (expenses) stream.businessExpensesAnnual = val(expenses, annual(expenses));
     const start = g.get("start");
     if (start) stream.start = String(start.parsed);
+    if (unconfirmed.has(item)) stream.notConfirmed = true;
     streams.push(stream);
   }
   if (streams.length) h.self.income = { kind: "rows", rows: streams };
@@ -581,9 +586,6 @@ const FILING_OUT = reverse(FILING);
 const ACCOUNT_OUT = reverse(ACCOUNT_TYPES);
 const DEBT_OUT = reverse(DEBT_TYPES);
 const MIX_OUT = reverse(MIX);
-const INCOME_NAMES: Readonly<Record<IncomeType, string>> = {
-  salary: "Salary", hourly: "Hourly job", selfEmployed: "Self-employment", sideGig: "Side gig", unemployment: "Unemployment benefits", allowance: "Allowance", rental: "Rental", other: "Other income",
-};
 
 /** The file name for a template export. It starts with "my-" so .gitignore keeps it out of the repository. */
 export function templateFileName(exportedAt: IsoDate): string {
@@ -597,10 +599,10 @@ export function templateFileName(exportedAt: IsoDate): string {
 export function exportTemplate(h: Household): string {
   const lines: string[] = [TEMPLATE_HEADER];
   const kindOf = (c: Confidence): string | null => (c === "known" ? "known" : c === "roughly" ? "roughly" : c === "lookUp" ? "lookup" : null);
-  const row = (section: TemplateSection, item: string, field: string, value: string | number, cadence: string, v: { confidence: Confidence; asOf: IsoDate }) => {
+  const row = (section: TemplateSection, item: string, field: string, value: string | number, cadence: string, v: { confidence: Confidence; asOf: IsoDate }, notes = "") => {
     const kind = kindOf(v.confidence);
     if (kind === null) return;
-    lines.push([section, item, field, String(value), cadence, kind, v.asOf.slice(0, 7), ""].map(csvCell).join(","));
+    lines.push([section, item, field, String(value), cadence, kind, v.asOf.slice(0, 7), notes].map(csvCell).join(","));
   };
   const entered = (v: { source: string } | undefined): boolean => v !== undefined && v.source !== "preset";
   const known = (asOf: IsoDate) => ({ confidence: "known" as const, asOf });
@@ -624,9 +626,10 @@ export function exportTemplate(h: Household): string {
   if (h.self.income.kind === "rows") {
     const name = namer();
     for (const s of h.self.income.rows) {
-      const item = name(s.label ?? INCOME_NAMES[s.type]);
+      const item = name(s.label ?? INCOME_TYPE_NAMES[s.type]);
       const at = s.grossAnnual.asOf;
-      row("income", item, "type", INCOME_OUT.get(s.type) ?? "other", "", known(at));
+      if (s.notConfirmed) row("income", item, "type", INCOME_OUT.get(s.type) ?? "other", "", { confidence: "roughly", asOf: at }, "not confirmed");
+      else row("income", item, "type", INCOME_OUT.get(s.type) ?? "other", "", known(at));
       row("income", item, "gross_amount", s.grossAnnual.value, "year", s.grossAnnual);
       if (s.hoursPerWeek) row("income", item, "hours_per_week", s.hoursPerWeek.value, "", s.hoursPerWeek);
       if (s.payFrequency) row("income", item, "pay_frequency", s.payFrequency.value, "", s.payFrequency);

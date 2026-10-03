@@ -25,6 +25,7 @@ import {
   resolveAssumptions,
   resolveBand,
   templateFileName,
+  unconfirmedIncome,
   userValue,
   type SavingsStrategy,
 } from "../engine";
@@ -249,5 +250,38 @@ describe("spending that changes on a date", () => {
 
   it("round-trips through export", () => {
     expect(readTemplate(exportTemplate(preview.household), "2026-10-03").household).toEqual(preview.household);
+  });
+});
+
+describe("income that is expected but not confirmed", () => {
+  const preview = readTemplate(
+    file(
+      "income,Consulting contract,type,self_employed,,roughly,,not confirmed",
+      "income,Consulting contract,gross_amount,50000,year,roughly,,Not confirmed: waiting on the signed agreement",
+      "income,Consulting contract,start,2027-01,,roughly,,",
+      "income,Day job,type,salary,,known,,not confirmed",
+      "income,Day job,gross_amount,60000,year,known,,",
+    ),
+    "2026-10-03",
+  );
+
+  it("imports normally and is marked not confirmed", () => {
+    expect(preview.needsALook).toEqual([]);
+    if (preview.household.self.income.kind !== "rows") throw new Error("no income");
+    const [contract, job] = preview.household.self.income.rows;
+    expect(contract).toMatchObject({ type: "selfEmployed", start: "2027-01", notConfirmed: true });
+    expect(contract?.grossAnnual).toMatchObject({ value: 50000, confidence: "roughly" });
+    // The note only counts on a row marked roughly.
+    expect(job?.notConfirmed).toBeUndefined();
+  });
+
+  it("is named for the result screen", () => {
+    expect(unconfirmedIncome(preview.household)).toEqual(["Consulting contract"]);
+    expect(unconfirmedIncome(readTemplate(exampleTemplate, TIE_OUT_AS_OF).household)).toEqual([]);
+  });
+
+  it("round-trips through export", () => {
+    const again = readTemplate(exportTemplate(preview.household), "2026-10-03");
+    expect(again.household).toEqual(preview.household);
   });
 });

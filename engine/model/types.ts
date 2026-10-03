@@ -168,6 +168,8 @@ export interface IncomeStream {
   businessExpensesAnnual?: Value<number>;
   start?: YearMonth;
   end: EndRule;
+  /** True when the income is expected but not yet certain (3.4). It counts in the plan and is named on the result screen. */
+  notConfirmed?: boolean;
   /** Real growth, percent per year. Blank means the assumption set default for this type. */
   growth?: Value<Band>;
 }

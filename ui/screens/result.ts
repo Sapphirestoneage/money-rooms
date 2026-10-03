@@ -7,6 +7,7 @@
 import {
   debtsNeedingRate,
   missingLevelOneAnswers,
+  unconfirmedIncome,
   project,
   resolveAssumptions,
   resolveBand,
@@ -128,13 +129,19 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     );
 
     const flags = [...new Set([...t.flags, ...t.rows.flatMap((r) => r.flags)])].slice(0, 8);
+    const notConfirmed = unconfirmedIncome(ctx.household);
 
     root.append(
       el("h1", { class: "screen-title" }, "Your FI date"),
       headlineResult(result, openTrace),
       el("section", { class: "card" }, el("div", { class: "card__title" }, el("h2", {}, "Net worth over time")), bandChart(result, { display, dollarsLabel: dollarsLabel(), width: chartWidth() })),
       figures,
-      el("section", { class: "stack" }, ...flags.map((f) => gentleFlag(f))),
+      el(
+        "section",
+        { class: "stack" },
+        notConfirmed.length ? gentleFlag(`Includes income not yet confirmed: ${notConfirmed.join(", ")}.`, { label: "Change my numbers", onClick: ctx.goToEntry }) : null,
+        ...flags.map((f) => gentleFlag(f)),
+      ),
       el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: ctx.goToEntry }, "Change my numbers")),
       el("p", { class: "notice" }, "Money Rooms is educational software, not individualized financial, tax, or legal advice. Amounts are in today's dollars unless marked as future dollars."),
     );

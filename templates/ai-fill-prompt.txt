@@ -72,6 +72,9 @@ RULES
      If it has already started, leave the start row out.
    - end is a month (YYYY-MM), an age (age:30), or retirement.
    - For unemployment benefits, end is the last month they are paid.
+   - If an income is expected but not certain yet (an offer or contract that
+     is not signed), still write it: set kind to roughly on its rows and put
+     the words "not confirmed" in the notes of its type row.
 
    - For a debt on a promotional rate (like 0% for 12 months): rate is the
      promo rate, promo_end is the last month of the promo (YYYY-MM), and

@@ -495,6 +495,17 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       }
     }
 
+    // Certain, or expected but not confirmed yet (named on the result screen).
+    fields.push(field("Is this income confirmed?", select(
+      [{ value: "yes", label: "Yes, it is certain" }, { value: "no", label: "Expected, not confirmed yet" }],
+      s.notConfirmed ? "no" : "yes",
+      (v) => {
+        if (v === "no") s.notConfirmed = true;
+        else delete s.notConfirmed;
+        ctx.save();
+      },
+    )));
+
     // How long the income lasts: until retirement, until an age, or through a month.
     const endKind = s.end.kind === "age" ? "age" : s.end.kind === "date" ? "date" : "retirement";
     if (!isUnemployment) {

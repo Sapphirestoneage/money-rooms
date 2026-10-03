@@ -23,7 +23,7 @@ section,item,field,value,cadence,kind,as_of,notes
 | `cadence` | For dollar amounts only: `week`, `paycheck`, `month`, or `year`. Blank otherwise |
 | `kind` | `known`, `roughly`, `lookup`, or `dontknow`. `dontknow` rows are skipped on import and listed for later |
 | `as_of` | YYYY-MM the value was true. Optional |
-| `notes` | Free text. Ignored by the importer |
+| `notes` | Free text. Ignored by the importer, with one exception: an income row with kind `roughly` and the words "not confirmed" in its notes marks that income as expected but not confirmed |
 
 **Rules the importer applies**
 
@@ -64,7 +64,7 @@ section,item,field,value,cadence,kind,as_of,notes
 | `start` | YYYY-MM. Leave the row out if the income has already started | 2.6 and 3.4 Cadence, `start` |
 | `end` | YYYY-MM, `age:NN`, or `retirement` | 2.6 and 3.4 Cadence, `end` |
 
-An income needs its `type` row. Everything else is optional. Match needs both `match_percent` and `match_cap_percent`.
+An income needs its `type` row. Everything else is optional. Income that is expected but not yet certain imports normally: mark a row of it `roughly` and write "not confirmed" in its notes, and the result screen will say "Includes income not yet confirmed" with its name (data dictionary 3.4, Expected but not confirmed). Match needs both `match_percent` and `match_cap_percent`.
 
 ### spending (one item per amount; the item is the person's own name for it)
 
