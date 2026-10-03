@@ -140,6 +140,9 @@ For proof-of-cash mismatches, stale numbers, payments that don't cover interest,
 ### Confirm panel
 Shown inline, where the person tapped, before anything replaces or removes their data (loading an example, undoing an import). One plain sentence saying what will happen, then two buttons: the action in its own words ("Replace my numbers") and a way out ("Keep what I have"). Browser confirm boxes are never used.
 
+### Drop zone
+A dashed box for bringing a file into the app. It says what to drop, and holds a "Choose a file" button for people who can't or don't drag, so keyboard and touch use need nothing extra. While a file is dragged over it, the border and background change and the change is not color alone (the border turns solid). It takes one file at a time. A bad file gets a gentle flag naming the file and the problem. A file dropped beside the zone does nothing, so the browser never leaves the app to open it.
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 
