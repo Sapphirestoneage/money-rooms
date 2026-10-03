@@ -922,6 +922,29 @@
         "D2",
         "B6"
       ]
+    },
+    {
+      "id": "hsa.distributions",
+      "name": "HSA distributions: tax-free for qualified medical expenses (including saved receipts reimbursed later); otherwise ordinary income plus a 20% additional tax, with no additional tax from age 65",
+      "value": {
+        "nonMedicalAdditionalTaxPct": 20,
+        "noAdditionalTaxFromAge": 65,
+        "receiptsReimbursableLater": true
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "IRS Publication 969 (2025), Distributions From an HSA: Additional tax and Exceptions; Recordkeeping",
+      "url": "https://www.irs.gov/publications/p969",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "The 20% additional tax, its end at 65 (or disability or death), and the recordkeeping rule for later reimbursement confirmed in the publication on 2026-10-04.",
+      "watch": null,
+      "affects": [
+        "A6",
+        "C4"
+      ]
     }
   ]
 }

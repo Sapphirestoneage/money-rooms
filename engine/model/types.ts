@@ -241,10 +241,66 @@ export interface AssetAccount extends AccountCommon {
   annualContribution: Value<number>;
   /** Percent per year. */
   fees: Value<number>;
-  /** Later. */
+  /** M2 (spec section 7): taxable accounts. Blank means 70% of the balance, roughly. */
   costBasis?: Value<number>;
+  /** M2: Roth accounts. Regular contributions, which come out first and free. Blank means 50% of the balance, roughly. */
+  rothBasis?: Value<number>;
+  /** M2: Roth accounts. Past conversions into this account, each with its own five-year clock (dictionary 9.6). */
+  conversions?: RothConversion[];
+  /** M2: HSA. Qualified medical receipts saved for later tax-free reimbursement (strategy A6). */
+  savedReceipts?: Value<number>;
+  /** M2: the workplace plan this account belongs to (dictionary 9.2). */
+  planId?: string;
+  /** Dictionary 9.4. Blank means self. */
+  owner?: AccountOwner;
   /** Later. */
   holdings?: Value<string[]>;
+}
+
+export type AccountOwner = "self" | "partner" | "joint";
+
+/** 72(t) payment methods (M2 strategy A3). */
+export type SeppMethod = "rmd" | "fixedAmortization" | "fixedAnnuitization";
+
+/** Dictionary 9.6. A past Roth conversion. The five-year clock starts January 1 of the conversion year. */
+export interface RothConversion {
+  id: string;
+  fromAccountId?: string;
+  /** The taxable part converted, in dollars. */
+  amount: Value<number>;
+  month: YearMonth;
+}
+
+/** Dictionary 9.2. The employer's plan: accounts hold money, the plan holds the rules. */
+export type WorkplacePlanType = "401k" | "403b" | "457bGovernmental" | "457bNonGovernmental" | "tsp" | "simpleIra" | "sepIra" | "solo401k";
+export type YesNoUnknown = "yes" | "no" | "unknown";
+
+export interface WorkplacePlan {
+  id: string;
+  /** The income stream of the employer. */
+  employerIncomeId: string;
+  planType: WorkplacePlanType;
+  ruleOf55Allowed: Value<YesNoUnknown>;
+  megaBackdoorAllowed: Value<YesNoUnknown>;
+  rothOffered: Value<boolean>;
+  /** Age in years at separation from this employer, or blank for retirement (M2 spec section 7). */
+  separationAge?: Value<number>;
+  owner?: AccountOwner;
+}
+
+/** Dictionary 9.3. A business groups self-employed income, expenses, and business debts. */
+export type BusinessEntityType = "soleProprietor" | "singleMemberLlc" | "partnership" | "sCorp" | "cCorp";
+
+export interface Business {
+  id: string;
+  name: string;
+  entityType: Value<BusinessEntityType>;
+  incomeIds: string[];
+  expenseAnnual: Value<number>;
+  debtIds: string[];
+  ownerSalary?: Value<number>;
+  /** A record only. Where an entity is formed never changes where income is taxed. */
+  stateOfFormation?: Value<StateCode>;
 }
 
 export interface PromoRate {
@@ -392,4 +448,22 @@ export interface Household {
   savingsStrategy: Value<SavingsStrategy>;
   /** Later. */
   goals: GoalBucket[];
+  /** M2, dictionary 9.2 (Proposed). */
+  plans?: WorkplacePlan[];
+  /** M2, dictionary 9.3 (Proposed). */
+  businesses?: Business[];
+  /** M2, spec section 7: the drawdown details that unlock the True FI number. */
+  drawdown?: DrawdownInputs;
+}
+
+/** M2 spec section 7, the level-two inputs that are not on an account. */
+export interface DrawdownInputs {
+  /** The year of the first Roth IRA contribution, for the five-year earnings clock. Blank means the year of the oldest Roth account, or five years ago when unknown. */
+  firstRothYear?: Value<number>;
+  /** Expected heir tax rate, percent. Blank means 22, roughly (Level 5 Y5). */
+  heirTaxRatePercent?: Value<number>;
+  /** People covered on the health plan, for the poverty line. Blank means 1. */
+  acaHouseholdSize?: Value<number>;
+  /** Blank means the state's value from data/, else unknown. */
+  medicaidExpansionState?: Value<boolean>;
 }
