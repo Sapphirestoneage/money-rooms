@@ -20,6 +20,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 11 Coaching spec | Done (docs only) | `coaching-specs` | (see git log) |
 | 12 Feature register | Done (docs only) | `feature-register` | (see git log) |
 | 13 Readiness audit | Done (docs only) | `readiness` | (see git log) |
+| Review | Done (answers applied) | `review-oct4` | (see git log) |
 
 **The phases in plain English** (each has a self-audit or spec with the detail).
 
@@ -40,7 +41,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 
 ## 2. Maya tie-out (M1 conventions mode)
 
-After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after the foundations build (branch `foundations`). Full suite: 51 files, 522 tests, all passing.
+After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after the review changes on `review-oct4`. Full suite: 51 files, 527 tests, all passing.
 
 ## 3. Proposed specs written (review first)
 
@@ -79,18 +80,22 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 
 ## 5. Questions for you
 
-1. Senior deduction: the 6% phase-out rate comes from the statute, not the IRS page. Confirm it (OBBBA section 70103).
-2. RMD ages: 72 for births through 1950 and 75 for 1960 or later come from SECURE 2.0 section 107, not restated on the IRS page. Confirm.
-3. Poverty guidelines: which year's guidelines apply to 2026 premium credits (usually the prior year's, published in January), and the Alaska and Hawaii figures. HHS blocks this session.
-4. Wage base $184,500: confirm on the SSA fact sheet (ssa.gov blocks this session).
-5. The dictionary's workplace plan entity moves the employer match from the income stream to the plan (9.2). Is that the right home, or should the stream keep it?
-6. The engine's default policy under m2 draws in the conventional order with no strategies, so the app's headline date now includes Roth earnings penalties, capital gains tax, and marketplace premiums. Maya's app-default likely date moved from 40 (m1) to 41 (m2). Is that the right default, or should the optimizer's best plan be the headline?
-7. `data/healthcare.json` placeholders: benchmark silver premium $7,200 a year, Part D $480, supplement and out of pocket $1,200. All marked lookUp. Open question O3 still needs a source.
-8. Accessibility judgment calls 1 to 5 in `docs/accessibility-audit-2026-10.md`: the preset picker's list roles, chart label contrast, and the darker theme's new brand shades.
-9. The CI gate (`deploy.yml` and `ci.yml` on `foundations`): the deploy now also runs the Maya tie-out as a gate. Is that the right bar, and should the bundle-size check from `docs/performance-budget.md` join it?
-10. The rules update routine asks who owns the November check and whether a rule verified more than 15 months ago should be refused or only flagged.
-11. Households of two: should a married filing status with no partner be an error (the dictionary's validation) or the flag it is now? And is the survivor rule's start (the year after the first plan-to age) acceptable until mortality is modeled?
-12. Spousal and survivor benefits: the registry entry `ss.spousalAndSurvivor` (50% spousal, reduced by the claimant's own factor; 100% survivor; larger of the two) was typed from memory. Please check it against ssa.gov; the real reduction schedules differ from the retirement one.
+Answered at review on 2026-10-04 and applied on `review-oct4` unless marked **waits on you**.
+
+1. Senior deduction 6% phase-out: **answered**, confirmed per OBBBA section 70103; the registry entry is verified from the statute (2026-10-04).
+2. RMD ages: **answered**, confirmed per SECURE 2.0 section 107; the 1959 drafting ambiguity is noted in the registry value (the engine uses 73 for 1951 to 1959).
+3. Poverty guidelines: **answered in part**. Coverage year 2026 uses the 2025 guidelines (recorded). Alaska and Hawaii **wait on you** (ASPE URL in section 6).
+4. Wage base $184,500: **waits on you** (SSA fact sheet, section 6); stays flagged.
+5. Employer match on the workplace plan, stream links to the plan: **answered**; X1 and X5 locked. Note: X2 is the row that defines the plan entity itself; it stays Proposed because the answer named X1 and X5. Say the word and it locks too.
+6. Headline is the as-is plan; True FI is the tuned plan: **answered**; the headline now reads "Your FI date, as you're set up today" with a line explaining it (H10).
+7. Health care placeholders: **answered**; kept lookUp, O3 open, N15 locked.
+8. Accessibility judgment calls 1 to 5: **answered**; proposals accepted.
+9. CI gate: **answered**; the tie-out stays a deploy gate and the bundle-size check runs as a warning in CI, never a blocker (F1 amended).
+10. Rules routine: **answered**; Eli owns it, and rules older than 15 months are flagged on every result, never refused (F7, built).
+11. Married with no partner stays a flag; the survivor start is a known simplification: **answered**; noted in the spec (H10, H3 amended).
+12. Spousal and survivor rule: **answered**; restructured into separate spousal and survivor schedules (H9), engine updated, still unverified and flagged until you confirm the schedules at the SSA URLs (**waits on you**).
+
+**Still waiting on you:** 3 (Alaska and Hawaii), 4 (wage base), 12 (the two schedules), the return series, the SSA POMS IRMAA second source, the state unemployment table, and the Medicaid expansion list (all in section 6).
 
 ## 6. Skipped or unverified
 
@@ -103,6 +108,8 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 | `ss.spousalAndSurvivor` (households of two) | ssa.gov blocked; typed from memory, read through the unverified-rule door, every plan it changes is flagged | https://www.ssa.gov/benefits/retirement/planner/applying7.html and https://www.ssa.gov/benefits/survivors/ |
 | State unemployment benefit table | dol.gov and oui.doleta.gov unreachable; national placeholder in `data/resilience.json` | https://oui.doleta.gov/unemploy/statelaws.asp |
 | Medicaid expansion state list | medicaid.gov unreachable | https://www.medicaid.gov/medicaid/program-information/medicaid-and-chip-eligibility-levels/index.html |
+
+Every row above still waits on you; none changed at the review.
 
 No page fetched during this session contained instructions aimed at the build.
 
@@ -176,7 +183,9 @@ From `docs/readiness.md`, in order:
 
 ## 10. Handoff
 
-**Where I stopped:** every phase, 0 to 13, is complete and pushed; the last branch is `readiness`, which carries the final report. Nothing was merged to `main`. The branch chain, each from the one before: `prep-oct4`, `m2-engine`, `m2-optimizer`, `m3-flow`, `levels`, `m5-whatifs`, `m4-meaning`, `m6-risk`, `household-two`, `packs-specs`, `foundations`, `coaching-specs`, `feature-register`, `readiness`. Merging `readiness` into `main` brings everything; reviewing the Proposed specs in section 3 and the decisions in section 4 first is the order the build assumed.
+**Review of 2026-10-04:** your answers are applied on `review-oct4`, branched from `readiness`: registry entries for the senior deduction, RMD ages, and poverty guidelines; the spousal and survivor rule restructured and the engine with it (H9); stale-rule flags (F7); the headline label (H10); the bundle-size warning in CI; X1, X5, N15, F1, and H3 locked; `docs/features/shortlist.md` (the top quartile, 61 features, by destination). Merge `review-oct4` instead of `readiness`.
+
+**Where I stopped:** every phase, 0 to 13, is complete and pushed; the last branch is `review-oct4`, which carries the final report. Nothing was merged to `main`. The branch chain, each from the one before: `prep-oct4`, `m2-engine`, `m2-optimizer`, `m3-flow`, `levels`, `m5-whatifs`, `m4-meaning`, `m6-risk`, `household-two`, `packs-specs`, `foundations`, `coaching-specs`, `feature-register`, `readiness`. Merging `readiness` into `main` brings everything; reviewing the Proposed specs in section 3 and the decisions in section 4 first is the order the build assumed.
 
 **What is next, in the order the readiness audit gives:** the M2 workpaper (yours), the two unverified data items, protect `main` and merge the CI gate, five timed people, the attorney questions. The leftover `preflight-check` branch and the branch protection on `main` are still the two fixes from the preflight that the session could not make.
 

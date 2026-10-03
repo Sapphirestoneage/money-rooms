@@ -15,7 +15,7 @@
 
 ## What is weaker than it looks
 
-1. **The spousal and survivor rule is unverified.** The numbers follow the registry entry typed from memory (50% spousal at full retirement age, reduced by the claimant's own factor; 100% survivor; survivor takes the larger). The real spousal reduction schedule differs from the retirement one, delayed credits do not apply to spousal benefits, and survivor benefits have their own reduction. All of it waits on ssa.gov.
+1. **The spousal and survivor schedules are unverified.** At Eli's review (2026-10-04, decision H9) the rule was restructured: spousal benefits are up to 50% of the worker's full-retirement-age benefit on the spousal early-claiming schedule with no delayed credits; survivor benefits are up to 100%, reduced before the survivor's own full retirement age, as early as 60. The schedule numbers are entered from memory and wait on ssa.gov; every affected plan stays flagged.
 2. **Mortality is the plan-to age.** The survivor rule starts the year after the first person's plan-to age, which is the simplest honest assumption; a mortality table would change every couple's late years.
 3. **Married filing separately is approximate.** Withdrawals, gains, and conversions all land on the self's return (decision H2), and the separate-filing quirks (no Roth contribution above a tiny phase-out, no credits) are not applied.
 4. **The waterfall fills the partner's workplace plan only** (decision H5). Their HSA and IRA get what is entered, nothing more, so a "max tax savings now" household of two under-saves relative to the real limits.

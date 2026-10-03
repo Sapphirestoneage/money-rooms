@@ -24,7 +24,7 @@ Phone numbers were not measured (no device in the session). Treat Node timings a
 
 | Item | Target | Hard limit | How it is kept |
 |---|---|---|---|
-| JS bundle, gzipped | 150 KB | 200 KB | A size check in CI (`ci.yml`) that fails over the hard limit; heavy optional pieces (PDF text extraction for statement upload, the historical series) load lazily |
+| JS bundle, gzipped | 150 KB | 200 KB | `scripts/check-bundle-size.mjs` runs after every CI build and prints the size, a notice over the target, and a warning over the hard limit; it never fails the build (Eli, 2026-10-04). Heavy optional pieces (PDF text extraction for statement upload, the historical series) load lazily |
 | First FI date on screen | Under 1 second on a mid-range phone | 2 seconds | The result screen shows the date before anything else runs; optimizer and toggles run afterwards |
 | Optimizer | Under 5 seconds on a mid-range phone | 10 seconds | Coordinate search with a near-hint FI search (decision N18); cap on knob values; results cached per policy |
 | Backtest and sturdy date | Under 10 seconds | 20 seconds, then show partial results | Run in a Web Worker; show the success rate as starts complete; the sturdy search narrows with the deterministic date as its lower bound |
@@ -45,6 +45,6 @@ Once a phone is available: open the deployed site, enter Maya from the template,
 
 ## 6. Acceptance tests (when built)
 
-1. CI fails when the gzipped bundle passes 200 KB.
+1. CI warns (never fails) when the gzipped bundle passes 200 KB, and notes when it passes 150 KB. Built.
 2. The result screen's first paint does not wait on the optimizer (a test that stubs `optimize` to throw after a delay and checks the date still renders).
 3. The backtest runs in a worker and the page stays responsive (manual, on a phone).

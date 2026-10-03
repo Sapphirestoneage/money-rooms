@@ -438,6 +438,8 @@ Today a workplace contribution (3.4) is a percent of pay on the income stream, a
 
 ### 9.2 Workplace plan (new entity)
 
+**Decided 2026-10-04 (review, X1 and X5 locked):** the employer match lives on the workplace plan; the income stream links to its plan. The stream's `employerMatch` field is the migration source and is read until the plan carries it.
+
 A plan is the employer's arrangement. Accounts hold money; the plan holds the rules. One plan can have two accounts (traditional and Roth).
 
 | Field | Kind | Stored as | Default |

@@ -33,10 +33,10 @@ Married filing jointly: one return on both incomes with the joint brackets, dedu
 | Benefit | Rule | Source |
 |---|---|---|
 | Own benefit | Each person's PIA from their own record, claimed at their own age | SSA, as today |
-| Spousal | A person can receive up to 50% of the other's PIA at full retirement age, reduced for early claiming, in place of their own if larger; the other must have claimed | SSA, spousal benefits |
-| Survivor | After one dies, the survivor receives the larger of the two benefits (100% of the deceased's benefit at full retirement age, reduced if the survivor claims before their own full retirement age) | SSA, survivor benefits |
+| Spousal | Up to 50% of the worker's full-retirement-age benefit (PIA), in place of the claimant's own benefit if larger; the worker must have claimed; reduced on the spousal early-claiming schedule when the claimant claims before their own full retirement age (25/36 of 1% a month for the first 36 months, 5/12 of 1% beyond, to be confirmed); delayed retirement credits never apply | SSA, Benefits for Spouses |
+| Survivor | After one dies, the survivor receives the larger of their own benefit and up to 100% of the deceased's benefit, reduced when the survivor's own claiming age is before their full retirement age, as early as 60 (71.5% at 60, to be confirmed) | SSA, Benefits for Survivors |
 
-The engine applies spousal top-ups once both have claimed, and the survivor rule from the plan-to age of the first to reach it (the simplest honest assumption until mortality is modeled). Both rules live in `data/rules-registry.json` as `ss.spousalAndSurvivor`, with the SSA URL; **the SSA pages could not be reached from the build session, so the entry is unverified and the engine flags any plan that uses it**.
+The engine applies spousal top-ups once both have claimed, and the survivor rule from the year after the plan-to age of the first to reach it. **Known simplification (accepted at review, 2026-10-04):** the survivor rule starts at the first plan-to age because mortality is not modeled yet; the Partner pack's life table replaces it. Both rules live in `data/rules-registry.json` as `ss.spousalAndSurvivor` with separate spousal and survivor schedules (decision H9); **the schedule numbers are entered from memory and stay unverified until Eli confirms them at the SSA URLs, and the engine flags every plan they change**. A married filing status with no partner entered is a flag, not an error (decision H10).
 
 ### 2.6 Spending, retirement, and plan-to age
 

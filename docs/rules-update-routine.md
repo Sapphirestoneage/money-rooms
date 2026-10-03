@@ -15,7 +15,7 @@ Every tax and benefit number the engine uses lives in `data/rules-registry.json`
 | **Late October to mid November, every year** | The IRS inflation adjustments (the revenue procedure with brackets, standard deduction, capital gains thresholds, the senior deduction phase-out) and the retirement plan limits notice. Social Security's COLA fact sheet (wage base, bend points, earnings test). Medicare Part B and D premiums and the IRMAA tiers (CMS). | Eli, or a session with network access to irs.gov, ssa.gov, cms.gov |
 | **January** | The poverty guidelines (HHS), which the ACA table for the next coverage year reads. The ACA applicable percentage table for the year (IRS). | Same |
 | **When a law passes** | Anything the bill touches. Add the rule's `effective` years and `sunset`, set `status` to `sunsetting` or `watch` as the text says, re-verify the URL. | Same |
-| **Monthly** | A check of the whole registry against its sources, with a report: open every URL, confirm the value, note any page that moved or could not be reached. The report is `docs/rules-verification-<year>-<month>.md`; a month with no changes still gets a one-line report saying so. | A scheduled session, reviewed by Eli |
+| **Monthly** | A check of the whole registry against its sources, with a report: open every URL, confirm the value, note any page that moved or could not be reached. The report is `docs/rules-verification-<year>-<month>.md`; a month with no changes still gets a one-line report saying so. | Eli (owner, decided 2026-10-04); a scheduled session may draft the report |
 | **Quarterly** | The 72(t) rate inputs (federal mid-term rate), the `watch` list (rules with a `status` of watch), and the state tables for states that changed their brackets. | Same |
 | **Each session that touches a rule** | Re-open the source, confirm, update `lastVerified`. Never bump the date without opening the page. | Whoever touches it |
 
@@ -31,14 +31,14 @@ Every tax and benefit number the engine uses lives in `data/rules-registry.json`
 ## 4. What the app shows
 
 - Every result lists the rules it used with their verified dates (the "Rules behind this plan" section).
-- A rule verified more than 15 months ago shows the attention color and "last checked" in the list. This is the trigger the routine missed.
+- A rule verified more than 15 months before the plan date is flagged on every result that uses it ("was last checked on ..., more than 15 months ago"), and never refused (decision F7). This is the trigger the routine missed.
 - A `sunsetting` rule shows in "Rules that could change" with its sunset year; the stress test runs the plan without it.
 
 ## 5. The yearly table roll
 
 When a new tax year's values arrive, add `data/tax/<year>.json`, keep the prior year's file untouched, and point `defaultDeps()` at the new year once every value in it is verified. The data dictionary's section on tax tables names the fields a year file must carry. Partial years are not allowed: a year file with a blank value fails `loadTaxTables`.
 
-## 6. Open questions for Eli
+## 6. Answered at review (2026-10-04)
 
-1. Who owns the November check: a calendar reminder for Eli, or a scheduled session that opens the pages and drafts the verification doc for review?
-2. Should the engine refuse a rule verified more than 15 months ago (as it refuses an unverified one), or only flag it?
+1. Eli owns the routine. A scheduled session may open the pages and draft the verification doc for his review.
+2. A rule verified more than 15 months ago is flagged on every result that uses it, never refused (built as `RuleLedger.stale` and a timeline flag; decision F7).
