@@ -141,7 +141,7 @@ One row per source of income. Total income is computed.
 
 **Unemployment benefits.** Entered as the benefit amount (per week, month, or year) and the last month it will be paid. Stored like every stream: an annual amount and an `end` date. Most states pay up to 26 weeks, so a new row starts with an end six months out, and the person sets the real month. The benefit is taxed as ordinary income by the federal government and by the state's brackets, with no Social Security or Medicare tax, and it does not count toward the Social Security earnings record. Confidence defaults to `known`: the amount is on the determination letter.
 
-**A stream that ends on a date is paid through that month.** In the year it ends, the engine counts only the months it is paid, so a benefit that runs through March counts three months of that year.
+**A stream is paid from its start month and through its end month.** In its first and last years the engine counts only the months it is paid, so income that starts in July counts six months that year, and a benefit that runs through March counts three. Spending rows follow the same rule. A stream with no start has already started.
 
 **Supporting fields:**
 

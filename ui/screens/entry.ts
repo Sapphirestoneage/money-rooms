@@ -463,8 +463,37 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       );
     }
 
-    // How long the income lasts: until retirement, until an age, or through a month.
+    // When the income starts: already, or in a coming month.
     const planYear = parseYearMonth(asOf().slice(0, 7)).year;
+    const comingYears: { value: string; label: string }[] = [];
+    for (let y = planYear; y <= planYear + 50; y++) comingYears.push({ value: String(y), label: String(y) });
+    const monthOptions = MONTH_NAMES.map((name, i) => ({ value: String(i + 1).padStart(2, "0"), label: name }));
+    if (!isUnemployment) {
+      const startSelect = select(
+        [{ value: "now", label: "Already started" }, { value: "later", label: "Starts in a coming month" }],
+        s.start ? "later" : "now",
+        (v) => {
+          if (v === "later") s.start = addMonths(asOf().slice(0, 7), 1);
+          else delete s.start;
+          ctx.save();
+          schedule();
+        },
+      );
+      fields.push(field("This income starts", startSelect));
+      if (s.start) {
+        const from = parseYearMonth(s.start);
+        const setStart = () => {
+          s.start = `${startYear.value}-${startMonth.value}`;
+          ctx.save();
+        };
+        const startMonth = select(monthOptions, String(from.month).padStart(2, "0"), setStart);
+        const startYear = select(comingYears, String(from.year), setStart);
+        fields.push(field("Starts in", startMonth, kindBadge("known")));
+        fields.push(field("Start year", startYear));
+      }
+    }
+
+    // How long the income lasts: until retirement, until an age, or through a month.
     const endKind = s.end.kind === "age" ? "age" : s.end.kind === "date" ? "date" : "retirement";
     if (!isUnemployment) {
       const endSelect = select(
@@ -517,7 +546,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     return el(
       "div",
       { class: "card" },
-      el("div", { class: "card__title" }, el("h2", {}, typeLabel), el("div", { class: "row-actions" }, remove)),
+      el("div", { class: "card__title" }, el("h2", {}, s.label ? `${s.label} (${typeLabel.toLowerCase()})` : typeLabel), el("div", { class: "row-actions" }, remove)),
       el("div", { class: "field-grid" }, ...fields),
     );
   }
@@ -562,9 +591,22 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         initialCadence: "month",
         badge: badge.node,
         rough: () => isRough(find()?.annual.confidence),
+        note: () => {
+          const start = find()?.start;
+          if (!start) return "";
+          const from = parseYearMonth(start);
+          return `starting ${MONTH_NAMES[from.month - 1]} ${from.year}`;
+        },
         onChange: (annual) => {
+          const existing = find();
           const others = currentRows().filter(keep);
-          if (annual !== null && annual > 0) others.push(make(annual));
+          if (annual !== null && annual > 0) {
+            const row = make(annual);
+            // Editing the amount keeps when the row starts and ends.
+            if (existing?.start) row.start = existing.start;
+            if (existing?.end) row.end = existing.end;
+            others.push(row);
+          }
           setRows(others);
           badge.refresh();
         },

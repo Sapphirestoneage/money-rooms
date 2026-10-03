@@ -3,7 +3,7 @@
  * its own real rate and stops on its end rule.
  */
 
-import type { EndRule, IncomeGrowthType, IncomeStream, IncomeType } from "../model";
+import type { EndRule, IncomeGrowthType, IncomeStream, IncomeType, YearMonth } from "../model";
 import { parseYearMonth, pickBand } from "../model";
 import type { BandNumbers } from "./bands";
 
@@ -65,20 +65,35 @@ export function endReached(end: EndRule | undefined, ctx: YearContext): boolean 
 }
 
 /**
- * The share of this row's period a stream is paid for. A stream that ends on a date is paid
- * through that month, so in its last year it counts only the months it is paid. Everything
- * else is all or nothing.
+ * The share of this row's period that falls between a start month and an end month
+ * (both inclusive, both optional). A full year with no dates gives 1. A stream starting in
+ * July of a full year gives 6/12. In the stub year, months are counted against the stub's length.
+ */
+export function periodShare(start: YearMonth | undefined, endDate: YearMonth | undefined, ctx: YearContext): number {
+  let first = ctx.startMonth ?? 1;
+  let last = 12;
+  const monthsInPeriod = 12 * (ctx.fraction ?? 1);
+  if (start) {
+    const s = parseYearMonth(start);
+    if (ctx.year < s.year) return 0;
+    if (ctx.year === s.year) first = Math.max(first, s.month);
+  }
+  if (endDate) {
+    const e = parseYearMonth(endDate);
+    if (ctx.year > e.year) return 0;
+    if (ctx.year === e.year) last = Math.min(last, e.month);
+  }
+  return Math.max(0, Math.min(1, (last - first + 1) / monthsInPeriod));
+}
+
+/**
+ * The share of this row's period a stream is paid for. A stream is paid from its start month
+ * and through its end month, so its first and last years count only the months it is paid.
+ * Age and retirement ends are all or nothing by year.
  */
 export function streamShare(stream: IncomeStream, ctx: YearContext): number {
-  if (stream.start && ctx.year < parseYearMonth(stream.start).year) return 0;
-  if (stream.end.kind !== "date") return endReached(stream.end, ctx) ? 0 : 1;
-  const end = parseYearMonth(stream.end.date);
-  if (ctx.year < end.year) return 1;
-  if (ctx.year > end.year) return 0;
-  const startMonth = ctx.startMonth ?? 1;
-  const monthsInPeriod = 12 * (ctx.fraction ?? 1);
-  const monthsPaid = end.month - startMonth + 1;
-  return Math.max(0, Math.min(1, monthsPaid / monthsInPeriod));
+  if (stream.end.kind !== "date" && endReached(stream.end, ctx)) return 0;
+  return periodShare(stream.start, stream.end.kind === "date" ? stream.end.date : undefined, ctx);
 }
 
 export function streamActive(stream: IncomeStream, ctx: YearContext): boolean {

@@ -6,7 +6,7 @@
 
 import type { LifePhase, SpendingRow } from "../model";
 import { getSpendingCategory } from "../model";
-import { endReached, type YearContext } from "./income";
+import { endReached, periodShare, type YearContext } from "./income";
 
 export interface SpendingLine {
   rowId: string;
@@ -37,15 +37,18 @@ export function spendingForYear(
   const out: YearSpending = { lines: [], total: 0, phaseId: phase?.id ?? null };
 
   for (const row of rows) {
-    if (endReached(row.end, ctx)) continue;
+    // A row counts from its start month and through its end month, by the months it applies.
+    if (row.end && row.end.kind !== "date" && endReached(row.end, ctx)) continue;
+    const share = periodShare(row.start, row.end?.kind === "date" ? row.end.date : undefined, ctx);
+    if (share <= 0) continue;
     const category = getSpendingCategory(row.category);
-    let amount = row.annual.value;
+    let amount = row.annual.value * share;
     let multiplier = 1;
 
     if (retired) {
       const continues = row.continuesInRetirement?.value ?? category.continuesInRetirement;
       if (continues === "no") amount = 0;
-      else if (continues === "changes") amount = row.retirementAnnual?.value ?? row.annual.value;
+      else if (continues === "changes") amount = (row.retirementAnnual?.value ?? row.annual.value) * share;
       if (category.type === "discretionary" && phase) multiplier = phase.discretionaryMultiplier;
     }
 
