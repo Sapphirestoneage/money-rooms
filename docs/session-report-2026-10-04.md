@@ -18,7 +18,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 9 Pack specs | Done (docs only) | `packs-specs` | (see git log) |
 | 10 Foundations | Done (CI gate left for review) | `foundations` | (see git log) |
 | 11 Coaching spec | Done (docs only) | `coaching-specs` | (see git log) |
-| 12 Feature register | Not started | `feature-register` | |
+| 12 Feature register | In progress (base list scored; v1 inventory being added) | `feature-register` | (see git log) |
 | 13 Readiness audit | Not started | `readiness` | |
 
 **Phase 11 in plain English.** `docs/coaching-spec.md`: the weekly loop in twelve parts, each with its engine sources, its dictionary additions (records only, never a second copy of a number), and acceptance tests: weekly rings (Check in, Move, Learn), an openable readiness score (runway 35, rough numbers 25, debt pressure 25, staleness 15), four guided programs (Couch to Roth, Debt-free sprint, First $10K, Before the promo ends), adaptive re-planning at the material line, personal records, four money phases read from the engine, the Sunday recap, rest days (the spending headroom that leaves the FI year unchanged), insights from tags with counts and the word pattern, coach mode through exports only with its privacy and consent requirements and the attorney question left open, two-minute lessons, and streaks with automatic freezes. A "what we will not copy" section: no streak guilt, no public comparison, no red or shame, no engagement for its own sake, no urgency, no dark patterns around coach mode. Decisions C1 to C12. Also: the rules update routine gained the monthly check with a report that the phase list asked for.
@@ -130,7 +130,7 @@ No page fetched during this session contained instructions aimed at the build.
 
 ## 8. Feature register
 
-Not started.
+In progress on `feature-register`: the base register (the build's minimum list, the named frameworks, the coaching spec parts, and this repo's unbuilt specs) is scored and written to `data/feature-register.json` and `docs/features/`; the v1 repository inventory is being added next, with the SPARKS failed-claims list. Totals and the top twenty follow once the v1 rows are in.
 
 ## 9. Readiness audit top ten
 
