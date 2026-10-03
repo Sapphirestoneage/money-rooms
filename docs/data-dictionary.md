@@ -207,9 +207,9 @@ Assets and debts share one list. Net worth is computed.
 
 | Field | Stored as | Default |
 |---|---|---|
-| Rate | Percent per year | Required |
+| Rate | Percent per year | Required. A preset's typical rate is shown as a starting point marked `roughly`. With no preset rate, the debt is not complete until a rate is entered |
 | Promo | Promo rate, promo end date, rate after | None |
-| Minimum payment | Entered monthly, stored annual | Required |
+| Minimum payment | Entered monthly, stored annual | Required. Until entered, the app shows an estimate (each month's interest plus 1% of the balance), marked `roughly` and flagged. It is never silently zero |
 | Actual payment | Entered monthly, stored annual | Equal to minimum |
 | Personal or business | Pick list | `personal` |
 | Interest deductible | Yes or no | From preset |

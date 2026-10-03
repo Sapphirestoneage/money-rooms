@@ -4,7 +4,7 @@
  * A second key holds the snapshot taken before an import, so it can be undone.
  */
 
-import { emptyHousehold, type Household, type IsoDate } from "../engine";
+import { emptyHousehold, migrateHousehold, type Household, type IsoDate } from "../engine";
 
 export const STORAGE_KEY = "moneyRooms.household.v1";
 export const SNAPSHOT_KEY = "moneyRooms.snapshotBeforeImport.v1";
@@ -64,7 +64,7 @@ export function browserStore(storage: Storage | null): Store {
   return {
     load() {
       const parsed = read(STORAGE_KEY);
-      return isHousehold(parsed) ? parsed : emptyHousehold(todayIso());
+      return isHousehold(parsed) ? migrateHousehold(parsed) : emptyHousehold(todayIso());
     },
     save: (h) => write(STORAGE_KEY, h),
     clear: () => remove(STORAGE_KEY),
@@ -73,7 +73,7 @@ export function browserStore(storage: Storage | null): Store {
       const parsed = read(SNAPSHOT_KEY);
       if (typeof parsed !== "object" || parsed === null) return null;
       const s = parsed as Partial<Snapshot>;
-      return typeof s.takenAt === "string" && isHousehold(s.household) ? { takenAt: s.takenAt, household: s.household } : null;
+      return typeof s.takenAt === "string" && isHousehold(s.household) ? { takenAt: s.takenAt, household: migrateHousehold(s.household) } : null;
     },
     clearSnapshot: () => remove(SNAPSHOT_KEY),
   };

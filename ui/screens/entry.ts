@@ -1,7 +1,8 @@
 /**
  * The entry screen: the level-one checklist (data dictionary section 7), with
  * "I don't" answers, roughly values, and presets. It writes stored parts only.
- * Nothing here calculates: normalization goes through the engine.
+ * Nothing here calculates: normalization and estimates come from the engine.
+ * Every value shown carries its kind badge.
  */
 
 import dev from "../../tests/households/dev.json";
@@ -10,12 +11,13 @@ import maya from "../../tests/households/maya.json";
 import {
   STATE_CODES,
   amountFromPercentOfPay,
-  annualFromMonthly,
-  isWorkplaceContribution,
   assetFromPreset,
   debtFromPreset,
+  debtsNeedingRate,
+  estimatedMinimumPaymentAnnual,
   getAccountPreset,
   householdFromExample,
+  isWorkplaceContribution,
   listAssumptionSets,
   loadQuickAllocations,
   loadSocialSecurityParams,
@@ -24,25 +26,29 @@ import {
   notForMe,
   parseYearMonth,
   planToAgeBounds,
+  resolveAssumptions,
   userValue,
   type Account,
   type AccountPresetKey,
   type AnnualDeduction,
-  type PreTaxDeduction,
-  type WorkplaceAccountType,
   type Confidence,
+  type DebtAccount,
   type ExampleHouseholdFile,
   type FilingStatus,
   type Household,
   type IncomeStream,
   type IncomeType,
   type PayFrequency,
+  type PreTaxDeduction,
   type SavingsStrategy,
   type SpendingRow,
   type StateCode,
+  type Value,
+  type WorkplaceAccountType,
 } from "../../engine";
+import { confirmPanel } from "../components/confirm-panel";
 import { gentleFlag } from "../components/gentle-flag";
-import { kindBadge } from "../components/kind-badge";
+import { kindBadge, type EditableKind } from "../components/kind-badge";
 import { moneyInput } from "../components/money-input";
 import { presetPicker } from "../components/preset-picker";
 import { clear, el, uid } from "../dom";
@@ -95,9 +101,11 @@ const MISSING_LABEL: Record<ReturnType<typeof missingLevelOneAnswers>[number], s
   accounts: "accounts (or \"I don't have any\")",
 };
 
-function labelFor(key: string, text: string, control: HTMLElement): HTMLElement {
-  control.id = key;
-  return el("div", { class: "field" }, el("label", { for: key }, text), control);
+/** A label, an optional kind badge beside it, and a control underneath. */
+function field(text: string, control: HTMLElement, badge?: HTMLElement | null, help?: HTMLElement | null): HTMLElement {
+  const id = uid("f");
+  control.id = id;
+  return el("div", { class: "field" }, el("div", { class: "field__label-row" }, el("label", { for: id }, text), badge ?? null), control, help ?? null);
 }
 
 function select<T extends string>(options: { value: T; label: string }[], current: T | undefined, onChange: (v: T) => void, placeholder?: string): HTMLSelectElement {
@@ -112,6 +120,39 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   const root = el("div", {});
   const h = () => ctx.household;
   const asOf = () => ctx.household.asOf;
+
+  /**
+   * A place for a value's kind badge. It is empty while there is no number,
+   * shows the badge once there is one, and lets the person change the kind.
+   */
+  function badgeSlot<T>(read: () => Value<T> | undefined, write: (v: Value<T>) => void, editable = true): { node: HTMLElement; refresh: () => void } {
+    const node = el("span", { class: "badge-slot" });
+    const refresh = () => {
+      clear(node);
+      const v = read();
+      if (!v || v.value === null || v.value === undefined) return;
+      node.append(
+        kindBadge(
+          v.confidence,
+          editable
+            ? {
+                onChange: (next: EditableKind) => {
+                  const current = read();
+                  if (!current) return;
+                  write({ ...current, source: "user", confidence: next });
+                  ctx.save();
+                  render();
+                },
+              }
+            : {},
+        ),
+      );
+    };
+    refresh();
+    return { node, refresh };
+  }
+
+  const isRough = (c: Confidence | undefined) => c === "roughly";
 
   function render(): void {
     clear(root);
@@ -132,10 +173,12 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   // ---- About you -----------------------------------------------------------
   function aboutYou(): HTMLElement {
     const birth = el("input", { class: "input", type: "month", value: h().self.birthDate?.value ?? "", max: asOf().slice(0, 7) });
+    const birthBadge = badgeSlot(() => h().self.birthDate, () => undefined, false);
     birth.addEventListener("change", () => {
       if (birth.value) h().self.birthDate = userValue(birth.value, asOf());
       else delete h().self.birthDate;
       ctx.save();
+      birthBadge.refresh();
     });
     const state = select(
       STATE_CODES.map((s) => ({ value: s, label: s })),
@@ -158,10 +201,9 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       el(
         "div",
         { class: "field-grid" },
-        labelFor(uid("birth"), "Birth month", birth),
-        labelFor(uid("state"), "State", state),
-        labelFor(uid("filing"), "Filing status", filing),
-        el("div", { class: "field" }, el("label", {}, "Filing status kind"), kindBadge(h().self.filingStatus.confidence)),
+        field("Birth month", birth, birthBadge.node),
+        field("State", state),
+        field("Filing status", filing, kindBadge(h().self.filingStatus.confidence)),
       ),
     );
   }
@@ -193,6 +235,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       ctx.save();
       render();
     }, "Add income");
+    addType.setAttribute("aria-label", "Add income");
 
     const none = el("button", { type: "button", class: "button button--quiet", onClick: () => { h().self.income = { kind: "none", asOf: asOf() }; ctx.save(); render(); } }, "I don't have income right now");
 
@@ -201,7 +244,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       { class: "card" },
       el("div", { class: "card__title" }, el("h2", {}, "Income")),
       body,
-      el("div", { class: "row-actions" }, el("div", { class: "field" }, el("label", { class: "visually-hidden" }, "Add income"), addType), answer.kind !== "none" ? none : null),
+      el("div", { class: "row-actions" }, addType, answer.kind !== "none" ? none : null),
     );
   }
 
@@ -211,60 +254,75 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const isSe = s.type === "selfEmployed" || s.type === "sideGig";
     const cadences = s.type === "hourly" ? (["hour", "paycheck", "month", "year"] as const) : isWage ? (["paycheck", "month", "year"] as const) : (["month", "year"] as const);
 
-    const gross = moneyInput({
-      label: "Gross pay",
-      annual: s.grossAnnual.value || null,
-      cadences,
-      initialCadence: "year",
-      payFrequency: () => s.payFrequency?.value ?? "biweekly",
-      hoursPerWeek: () => s.hoursPerWeek?.value ?? null,
-      onChange: (annual) => {
-        s.grossAnnual = { ...s.grossAnnual, value: annual ?? 0 };
-        ctx.save();
-      },
-    });
-
-    const kind = kindBadge(s.grossAnnual.confidence, {
-      cycle: ["known", "roughly", "lookUp"],
-      onChange: (next: Confidence) => {
-        s.grossAnnual = { ...s.grossAnnual, confidence: next as "known" | "roughly" | "lookUp" };
-        ctx.save();
-        render();
-      },
-    });
-
-    const fields: HTMLElement[] = [gross];
+    const grossBadge = badgeSlot(() => (s.grossAnnual.value > 0 ? s.grossAnnual : undefined), (v) => { s.grossAnnual = v; });
+    const fields: HTMLElement[] = [
+      moneyInput({
+        label: "Gross pay",
+        annual: s.grossAnnual.value || null,
+        cadences,
+        initialCadence: "year",
+        payFrequency: () => s.payFrequency?.value ?? "biweekly",
+        hoursPerWeek: () => s.hoursPerWeek?.value ?? null,
+        badge: grossBadge.node,
+        rough: () => isRough(s.grossAnnual.confidence),
+        onChange: (annual) => {
+          s.grossAnnual = { ...s.grossAnnual, value: annual ?? 0 };
+          ctx.save();
+          grossBadge.refresh();
+        },
+      }),
+    ];
 
     if (isWage) {
-      fields.push(labelFor(uid("freq"), "Pay frequency", select(PAY_FREQUENCIES, s.payFrequency?.value ?? "biweekly", (v: PayFrequency) => { s.payFrequency = userValue(v, asOf()); ctx.save(); })));
+      fields.push(field("Pay frequency", select(PAY_FREQUENCIES, s.payFrequency?.value ?? "biweekly", (v: PayFrequency) => { s.payFrequency = userValue(v, asOf()); ctx.save(); })));
     }
     if (s.type === "hourly") {
       const hours = el("input", { class: "input", type: "number", min: 1, max: 80, step: 1, value: s.hoursPerWeek?.value ?? "" });
+      const hoursBadge = badgeSlot(() => s.hoursPerWeek, (v) => { s.hoursPerWeek = v; });
       hours.addEventListener("input", () => {
         const v = Number(hours.value);
         if (v >= 1 && v <= 80) s.hoursPerWeek = userValue(v, asOf());
         else delete s.hoursPerWeek;
         ctx.save();
+        hoursBadge.refresh();
       });
-      fields.push(labelFor(uid("hours"), "Hours per week", hours));
+      fields.push(field("Hours per week", hours, hoursBadge.node));
     }
     if (isSe) {
-      fields.push(moneyInput({ label: "Business expenses", annual: s.businessExpensesAnnual?.value ?? null, cadences: ["month", "year"], initialCadence: "year", onChange: (annual) => { if (annual === null) delete s.businessExpensesAnnual; else s.businessExpensesAnnual = userValue(annual, asOf(), "roughly"); ctx.save(); } }));
+      const expBadge = badgeSlot(() => s.businessExpensesAnnual, (v) => { s.businessExpensesAnnual = v; });
+      fields.push(moneyInput({
+        label: "Business expenses",
+        annual: s.businessExpensesAnnual?.value ?? null,
+        cadences: ["month", "year"],
+        initialCadence: "year",
+        badge: expBadge.node,
+        rough: () => isRough(s.businessExpensesAnnual?.confidence),
+        onChange: (annual) => {
+          if (annual === null) delete s.businessExpensesAnnual;
+          else s.businessExpensesAnnual = userValue(annual, asOf(), "roughly");
+          ctx.save();
+          expBadge.refresh();
+        },
+      }));
     }
     if (isWage) {
       const matchPct = el("input", { class: "input", type: "number", min: 0, max: 200, step: 1, value: s.employerMatch?.matchPercent.value ?? "" });
       const matchCap = el("input", { class: "input", type: "number", min: 0, max: 100, step: 0.5, value: s.employerMatch?.capPercentOfPay.value ?? "" });
+      const pctBadge = badgeSlot(() => s.employerMatch?.matchPercent, (v) => { if (s.employerMatch) s.employerMatch.matchPercent = v; });
+      const capBadge = badgeSlot(() => s.employerMatch?.capPercentOfPay, (v) => { if (s.employerMatch) s.employerMatch.capPercentOfPay = v; });
       const updateMatch = () => {
         const p = Number(matchPct.value);
         const c = Number(matchCap.value);
         if (matchPct.value !== "" && matchCap.value !== "" && p >= 0 && c >= 0) s.employerMatch = { matchPercent: userValue(p, asOf()), capPercentOfPay: userValue(c, asOf()) };
         else delete s.employerMatch;
         ctx.save();
+        pctBadge.refresh();
+        capBadge.refresh();
       };
       matchPct.addEventListener("input", updateMatch);
       matchCap.addEventListener("input", updateMatch);
-      fields.push(labelFor(uid("mpct"), "Employer match, percent matched", matchPct));
-      fields.push(labelFor(uid("mcap"), "Match cap, percent of pay", matchCap));
+      fields.push(field("Employer match, percent matched", matchPct, pctBadge.node));
+      fields.push(field("Match cap, percent of pay", matchCap, capBadge.node));
 
       const setDeductions = (list: PreTaxDeduction[]) => {
         if (list.length) s.preTaxDeductions = list;
@@ -273,18 +331,22 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       };
 
       // Workplace plan: stored as a percent of pay, in the account type the person chooses (data dictionary 3.4).
-      const workplace = s.preTaxDeductions?.find(isWorkplaceContribution);
-      const percentInput = el("input", { class: "input", type: "number", min: 0, max: 100, step: 0.5, value: workplace?.percentOfPay.value ?? "" });
+      const workplace = () => s.preTaxDeductions?.find(isWorkplaceContribution);
+      const percentInput = el("input", { class: "input", type: "number", min: 0, max: 100, step: 0.5, value: workplace()?.percentOfPay.value ?? "" });
       const percentHelp = el("div", { class: "money-input__normalized", "aria-live": "polite" });
-      const showPercentHelp = (p: number | null) => {
-        percentHelp.textContent = p === null || !(s.grossAnnual.value > 0) ? "" : `${dollars(amountFromPercentOfPay(p, s.grossAnnual.value))} a year at your current pay`;
+      const percentBadge = badgeSlot(() => workplace()?.percentOfPay, (v) => { const w = workplace(); if (w) w.percentOfPay = v; });
+      const showPercentHelp = () => {
+        const w = workplace();
+        percentHelp.textContent = !w || !(s.grossAnnual.value > 0)
+          ? ""
+          : `${isRough(w.percentOfPay.confidence) ? "About " : ""}${dollars(amountFromPercentOfPay(w.percentOfPay.value, s.grossAnnual.value))} a year at your current pay`;
       };
-      showPercentHelp(workplace?.percentOfPay.value ?? null);
+      showPercentHelp();
       const accountType = select<WorkplaceAccountType>(
         [{ value: "traditional", label: "Traditional (pre-tax)" }, { value: "roth", label: "Roth (after tax)" }],
-        workplace?.accountType.value ?? "traditional",
+        workplace()?.accountType.value ?? "traditional",
         (v) => {
-          const current = s.preTaxDeductions?.find(isWorkplaceContribution);
+          const current = workplace();
           if (!current) return;
           current.accountType = userValue(v, asOf());
           ctx.save();
@@ -295,27 +357,30 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         const others: PreTaxDeduction[] = (s.preTaxDeductions ?? []).filter((d) => !isWorkplaceContribution(d));
         if (p !== null && p > 0 && p <= 100) {
           others.push({ id: `${s.id}-401k`, type: "401k", percentOfPay: userValue(p, asOf()), accountType: userValue(accountType.value as WorkplaceAccountType, asOf()) });
-          showPercentHelp(p);
-        } else showPercentHelp(null);
+        }
         setDeductions(others);
+        showPercentHelp();
+        percentBadge.refresh();
       });
-      const percentId = uid("k401pct");
-      percentInput.id = percentId;
-      fields.push(el("div", { class: "field" }, el("label", { for: percentId }, "Your 401(k) or 403(b) contribution, percent of pay"), percentInput, percentHelp));
-      fields.push(labelFor(uid("k401type"), "Contribution type", accountType));
+      fields.push(field("Your 401(k) or 403(b) contribution, percent of pay", percentInput, percentBadge.node, percentHelp));
+      fields.push(field("Contribution type", accountType));
 
-      const hsa = s.preTaxDeductions?.find((d): d is AnnualDeduction => d.type === "hsa");
+      const hsa = () => s.preTaxDeductions?.find((d): d is AnnualDeduction => d.type === "hsa");
+      const hsaBadge = badgeSlot(() => hsa()?.annual, (v) => { const x = hsa(); if (x) x.annual = v; });
       fields.push(
         moneyInput({
           label: "Your HSA contribution",
-          annual: hsa?.annual.value ?? null,
+          annual: hsa()?.annual.value ?? null,
           cadences: ["paycheck", "month", "year"],
           initialCadence: "year",
           payFrequency: () => s.payFrequency?.value ?? "biweekly",
+          badge: hsaBadge.node,
+          rough: () => isRough(hsa()?.annual.confidence),
           onChange: (annual) => {
             const list: PreTaxDeduction[] = (s.preTaxDeductions ?? []).filter((d) => d.type !== "hsa");
             if (annual !== null && annual > 0) list.push({ id: `${s.id}-hsa`, type: "hsa", annual: userValue(annual, asOf()) });
             setDeductions(list);
+            hsaBadge.refresh();
           },
         }),
       );
@@ -330,14 +395,14 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         render();
       },
     );
-    fields.push(labelFor(uid("end"), "This income lasts", endSelect));
+    fields.push(field("This income lasts", endSelect));
     if (s.end.kind === "age") {
       const endAge = el("input", { class: "input", type: "number", min: 16, max: 100, step: 1, value: s.end.age });
       endAge.addEventListener("input", () => { const v = Number(endAge.value); if (v >= 16 && v <= 100) { s.end = { kind: "age", age: v }; ctx.save(); } });
-      fields.push(labelFor(uid("endage"), "Ends at age", endAge));
+      fields.push(field("Ends at age", endAge, kindBadge("known")));
     }
 
-    const remove = el("button", { type: "button", class: "button button--quiet button--small", onClick: () => {
+    const remove = el("button", { type: "button", class: "button button--quiet", onClick: () => {
       const inc = h().self.income;
       if (inc.kind !== "rows") return;
       const rows = inc.rows.filter((r) => r.id !== s.id);
@@ -349,7 +414,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     return el(
       "div",
       { class: "card" },
-      el("div", { class: "card__title" }, el("h2", {}, typeLabel), el("div", { class: "row-actions" }, kind, remove)),
+      el("div", { class: "card__title" }, el("h2", {}, typeLabel), el("div", { class: "row-actions" }, remove)),
       el("div", { class: "field-grid" }, ...fields),
     );
   }
@@ -362,8 +427,10 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   })();
 
   function spending(): HTMLElement {
-    const answer = h().spending;
-    const rows = answer.kind === "rows" ? answer.rows : [];
+    const currentRows = (): SpendingRow[] => {
+      const sp = h().spending;
+      return sp.kind === "rows" ? sp.rows : [];
+    };
     const body = el("div", { class: "stack" });
 
     const modeRow = el(
@@ -382,40 +449,44 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       ctx.save();
     };
 
+    const rowInput = (label: string, find: () => SpendingRow | undefined, make: (annual: number) => SpendingRow, keep: (r: SpendingRow) => boolean): HTMLElement => {
+      const badge = badgeSlot(() => find()?.annual, (v) => { const r = find(); if (r) r.annual = v; });
+      return moneyInput({
+        label,
+        annual: find()?.annual.value ?? null,
+        cadences: ["month", "year"],
+        initialCadence: "month",
+        badge: badge.node,
+        rough: () => isRough(find()?.annual.confidence),
+        onChange: (annual) => {
+          const others = currentRows().filter(keep);
+          if (annual !== null && annual > 0) others.push(make(annual));
+          setRows(others);
+          badge.refresh();
+        },
+      });
+    };
+
     if (spendingMode === "total") {
-      const total = rows.find((r) => r.category === "everythingElse" && r.id === "total");
       body.append(
-        moneyInput({
-          label: "Everything you spend (not saving, not debt payments)",
-          annual: total?.annual.value ?? null,
-          cadences: ["month", "year"],
-          initialCadence: "month",
-          onChange: (annual) => {
-            const others = rows.filter((r) => r.id !== "total");
-            if (annual !== null && annual > 0) setRows([{ id: "total", category: "everythingElse", annual: userValue(annual, asOf(), "roughly") }, ...others]);
-            else setRows(others);
-          },
-        }),
+        rowInput(
+          "Everything you spend (not saving, not debt payments)",
+          () => currentRows().find((r) => r.id === "total"),
+          (annual) => ({ id: "total", category: "everythingElse", annual: userValue(annual, asOf(), "roughly") }),
+          (r) => r.id !== "total",
+        ),
         el("p", { class: "muted" }, "Spending means consumption only. Debt payments and saving are counted elsewhere, so they are not double counted."),
       );
     } else {
       const grid = el("div", { class: "field-grid" });
       for (const c of loadSpendingCategories()) {
-        const row = rows.find((r) => r.category === c.id && r.id !== "total");
         grid.append(
-          moneyInput({
-            label: c.label,
-            annual: row?.annual.value ?? null,
-            cadences: ["month", "year"],
-            initialCadence: "month",
-            onChange: (annual) => {
-              const sp = h().spending;
-              const current = sp.kind === "rows" ? sp.rows : [];
-              const others = current.filter((r) => !(r.category === c.id && r.id !== "total") && r.id !== "total");
-              if (annual !== null && annual > 0) others.push({ id: `cat-${c.id}`, category: c.id, annual: userValue(annual, asOf(), "roughly") });
-              setRows(others);
-            },
-          }),
+          rowInput(
+            c.label,
+            () => currentRows().find((r) => r.category === c.id && r.id !== "total"),
+            (annual) => ({ id: `cat-${c.id}`, category: c.id, annual: userValue(annual, asOf(), "roughly") }),
+            (r) => !(r.category === c.id && r.id !== "total") && r.id !== "total",
+          ),
         );
       }
       body.append(grid);
@@ -448,9 +519,19 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
           const preset = getAccountPreset(key);
           const id = uid("acct");
           const balance = userValue(0, asOf(), "roughly");
-          const account: Account = preset.side === "asset"
-            ? assetFromPreset(key, id, balance, asOf())
-            : debtFromPreset(key, id, balance, { rate: userValue(preset.typicalRate ?? 0, asOf(), "roughly"), minimumPaymentAnnual: userValue(0, asOf(), "roughly") }, asOf());
+          let account: Account;
+          if (preset.side === "asset") {
+            account = assetFromPreset(key, id, balance, asOf());
+          } else {
+            // A debt never starts with a silent zero. The rate is the preset's typical rate marked
+            // roughly, or a look-it-up placeholder that must be answered. The payment is an
+            // estimate from the engine, marked roughly, until the person enters the real one.
+            const rate: Value<number> = preset.typicalRate !== undefined
+              ? { value: preset.typicalRate, asOf: asOf(), source: "preset", confidence: "roughly" }
+              : { value: 0, asOf: asOf(), source: "preset", confidence: "lookUp" };
+            const estimate: Value<number> = { value: 0, asOf: asOf(), source: "preset", confidence: "roughly" };
+            account = debtFromPreset(key, id, balance, { rate, minimumPaymentAnnual: estimate, actualPaymentAnnual: { ...estimate } }, asOf());
+          }
           h().accounts = { kind: "rows", rows: [...rows, account] };
           pickerOpen = false;
           ctx.save();
@@ -461,25 +542,34 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     return el("section", { class: "card" }, el("div", { class: "card__title" }, el("h2", {}, "Accounts and debts")), body, actions, picker);
   }
 
+  /** Keeps a debt's estimated payment in step with its balance and rate until the person enters a real one. */
+  function refreshEstimate(a: DebtAccount): void {
+    if (a.minimumPaymentAnnual.source !== "preset") return;
+    const balance = a.balance.value ?? 0;
+    const estimate: Value<number> = { value: estimatedMinimumPaymentAnnual(balance, a.rate.value), asOf: asOf(), source: "preset", confidence: "roughly" };
+    a.minimumPaymentAnnual = estimate;
+    if (a.actualPaymentAnnual.source === "preset") a.actualPaymentAnnual = { ...estimate };
+  }
+
   function accountEditor(a: Account): HTMLElement {
     const preset = getAccountPreset(a.preset);
-    const balanceInput = el("input", { class: "input input--money", type: "text", inputmode: "decimal", value: a.balance.value === null ? "" : String(a.balance.value) });
+    const balanceInput = el("input", { class: "input input--money", type: "text", inputmode: "decimal", value: a.balance.value ? String(a.balance.value) : "" });
+    const balanceBadge = badgeSlot(
+      () => (a.balance.value !== null && a.balance.value > 0 ? (a.balance as Value<number>) : undefined),
+      (v) => { a.balance = v; },
+    );
     balanceInput.addEventListener("input", () => {
       const v = parseMoney(balanceInput.value);
       const confidence = a.balance.confidence === "notForMe" ? "roughly" : a.balance.confidence;
       a.balance = v === null ? notForMe(asOf()) : { value: v, asOf: asOf(), source: "user", confidence };
+      if (a.side === "debt") refreshEstimate(a);
       ctx.save();
+      balanceBadge.refresh();
     });
-    const balanceKind = kindBadge(a.balance.confidence, {
-      cycle: ["known", "roughly", "lookUp"],
-      onChange: (next) => {
-        if (a.balance.value !== null) a.balance = { ...a.balance, confidence: next as "known" | "roughly" | "lookUp" };
-        ctx.save();
-        render();
-      },
-    });
+    if (a.side === "debt") balanceInput.addEventListener("change", () => { if (a.minimumPaymentAnnual.source === "preset") render(); });
 
-    const fields: HTMLElement[] = [labelFor(uid("bal"), a.side === "asset" ? "Balance" : "Balance owed", balanceInput)];
+    const fields: HTMLElement[] = [field(a.side === "asset" ? "Balance" : "Balance owed", balanceInput, balanceBadge.node)];
+    const flags: HTMLElement[] = [];
 
     if (a.side === "asset") {
       const quick = loadQuickAllocations();
@@ -490,37 +580,72 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         { value: "preset", label: `As preset (${a.allocation.value.stocks} / ${a.allocation.value.bonds} / ${a.allocation.value.cash})` },
       ] as const;
       const current = (Object.keys(quick) as (keyof typeof quick)[]).find((k) => JSON.stringify(quick[k]) === JSON.stringify(a.allocation.value)) ?? "preset";
-      fields.push(labelFor(uid("alloc"), "Mix of stocks, bonds, cash", select([...options], current, (v) => {
-        if (v !== "preset") { a.allocation = userValue(quick[v], asOf()); ctx.save(); }
-      })));
-      fields.push(el("div", { class: "field" }, el("label", {}, "Fees"), el("div", {}, percent(a.fees.value), " a year")));
+      fields.push(field("Mix of stocks, bonds, cash", select([...options], current, (v) => {
+        if (v !== "preset") { a.allocation = userValue(quick[v], asOf()); ctx.save(); render(); }
+      }), kindBadge(a.allocation.confidence)));
+      fields.push(el("div", { class: "field" }, el("div", { class: "field__label-row" }, el("span", { class: "field__label" }, "Fees"), kindBadge(a.fees.confidence)), el("div", { class: "numbers" }, `${percent(a.fees.value)} a year`)));
     } else {
-      const rate = el("input", { class: "input", type: "number", min: 0, max: 100, step: 0.01, value: a.rate.value });
-      rate.addEventListener("input", () => { const v = Number(rate.value); if (v >= 0) { a.rate = userValue(v, asOf()); ctx.save(); } });
-      fields.push(labelFor(uid("rate"), "Interest rate, percent per year", rate));
+      const needsRate = a.rate.source === "preset" && a.rate.confidence === "lookUp";
+      const rate = el("input", { class: "input", type: "number", min: 0, max: 100, step: 0.01, value: needsRate ? "" : a.rate.value });
+      const rateBadge = badgeSlot(() => (needsRate ? undefined : a.rate), (v) => { a.rate = v; });
+      rate.addEventListener("input", () => {
+        if (rate.value === "") return;
+        const v = Number(rate.value);
+        if (v >= 0) {
+          a.rate = userValue(v, asOf());
+          refreshEstimate(a);
+          ctx.save();
+        }
+      });
+      rate.addEventListener("change", () => render());
+      fields.push(field("Interest rate, percent per year", rate, rateBadge.node));
+      if (needsRate) flags.push(gentleFlag("This debt needs its interest rate before a plan can run. It is on your statement or in your lender's app."));
+
+      const estimated = a.minimumPaymentAnnual.source === "preset";
+      const minBadge = badgeSlot(() => (a.minimumPaymentAnnual.value > 0 ? a.minimumPaymentAnnual : undefined), (v) => { a.minimumPaymentAnnual = v; });
       fields.push(moneyInput({
         label: "Minimum payment",
         annual: a.minimumPaymentAnnual.value || null,
         cadences: ["month", "year"],
         initialCadence: "month",
+        badge: minBadge.node,
+        rough: () => isRough(a.minimumPaymentAnnual.confidence),
+        note: () => (a.minimumPaymentAnnual.source === "preset" ? "(estimate)" : ""),
         onChange: (annual) => {
-          const v = annual ?? 0;
-          const sameAsMin = a.actualPaymentAnnual.value === a.minimumPaymentAnnual.value;
-          a.minimumPaymentAnnual = userValue(v, asOf());
-          if (sameAsMin) a.actualPaymentAnnual = userValue(v, asOf());
+          if (annual === null) return;
+          const sameAsMin = a.actualPaymentAnnual.source === "preset" || a.actualPaymentAnnual.value === a.minimumPaymentAnnual.value;
+          a.minimumPaymentAnnual = userValue(annual, asOf());
+          if (sameAsMin) a.actualPaymentAnnual = userValue(annual, asOf());
           ctx.save();
+          minBadge.refresh();
         },
       }));
+      const actBadge = badgeSlot(() => (a.actualPaymentAnnual.value > 0 ? a.actualPaymentAnnual : undefined), (v) => { a.actualPaymentAnnual = v; });
       fields.push(moneyInput({
         label: "What you actually pay",
         annual: a.actualPaymentAnnual.value || null,
         cadences: ["month", "year"],
         initialCadence: "month",
-        onChange: (annual) => { a.actualPaymentAnnual = userValue(annual ?? a.minimumPaymentAnnual.value, asOf()); ctx.save(); },
+        badge: actBadge.node,
+        rough: () => isRough(a.actualPaymentAnnual.confidence),
+        note: () => (a.actualPaymentAnnual.source === "preset" ? "(estimate)" : ""),
+        onChange: (annual) => {
+          if (annual === null) return;
+          a.actualPaymentAnnual = userValue(annual, asOf());
+          ctx.save();
+          actBadge.refresh();
+        },
       }));
+      if (estimated) {
+        flags.push(gentleFlag(
+          (a.balance.value ?? 0) > 0
+            ? "The payment shown is an estimate: each month's interest plus 1% of the balance. Enter the minimum payment from your statement."
+            : "Enter the balance, then the minimum payment from your statement. Until then the payment is an estimate, never zero.",
+        ));
+      }
     }
 
-    const remove = el("button", { type: "button", class: "button button--quiet button--small", onClick: () => {
+    const remove = el("button", { type: "button", class: "button button--quiet", onClick: () => {
       const acc = h().accounts;
       if (acc.kind !== "rows") return;
       const rows = acc.rows.filter((r) => r.id !== a.id);
@@ -532,8 +657,9 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     return el(
       "div",
       { class: "card" },
-      el("div", { class: "card__title" }, el("h2", {}, a.name?.value ?? preset.label), el("div", { class: "row-actions" }, balanceKind, remove)),
+      el("div", { class: "card__title" }, el("h2", {}, a.name?.value ?? preset.label), el("div", { class: "row-actions" }, remove)),
       el("div", { class: "field-grid" }, ...fields),
+      flags.length ? el("div", { class: "stack card__flags" }, ...flags) : null,
     );
   }
 
@@ -544,10 +670,12 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const sets = select(listAssumptionSets().map((s) => ({ value: s.key, label: s.label })), h().assumptions.set, (v) => { h().assumptions.set = v; ctx.save(); });
     const bounds = planToAgeBounds();
     const planTo = el("input", { class: "input", type: "number", min: bounds.min, max: bounds.max, step: 1, value: h().assumptions.overrides.planToAge?.value ?? bounds.default });
+    const planToBadge = badgeSlot(() => resolveAssumptions(h().assumptions).planToAge, () => undefined, false);
     planTo.addEventListener("input", () => {
       const v = Number(planTo.value);
       if (v >= bounds.min && v <= bounds.max) h().assumptions.overrides.planToAge = userValue(v, asOf());
       ctx.save();
+      planToBadge.refresh();
     });
     const birth = h().self.birthDate;
     const birthYear = birth ? parseYearMonth(birth.value).year : undefined;
@@ -559,56 +687,72 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       else h().self.socialSecurity.claimingAge = userValue({ years: Number(v), months: 0 }, asOf());
       ctx.save();
     });
-    const zero = el("input", { type: "checkbox", checked: h().self.socialSecurity.claimZero?.value === true });
-    zero.addEventListener("change", () => {
-      if (zero.checked) h().self.socialSecurity.claimZero = userValue(true, asOf());
-      else delete h().self.socialSecurity.claimZero;
-      ctx.save();
-    });
+    const zero = select(
+      [{ value: "no", label: "Count Social Security (the default)" }, { value: "yes", label: "Plan as if it pays nothing" }],
+      h().self.socialSecurity.claimZero?.value === true ? "yes" : "no",
+      (v) => {
+        if (v === "yes") h().self.socialSecurity.claimZero = userValue(true, asOf());
+        else delete h().self.socialSecurity.claimZero;
+        ctx.save();
+      },
+    );
 
     return el(
       "details",
       { class: "card" },
-      el("summary", {}, el("h2", { style: "display:inline" }, "Sharpen it (optional)")),
+      el("summary", { class: "card__summary" }, el("h2", {}, "Sharpen it (optional)")),
       el(
         "div",
-        { class: "field-grid", style: "margin-top: var(--space-3)" },
-        labelFor(uid("hsa"), "HSA eligible", hsa),
-        labelFor(uid("strategy"), "Savings strategy", strategy),
-        labelFor(uid("set"), "Assumption set", sets),
-        labelFor(uid("planto"), `Plan-to age (${bounds.min} to ${bounds.max})`, planTo),
-        labelFor(uid("claim"), "Social Security claiming age", claim),
-        el("label", { class: "toggle" }, zero, el("span", {}, "Plan as if Social Security pays nothing (an explicit choice, not a band)")),
+        { class: "field-grid card__details-body" },
+        field("HSA eligible", hsa),
+        field("Savings strategy", strategy),
+        field("Assumption set", sets),
+        field(`Plan-to age (${bounds.min} to ${bounds.max})`, planTo, planToBadge.node),
+        field("Social Security claiming age", claim),
+        field("Social Security in your plan", zero),
       ),
       el("p", { class: "notice" }, "Plan-to age. How long your plan needs to last. Running out at 88 is far worse than leaving some behind at 95, so this is set longer than average on purpose. You can change it."),
     );
   }
 
   // ---- Examples --------------------------------------------------------------
+  let pendingExample: ExampleHouseholdFile | null = null;
+
   function examples(): HTMLElement {
     const files = [maya, jordan, dev] as ExampleHouseholdFile[];
+    const pending = pendingExample;
     return el(
       "section",
       { class: "card" },
       el("div", { class: "card__title" }, el("h2", {}, "Or start from an example")),
       el("p", { class: "muted" }, "These are the checked example households from the tests. Loading one replaces what you have entered."),
-      el("div", { class: "row-actions" }, ...files.map((f) => el("button", { type: "button", class: "button button--quiet", onClick: () => {
-        if (window.confirm(`Replace your numbers with ${f.label}?`)) ctx.replace(householdFromExample(f, asOf()));
-      } }, f.label))),
+      el("div", { class: "row-actions" }, ...files.map((f) => el("button", { type: "button", class: "button button--quiet", onClick: () => { pendingExample = f; render(); } }, f.label))),
+      pending
+        ? confirmPanel({
+            sentence: `This replaces everything you have entered with ${pending.label}.`,
+            confirmLabel: "Replace my numbers",
+            cancelLabel: "Keep what I have",
+            onConfirm: () => { pendingExample = null; ctx.replace(householdFromExample(pending, asOf())); },
+            onCancel: () => { pendingExample = null; render(); },
+          })
+        : null,
     );
   }
 
   // ---- Footer ----------------------------------------------------------------
   function footer(): HTMLElement {
     const missing = missingLevelOneAnswers(h());
+    const needRate = debtsNeedingRate(h());
     const wrap = el("div", { class: "stack" });
     if (missing.length) {
       wrap.append(gentleFlag(`Still needed before a first FI date: ${missing.map((m) => MISSING_LABEL[m]).join(", ")}.`));
     }
-    wrap.append(el("div", { class: "row-actions" }, el("button", { type: "button", class: "button", disabled: missing.length > 0, onClick: ctx.goToResult }, "See my FI date")));
-    const sp = h().spending;
-    const total = sp.kind === "rows" ? sp.rows.length : 0;
-    wrap.append(el("p", { class: "notice" }, total ? `Spending rows entered: ${total}. Values shown as ${dollars(0).slice(0, 1)} are today's dollars.` : "Values are in today's dollars."));
+    if (needRate.length) {
+      wrap.append(gentleFlag(`Still needed: the interest rate on ${needRate.map((d) => d.label).join(", ")}.`));
+    }
+    const blocked = missing.length > 0 || needRate.length > 0;
+    wrap.append(el("div", { class: "row-actions" }, el("button", { type: "button", class: "button", disabled: blocked, onClick: ctx.goToResult }, "See my FI date")));
+    wrap.append(el("p", { class: "notice" }, "Amounts are in today's dollars."));
     return wrap;
   }
 

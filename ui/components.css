@@ -19,6 +19,9 @@
 }
 
 .topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-weight: var(--weight-bold);
   font-size: var(--text-md);
   color: var(--color-ink);
@@ -121,7 +124,6 @@
 }
 
 .button--small {
-  min-height: 36px;
   padding: 0 var(--space-3);
   font-size: var(--text-sm);
 }
@@ -264,7 +266,21 @@
 
 /* ---- Kind badge ---- */
 
+/* The button is the tap target (44px). The pill inside is the small visible badge. */
 .kind-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 var(--space-1);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.kind-badge__pill {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
@@ -274,16 +290,25 @@
   font-weight: var(--weight-medium);
   color: var(--color-surface);
   background: var(--color-ink-muted);
-  border: 0;
-  cursor: pointer;
-  font-family: var(--font-sans);
+  white-space: nowrap;
 }
 
-.kind-badge--known { background: var(--color-known); }
-.kind-badge--lookUp { background: var(--color-lookup); }
-.kind-badge--roughly { background: var(--color-roughly); }
-.kind-badge--computed { background: var(--color-computed); color: var(--color-ink); }
-.kind-badge--notForMe { background: var(--color-notforme); }
+.kind-badge:hover .kind-badge__pill {
+  outline: var(--border-width) solid var(--color-ink);
+  outline-offset: 1px;
+}
+
+.kind-badge__pill--known { background: var(--color-known); }
+.kind-badge__pill--lookUp { background: var(--color-lookup); }
+.kind-badge__pill--roughly { background: var(--color-roughly); }
+.kind-badge__pill--computed { background: var(--color-computed); color: var(--color-ink); }
+.kind-badge__pill--notForMe { background: var(--color-notforme); }
+
+.badge-slot {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
 
 /* ---- Preset picker ---- */
 
@@ -351,15 +376,24 @@
   background: var(--color-brand-100);
 }
 
+.headline__number-row,
+.headline__range-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1) var(--space-2);
+}
+
 .headline__range {
-  margin-top: var(--space-2);
+  margin: 0;
   color: var(--color-ink-muted);
 }
 
 /* ---- Band chart ---- */
 
 .band-chart {
-  width: 100%;
+  max-width: 100%;
   height: auto;
   display: block;
 }
@@ -405,6 +439,11 @@
 .chart-summary {
   font-size: var(--text-sm);
   color: var(--color-ink-muted);
+}
+
+.chart-summary__kind {
+  float: right;
+  margin-left: var(--space-2);
 }
 
 /* ---- Trace drawer ---- */
@@ -534,4 +573,100 @@
   font-size: var(--text-xs);
   color: var(--color-ink-muted);
   margin-top: var(--space-4);
+}
+
+/* ---- Field label row (label plus kind badge) ---- */
+
+.field__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 44px;
+}
+
+.field__label-row label,
+.field__label {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
+.card__flags {
+  margin-top: var(--space-3);
+}
+
+/* ---- Details summary as a full tap target ---- */
+
+.card__summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.card__summary h2 {
+  margin: 0;
+}
+
+.card__details-body {
+  margin-top: var(--space-3);
+}
+
+/* ---- Confirm panel ---- */
+
+.confirm-panel {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-attention-soft);
+  border-left: var(--space-1) solid var(--color-attention);
+}
+
+.confirm-panel p {
+  margin: 0;
+}
+
+/* ---- Toggle button ---- */
+
+.toggle-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  border: var(--border-width) solid var(--color-rule);
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.toggle-button[aria-pressed="true"] {
+  background: var(--color-brand-100);
+  border-color: var(--color-brand-500);
+  color: var(--color-ink);
+  font-weight: var(--weight-medium);
+}
+
+/* Radio choices: the whole pill is the target, the input fills it invisibly. */
+.choice-row label {
+  position: relative;
+}
+
+.choice-row input[type="radio"] {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+}
+
+/* Phones: the two navigation links and the brand share one row. */
+@media (max-width: 420px) {
+  .topbar {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .topbar__nav a {
+    padding: 0 var(--space-2);
+  }
 }

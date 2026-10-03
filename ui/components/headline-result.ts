@@ -1,11 +1,13 @@
 /**
  * Headline result (design system 5): the FI date in hero type, with the best
- * and worst range beneath it in one line. Never a verdict.
+ * and worst range beneath it in one line. Never a verdict. Both the age and
+ * the range carry a Computed badge.
  */
 
 import type { ProjectionResult } from "../../engine";
 import { el } from "../dom";
 import { age, dollars } from "../format";
+import { kindBadge } from "./kind-badge";
 
 export function headlineResult(result: ProjectionResult, onTap: () => void): HTMLElement {
   const { best, likely, worst } = result.bands;
@@ -16,7 +18,7 @@ export function headlineResult(result: ProjectionResult, onTap: () => void): HTM
       "section",
       { class: "headline", "aria-label": "Your FI date" },
       el("div", { class: "headline__kicker" }, "Your FI date"),
-      el("button", { type: "button", class: "headline__number", onClick: onTap }, "Not yet"),
+      el("div", { class: "headline__number-row" }, el("button", { type: "button", class: "headline__number", onClick: onTap }, "Not yet"), kindBadge("computed")),
       el(
         "p",
         { class: "headline__range" },
@@ -36,7 +38,12 @@ export function headlineResult(result: ProjectionResult, onTap: () => void): HTM
     "section",
     { class: "headline", "aria-label": "Your FI date" },
     el("div", { class: "headline__kicker" }, "Your FI date"),
-    el("button", { type: "button", class: "headline__number", onClick: onTap, "aria-label": `${age(likely.fiAge ?? 0)}. Tap to see what moves it.` }, age(likely.fiAge ?? 0)),
-    el("p", { class: "headline__range" }, `Likely in ${likely.retirementYear}. ${range}`),
+    el(
+      "div",
+      { class: "headline__number-row" },
+      el("button", { type: "button", class: "headline__number", onClick: onTap, "aria-label": `${age(likely.fiAge ?? 0)}. Tap to see what moves it.` }, age(likely.fiAge ?? 0)),
+      kindBadge("computed"),
+    ),
+    el("div", { class: "headline__range-row" }, el("p", { class: "headline__range" }, `Likely in ${likely.retirementYear}. ${range}`), kindBadge("computed")),
   );
 }

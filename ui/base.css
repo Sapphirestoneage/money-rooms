@@ -66,3 +66,7 @@ p {
   outline: 2px solid var(--color-brand-500);
   outline-offset: 2px;
 }
+
+figure {
+  margin: 0;
+}

@@ -1,7 +1,8 @@
 /**
  * Money input (design system 5): accepts "4120", "4,120", "$4,120", or "4.1k",
- * has a cadence selector, and shows the normalized annual amount underneath.
- * The engine normalizes; this component only formats and relays.
+ * has a cadence selector, shows the normalized annual amount underneath, and
+ * carries the value's kind badge. The engine normalizes; this component only
+ * formats and relays.
  */
 
 import { annualFrom, fromAnnual, type Cadence, type PayFrequency } from "../../engine";
@@ -20,6 +21,12 @@ export interface MoneyInputOptions {
   /** Needed when "hour" is offered. */
   hoursPerWeek?: () => number | null;
   onChange: (annual: number | null) => void;
+  /** The value's kind badge, shown beside the label. */
+  badge?: HTMLElement;
+  /** True when the value is rough, so the annual line reads "About ...". */
+  rough?: () => boolean;
+  /** Extra words after the annual amount, like "(estimate)". */
+  note?: () => string;
   placeholder?: string;
 }
 
@@ -56,7 +63,13 @@ export function moneyInput(o: MoneyInputOptions): HTMLElement {
   };
 
   const showNormalized = (annual: number | null) => {
-    normalized.textContent = annual === null ? "" : `${dollars(annual)} a year`;
+    if (annual === null) {
+      normalized.textContent = "";
+      return;
+    }
+    const about = o.rough?.() ? "About " : "";
+    const note = o.note?.() ?? "";
+    normalized.textContent = `${about}${dollars(annual)} a year${note ? ` ${note}` : ""}`;
   };
 
   const setFromAnnual = (annual: number | null) => {
@@ -67,7 +80,7 @@ export function moneyInput(o: MoneyInputOptions): HTMLElement {
     }
     try {
       const shown = fromAnnual(annual, cadence, context());
-      input.value = Math.round(shown * 100) / 100 === Math.round(shown) ? String(Math.round(shown)) : shown.toFixed(2);
+      input.value = Number.isInteger(shown) ? String(shown) : shown.toFixed(2);
     } catch {
       input.value = "";
     }
@@ -79,13 +92,13 @@ export function moneyInput(o: MoneyInputOptions): HTMLElement {
   input.addEventListener("input", () => {
     const amount = parseMoney(input.value);
     if (amount === null) {
-      showNormalized(null);
       o.onChange(null);
+      showNormalized(null);
       return;
     }
     const annual = safeAnnual(amount);
-    showNormalized(annual);
     o.onChange(annual);
+    showNormalized(annual);
   });
 
   select.addEventListener("change", () => {
@@ -93,14 +106,14 @@ export function moneyInput(o: MoneyInputOptions): HTMLElement {
     cadence = select.value as Cadence;
     if (amount === null) return;
     const annual = safeAnnual(amount);
-    showNormalized(annual);
     o.onChange(annual);
+    showNormalized(annual);
   });
 
   return el(
     "div",
     { class: "field" },
-    el("label", { for: id }, o.label),
+    el("div", { class: "field__label-row" }, el("label", { for: id }, o.label), o.badge ?? null),
     el("div", { class: "money-input" }, input, select, normalized),
   );
 }

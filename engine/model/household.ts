@@ -45,3 +45,19 @@ export function missingLevelOneAnswers(h: Household): ChecklistItem[] {
   if (h.accounts.kind === "unanswered") missing.push("accounts");
   return missing;
 }
+
+/**
+ * Debts whose interest rate has not been answered (data dictionary 3.6: the rate
+ * is required). A debt added from a preset with no typical rate carries a
+ * placeholder marked "look it up" from the preset until the person enters it.
+ */
+export function debtsNeedingRate(h: Household): { id: string; label: string }[] {
+  if (h.accounts.kind !== "rows") return [];
+  const out: { id: string; label: string }[] = [];
+  for (const a of h.accounts.rows) {
+    if (a.side === "debt" && a.rate.source === "preset" && a.rate.confidence === "lookUp") {
+      out.push({ id: a.id, label: a.name?.value ?? a.id });
+    }
+  }
+  return out;
+}

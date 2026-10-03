@@ -1,34 +1,64 @@
 /**
- * Kind badge (design system 5): a small pill showing a number's kind.
- * Tapping it explains the kind. Optionally cycles between known and roughly for entry.
+ * Kind badge (design system 5): a small pill showing a number's kind, inside a
+ * 44px tap target. Tapping it opens the drawer with the kind's explanation and,
+ * where the kind can be changed, the choices.
  */
 
 import type { Confidence } from "../../engine";
 import { el } from "../dom";
 import { KIND_EXPLANATION, KIND_LABEL } from "../format";
+import { sharedDrawer } from "./trace-drawer";
+
+/** The kinds a person can give a number they entered. */
+export type EditableKind = "known" | "roughly" | "lookUp";
+export const EDITABLE_KINDS: readonly EditableKind[] = ["known", "roughly", "lookUp"];
 
 export interface KindBadgeOptions {
-  /** When given, tapping cycles the kind through these values and calls onChange. */
-  cycle?: readonly Confidence[];
-  onChange?: (next: Confidence) => void;
+  /** When given, the drawer offers the three editable kinds. */
+  onChange?: (next: EditableKind) => void;
 }
 
 export function kindBadge(kind: Confidence, options: KindBadgeOptions = {}): HTMLButtonElement {
-  const button = el("button", {
-    type: "button",
-    class: `kind-badge kind-badge--${kind}`,
-    title: KIND_EXPLANATION[kind],
-    "aria-label": options.cycle ? `${KIND_LABEL[kind]}. Tap to change.` : `${KIND_LABEL[kind]}. ${KIND_EXPLANATION[kind]}`,
-  }, KIND_LABEL[kind]);
+  const pill = el("span", { class: `kind-badge__pill kind-badge__pill--${kind}` }, KIND_LABEL[kind]);
+  const button = el(
+    "button",
+    {
+      type: "button",
+      class: "kind-badge",
+      "aria-label": `${KIND_LABEL[kind]}. ${options.onChange ? "Tap for what this means, or to change it." : "Tap for what this means."}`,
+    },
+    pill,
+  );
 
   button.addEventListener("click", () => {
-    if (options.cycle && options.onChange) {
-      const i = options.cycle.indexOf(kind);
-      const next = options.cycle[(i + 1) % options.cycle.length] ?? kind;
-      options.onChange(next);
-      return;
+    const drawer = sharedDrawer();
+    const body = el("div", { class: "stack" }, el("p", {}, KIND_EXPLANATION[kind]));
+    const change = options.onChange;
+    if (change) {
+      body.append(
+        el("p", { class: "muted" }, "How sure are you of this number?"),
+        el(
+          "div",
+          { class: "row-actions" },
+          ...EDITABLE_KINDS.map((k) =>
+            el(
+              "button",
+              {
+                type: "button",
+                class: k === kind ? "button" : "button button--quiet",
+                "aria-pressed": k === kind,
+                onClick: () => {
+                  drawer.close();
+                  if (k !== kind) change(k);
+                },
+              },
+              KIND_LABEL[k],
+            ),
+          ),
+        ),
+      );
     }
-    window.alert(`${KIND_LABEL[kind]}. ${KIND_EXPLANATION[kind]}`);
+    drawer.open(KIND_LABEL[kind], body);
   });
   return button;
 }

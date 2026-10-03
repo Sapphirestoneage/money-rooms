@@ -5,7 +5,8 @@
  */
 
 import { isIsoDate } from "./dates";
-import type { Household, IsoDate } from "./types";
+import { percentOfPay } from "./normalize";
+import type { Household, IsoDate, PreTaxDeduction } from "./types";
 
 export const EXPORT_FORMAT = "money-rooms-household";
 export const EXPORT_VERSION = 1;
@@ -63,6 +64,36 @@ export function validateHousehold(x: unknown): string[] {
   return problems;
 }
 
+/**
+ * Upgrades a household saved by an earlier build to the current shape, in place.
+ * Run on every load and every import, so old saved data and old exports keep working.
+ *
+ * - Workplace contributions (401(k), 403(b)) used to be annual dollars. They are now a
+ *   percent of the stream's pay with an account type (decision E15). The old dollar
+ *   amount is converted at the stream's current pay and treated as traditional.
+ */
+export function migrateHousehold(h: Household): Household {
+  for (const person of [h.self, h.partner]) {
+    if (!person || person.income.kind !== "rows") continue;
+    for (const stream of person.income.rows) {
+      if (!stream.preTaxDeductions) continue;
+      stream.preTaxDeductions = stream.preTaxDeductions.map((d): PreTaxDeduction => {
+        const old = d as unknown as { id: string; type: string; annual?: { value: number; asOf: string; source: "user"; confidence: "known" }; percentOfPay?: unknown };
+        if ((old.type === "401k" || old.type === "403b") && old.percentOfPay === undefined && old.annual) {
+          return {
+            id: old.id,
+            type: old.type,
+            percentOfPay: { ...old.annual, value: percentOfPay(old.annual.value, stream.grossAnnual.value) },
+            accountType: { value: "traditional", asOf: old.annual.asOf, source: "preset", confidence: "known" },
+          };
+        }
+        return d;
+      });
+    }
+  }
+  return h;
+}
+
 /** Reads an exported file. Accepts the envelope, or a bare household for convenience. */
 export function importFromJson(text: string): ImportResult {
   let parsed: unknown;
@@ -86,5 +117,5 @@ export function importFromJson(text: string): ImportResult {
 
   const problems = validateHousehold(candidate);
   if (problems.length) return { ok: false, problems };
-  return { ok: true, household: candidate as Household, exportedAt };
+  return { ok: true, household: migrateHousehold(candidate as Household), exportedAt };
 }

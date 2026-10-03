@@ -1,10 +1,11 @@
 /**
  * The result screen: the FI date in three bands, net worth over time, the key
- * figures behind it, and the trace behind the likely date. Reads the engine. Never calculates.
+ * figures behind it, and the trace behind the likely date. Reads the engine.
+ * Never performs a financial calculation. Every number shown carries its kind.
  */
 
 import {
-  defaultHouseholdAssumptions,
+  debtsNeedingRate,
   missingLevelOneAnswers,
   project,
   resolveAssumptions,
@@ -18,6 +19,7 @@ import { bandChart } from "../components/band-chart";
 import { fieldRow } from "../components/field-row";
 import { gentleFlag } from "../components/gentle-flag";
 import { headlineResult } from "../components/headline-result";
+import { toggleButton } from "../components/toggle-button";
 import { computedFromBody, fiTraceBody, type Drawer } from "../components/trace-drawer";
 import { clear, el } from "../dom";
 import { dollars, percent } from "../format";
@@ -31,10 +33,14 @@ export interface ResultContext {
 export function resultScreen(ctx: ResultContext): HTMLElement {
   const root = el("div", {});
   const missing = missingLevelOneAnswers(ctx.household);
-  if (missing.length) {
+  const needRate = debtsNeedingRate(ctx.household);
+  if (missing.length || needRate.length) {
     root.append(
       el("h1", { class: "screen-title" }, "Your FI date"),
-      gentleFlag("A few answers are still needed before there is a date to show.", { label: "Go to your numbers", onClick: ctx.goToEntry }),
+      gentleFlag(
+        missing.length ? "A few answers are still needed before there is a date to show." : `A debt still needs its interest rate: ${needRate.map((d) => d.label).join(", ")}.`,
+        { label: "Go to your numbers", onClick: ctx.goToEntry },
+      ),
     );
     return root;
   }
@@ -50,33 +56,37 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     return root;
   }
 
-  const likelyBand = resolveBand(resolveAssumptions(ctx.household.assumptions ?? defaultHouseholdAssumptions()), "likely");
+  const likelyBand = resolveBand(resolveAssumptions(ctx.household.assumptions), "likely");
   let nominal = false;
 
   const display = (real: number, yearIndex: number) => (nominal ? toNominal(real, likelyBand.inflation, yearIndex) : real);
   const dollarsLabel = () => (nominal ? `future dollars (${percent(likelyBand.inflation)} inflation)` : "today's dollars");
+
+  /** The width the chart will be shown at: the content column less the page and card padding. */
+  const chartWidth = () => {
+    const column = root.clientWidth || document.documentElement.clientWidth;
+    const cardPadding = 34;
+    return column - cardPadding;
+  };
 
   function render(): void {
     clear(root);
     const likely = result.bands.likely;
     const t = likely.timeline;
 
-    const toggle = el("input", { type: "checkbox", checked: nominal });
-    toggle.addEventListener("change", () => { nominal = toggle.checked; render(); });
-
     const openTrace = () => {
       ctx.drawer.open("What moves your FI date", el("p", { class: "muted" }, "Working it out..."));
       window.setTimeout(() => ctx.drawer.open("What moves your FI date", fiTraceBody(traceFiDate(ctx.household, "likely"))), 20);
     };
 
-    const yearsFromNow = (year: number | null) => (year === null ? 0 : year - t.rows[0]!.year);
-    const retirementIndex = yearsFromNow(likely.retirementYear);
+    const firstYear = t.rows[0]!.year;
+    const retirementIndex = likely.retirementYear === null ? 0 : likely.retirementYear - firstYear;
     const lastIndex = t.rows.length - 1;
 
     const figures = el(
       "section",
       { class: "card key-figures", "aria-label": "Key figures, likely band" },
-      el("div", { class: "card__title" }, el("h2", {}, "The likely band, in numbers"), el("label", { class: "toggle" }, toggle, el("span", {}, "Show future dollars"))),
+      el("div", { class: "card__title" }, el("h2", {}, "The likely band, in numbers"), toggleButton(nominal ? "Showing future dollars" : "Show future dollars", nominal, (next) => { nominal = next; render(); })),
       fieldRow({
         label: "Assets when work income stops",
         value: t.assetsAtRetirement === null ? "Not reached" : dollars(display(t.assetsAtRetirement, Math.max(0, retirementIndex - 1))),
@@ -92,7 +102,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
         value: dollars(display(t.estate, lastIndex)),
         kind: "computed",
         onTapValue: () => ctx.drawer.open(`Left at age ${likelyBand.planToAge}`, computedFromBody([
-          "Everything above, then every retirement year: spending by life phase, Social Security from your claiming age, withdrawals in order (cash, taxable, pretax, Roth, HSA), and the taxes those withdrawals create.",
+          "Everything above, then every retirement year: spending by life phase, Social Security from your claiming age, withdrawals in order (cash above your reserve, taxable, pretax, Roth, then the reserve), and the taxes those withdrawals create.",
         ])),
       }),
       fieldRow({
@@ -117,12 +127,12 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
       }),
     );
 
-    const flags = [...new Set([...t.flags, ...t.rows.flatMap((r) => r.flags)])].slice(0, 6);
+    const flags = [...new Set([...t.flags, ...t.rows.flatMap((r) => r.flags)])].slice(0, 8);
 
     root.append(
       el("h1", { class: "screen-title" }, "Your FI date"),
       headlineResult(result, openTrace),
-      el("section", { class: "card" }, el("div", { class: "card__title" }, el("h2", {}, "Net worth over time")), bandChart(result, { display, dollarsLabel: dollarsLabel() })),
+      el("section", { class: "card" }, el("div", { class: "card__title" }, el("h2", {}, "Net worth over time")), bandChart(result, { display, dollarsLabel: dollarsLabel(), width: chartWidth() })),
       figures,
       el("section", { class: "stack" }, ...flags.map((f) => gentleFlag(f))),
       el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: ctx.goToEntry }, "Change my numbers")),
@@ -130,6 +140,21 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     );
   }
 
-  render();
+  // Draw once the screen is on the page, so the chart can be sized to its real width,
+  // and redraw when the width changes.
+  window.setTimeout(render, 0);
+  let lastWidth = 0;
+  const onResize = () => {
+    if (!root.isConnected) {
+      window.removeEventListener("resize", onResize);
+      return;
+    }
+    const w = chartWidth();
+    if (w !== lastWidth) {
+      lastWidth = w;
+      render();
+    }
+  };
+  window.addEventListener("resize", onResize);
   return root;
 }

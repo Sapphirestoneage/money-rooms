@@ -4,7 +4,7 @@
  */
 
 import type { Household } from "../engine";
-import { createDrawer } from "./components/trace-drawer";
+import { sharedDrawer } from "./components/trace-drawer";
 import { clear, el } from "./dom";
 import { entryScreen } from "./screens/entry";
 import { resultScreen } from "./screens/result";
@@ -30,8 +30,7 @@ function boot(): void {
   let household: Household = store.load();
   const save = () => store.save(household);
 
-  const drawer = createDrawer();
-  document.body.append(drawer.backdrop, drawer.root);
+  const drawer = sharedDrawer();
 
   const nav = el("nav", { class: "topbar__nav", "aria-label": "Screens" }, el("a", { href: "#/entry" }, "Your numbers"), el("a", { href: "#/result" }, "Your FI date"));
   const topbar = el("header", { class: "topbar" }, el("a", { class: "topbar__brand", href: "#/entry" }, "Money Rooms"), nav);

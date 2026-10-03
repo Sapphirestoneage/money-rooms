@@ -7,6 +7,7 @@
  * year t is the nominal payment divided by (1 + inflation)^t.
  */
 
+import engineDefaults from "../../data/engine-defaults.json";
 import type { DebtAccount } from "../model";
 import { parseYearMonth } from "../model";
 
@@ -85,4 +86,16 @@ export function debtYear(d: DebtYearInput): DebtYearResult {
     paidOff: endBalance < 0.005,
     paymentBelowInterest: realScheduled < interestFullYear - 1e-9,
   };
+}
+
+/**
+ * A stand-in for a debt's minimum payment until the person enters the real one
+ * (data dictionary 3.6): each month's interest plus a set percent of the balance.
+ * Annual dollars. The entry screen shows it marked roughly, never as a silent zero.
+ */
+export function estimatedMinimumPaymentAnnual(balance: number, nominalRatePercent: number): number {
+  if (!(balance > 0)) return 0;
+  const percentOfBalance = engineDefaults.estimatedMinimumPayment.percentOfBalancePerMonth;
+  const monthly = (balance * nominalRatePercent) / 100 / 12 + (balance * percentOfBalance) / 100;
+  return monthly * 12;
 }

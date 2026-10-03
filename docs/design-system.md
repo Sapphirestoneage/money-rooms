@@ -93,6 +93,12 @@ Small pill showing the number's kind.
 | computed | Computed | `--color-computed` |
 | notForMe | Not for me | `--color-notforme` |
 
+**Every displayed number carries its kind.** Entered values show an editable badge. Results show a Computed badge, including the headline age and its range. Chart values carry their kind as a tooltip and in the chart's caption. A rough number is also written with "about" (style guide section 3).
+
+**Tapping a badge opens the drawer** with the kind's explanation. Where the kind can be changed (an entered value), the drawer offers the choices: Known, Roughly, Look it up. Browser alert boxes are never used.
+
+The badge's pill is small, but its tap target is at least 44px.
+
 ### Preset picker
 A list of account or category types with plain names and a one-line description. Picking one fills its fields.
 
@@ -111,10 +117,16 @@ Likely in 2042. Could be as soon as 2039 or as late as 2047.
 Opens from any computed number. Lists the inputs that produced it, ranked by how much each one moves it, each linking to its field.
 
 ### Band chart
-Balance over time with three lines (best, likely, worst) using the band tokens. Labeled directly on the lines, no legend box.
+Balance over time with three lines (best, likely, worst) using the band tokens. Labeled directly on the lines, no legend box. The chart is drawn at the width it is shown, so labels stay at least 11px on a 360px screen.
 
 ### Gentle flag
-For proof-of-cash mismatches, stale numbers, and payments that don't cover interest. Attention color, one plain sentence, one action.
+For proof-of-cash mismatches, stale numbers, payments that don't cover interest, and estimates standing in for a required number (a debt's payment before the person enters it). Attention color, one plain sentence, one action.
+
+### Confirm panel
+Shown inline, where the person tapped, before anything replaces or removes their data (loading an example, undoing an import). One plain sentence saying what will happen, then two buttons: the action in its own words ("Replace my numbers") and a way out ("Keep what I have"). Browser confirm boxes are never used.
+
+### Toggle button
+A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 
 ---
 

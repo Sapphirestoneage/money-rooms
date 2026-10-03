@@ -1,13 +1,16 @@
 /**
  * Band chart (design system 5): balance over time, three lines, labeled
- * directly on the lines, no legend box. Includes a text summary.
+ * directly on the lines, no legend box. Includes a text summary. Every value
+ * carries its kind as a tooltip, and the caption carries a Computed badge.
  *
- * The only arithmetic here maps dollars and years to pixels. No financial math.
+ * The chart is drawn at the width it is shown, so its labels stay readable on
+ * a 360px screen. The only arithmetic here maps dollars and years to pixels.
  */
 
 import type { BandName, ProjectionResult } from "../../engine";
 import { el, svg } from "../dom";
-import { dollarsShort } from "../format";
+import { KIND_LABEL, dollarsShort } from "../format";
+import { kindBadge } from "./kind-badge";
 
 const BANDS: readonly BandName[] = ["best", "likely", "worst"];
 const LABEL: Record<BandName, string> = { best: "Best", likely: "Likely", worst: "Worst" };
@@ -16,12 +19,16 @@ export interface BandChartOptions {
   /** Converts a real value in a given year to the value to plot (identity for today's dollars). */
   display: (real: number, yearIndex: number) => number;
   dollarsLabel: string;
+  /** The width in CSS pixels the chart will be shown at. */
+  width: number;
 }
 
 export function bandChart(result: ProjectionResult, o: BandChartOptions): HTMLElement {
-  const width = 720;
-  const height = 320;
-  const pad = { top: 16, right: 64, bottom: 32, left: 8 };
+  const width = Math.max(260, Math.min(720, Math.round(o.width)));
+  const compact = width < 480;
+  const height = compact ? 260 : 320;
+  const pad = { top: 20, right: compact ? 52 : 64, bottom: 28, left: 8 };
+  const tip = `${KIND_LABEL.computed}: worked out by the engine from your numbers.`;
 
   const series = BANDS.map((band) => ({
     band,
@@ -39,35 +46,49 @@ export function bandChart(result: ProjectionResult, o: BandChartOptions): HTMLEl
   const x = (year: number) => pad.left + ((year - minYear) / Math.max(1, maxYear - minYear)) * (width - pad.left - pad.right);
   const y = (value: number) => pad.top + (1 - (value - minValue) / (maxValue - minValue)) * (height - pad.top - pad.bottom);
 
-  const chart = svg("svg", { class: "band-chart", viewBox: `0 0 ${width} ${height}`, role: "img", "aria-labelledby": "band-chart-title band-chart-desc" });
+  const chart = svg("svg", { class: "band-chart", viewBox: `0 0 ${width} ${height}`, width, height, role: "img", "aria-labelledby": "band-chart-title band-chart-desc" });
   chart.append(svg("title", { id: "band-chart-title" }, "Net worth over time, three bands"));
   const desc = svg("desc", { id: "band-chart-desc" });
   chart.append(desc);
 
+  const label = (cls: string, attrs: Record<string, string | number>, text: string) => {
+    const node = svg("text", { class: cls, ...attrs }, text);
+    node.append(svg("title", {}, `${text}. ${tip}`));
+    return node;
+  };
+
   // Zero line and a few grid lines.
   chart.append(svg("line", { class: "band-chart__axis", x1: pad.left, x2: width - pad.right, y1: y(0), y2: y(0) }));
-  for (const frac of [0.25, 0.5, 0.75, 1]) {
+  for (const frac of compact ? [0.5, 1] : [0.25, 0.5, 0.75, 1]) {
     const v = minValue + frac * (maxValue - minValue);
     chart.append(svg("line", { class: "band-chart__grid", x1: pad.left, x2: width - pad.right, y1: y(v), y2: y(v) }));
-    chart.append(svg("text", { class: "band-chart__label", x: width - pad.right + 6, y: y(v) + 4 }, dollarsShort(v)));
+    chart.append(label("band-chart__label", { x: width - pad.right + 6, y: y(v) + 4 }, dollarsShort(v)));
   }
 
-  // Year ticks every ten years.
-  for (let yr = Math.ceil(minYear / 10) * 10; yr <= maxYear; yr += 10) {
+  // Year ticks: every ten years, or every twenty when narrow.
+  const step = compact ? 20 : 10;
+  for (let yr = Math.ceil(minYear / step) * step; yr <= maxYear; yr += step) {
     chart.append(svg("text", { class: "band-chart__label", x: x(yr), y: height - 8, "text-anchor": "middle" }, String(yr)));
   }
 
   const summaries: string[] = [];
+  const labelYs: number[] = [];
   for (const s of series) {
     const d = s.points.map((p, i) => `${i === 0 ? "M" : "L"}${x(p.year).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ");
-    chart.append(svg("path", { class: `band-chart__line band-chart__line--${s.band}`, d }));
+    const path = svg("path", { class: `band-chart__line band-chart__line--${s.band}`, d });
+    path.append(svg("title", {}, `${LABEL[s.band]} band. ${tip}`));
+    chart.append(path);
     if (s.retirementYear !== null) {
       chart.append(svg("line", { class: "band-chart__marker", x1: x(s.retirementYear), x2: x(s.retirementYear), y1: pad.top, y2: height - pad.bottom }));
     }
-    // Label at the point where the line is highest, so the three labels rarely collide.
-    const peak = s.points.reduce((best, p) => (p.value > best.value ? p : best), s.points[0]!);
-    chart.append(svg("text", { class: `band-chart__label band-chart__label--${s.band}`, x: x(peak.year), y: y(peak.value) - 6, "text-anchor": "middle" }, LABEL[s.band]));
+    // Label each line at its right end, nudged apart so the three names never overlap.
     const last = s.points[s.points.length - 1]!;
+    const peak = s.points.reduce((best, p) => (p.value > best.value ? p : best), s.points[0]!);
+    let ly = y(last.value) - 6;
+    for (const taken of labelYs) if (Math.abs(taken - ly) < 18) ly = taken - 18;
+    ly = Math.max(pad.top - 6, ly);
+    labelYs.push(ly);
+    chart.append(label(`band-chart__label band-chart__label--${s.band}`, { x: width - pad.right - 4, y: ly, "text-anchor": "end" }, LABEL[s.band]));
     summaries.push(
       `${LABEL[s.band]}: ${s.retirementYear !== null ? `retire in ${s.retirementYear}, ` : "never fully funded, "}peak ${dollarsShort(peak.value)} at age ${peak.age}, ${dollarsShort(last.value)} at age ${last.age}.`,
     );
@@ -76,8 +97,8 @@ export function bandChart(result: ProjectionResult, o: BandChartOptions): HTMLEl
 
   return el(
     "figure",
-    { class: "stack" },
+    { class: "stack chart-figure" },
     chart,
-    el("figcaption", { class: "chart-summary" }, `Net worth by year in ${o.dollarsLabel}. ${summaries.join(" ")}`),
+    el("figcaption", { class: "chart-summary" }, el("span", { class: "chart-summary__kind" }, kindBadge("computed")), `Net worth by year in ${o.dollarsLabel}. ${summaries.join(" ")}`),
   );
 }

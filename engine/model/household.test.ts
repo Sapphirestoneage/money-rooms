@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { emptyHousehold, missingLevelOneAnswers } from "./household";
+import { debtsNeedingRate, emptyHousehold, missingLevelOneAnswers } from "./household";
+import { debtFromPreset } from "./presets";
 import { userValue } from "./values";
 
 const asOf = "2026-10-02";
@@ -33,5 +34,20 @@ describe("empty household", () => {
     h.spending = { kind: "rows", rows: [{ id: "all", category: "everythingElse", annual: userValue(30000, asOf, "roughly") }] };
     h.accounts = { kind: "none", asOf };
     expect(missingLevelOneAnswers(h)).toEqual([]);
+  });
+});
+
+describe("debtsNeedingRate", () => {
+  it("lists debts whose rate is still a look-it-up placeholder from the preset", () => {
+    const h = emptyHousehold(asOf);
+    const car = debtFromPreset("auto", "car", userValue(12000, asOf), {
+      rate: { value: 0, asOf, source: "preset", confidence: "lookUp" },
+      minimumPaymentAnnual: userValue(3600, asOf),
+    }, asOf);
+    const card = debtFromPreset("creditCard", "card", userValue(2000, asOf), { rate: userValue(24, asOf), minimumPaymentAnnual: userValue(600, asOf) }, asOf);
+    h.accounts = { kind: "rows", rows: [car, card] };
+    expect(debtsNeedingRate(h)).toEqual([{ id: "car", label: "Car loan" }]);
+    car.rate = userValue(6.5, asOf);
+    expect(debtsNeedingRate(h)).toEqual([]);
   });
 });

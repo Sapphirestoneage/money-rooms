@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { debtFromPreset, userValue } from "../model";
-import { debtYear, nominalRateFor, realRate } from "./debts";
+import { debtYear, estimatedMinimumPaymentAnnual, nominalRateFor, realRate } from "./debts";
 
 const asOf = "2026-10-02";
 
@@ -66,5 +66,18 @@ describe("debtYear", () => {
 
   it("a zero balance does nothing", () => {
     expect(debtYear({ ...base, balance: 0 })).toMatchObject({ paid: 0, endBalance: 0, paidOff: true });
+  });
+});
+
+describe("estimatedMinimumPaymentAnnual", () => {
+  it("is each month's interest plus 1% of the balance, annualized", () => {
+    // 6,800 at 26.9%: interest 152.43 a month, plus 68 = 220.43 a month, 2,645.20 a year
+    expect(estimatedMinimumPaymentAnnual(6800, 26.9)).toBeCloseTo(6800 * 0.269 + 6800 * 0.12, 6);
+    // A 0% loan from family: 1% of 5,000 a month = 600 a year
+    expect(estimatedMinimumPaymentAnnual(5000, 0)).toBeCloseTo(600, 6);
+  });
+
+  it("is zero for no balance", () => {
+    expect(estimatedMinimumPaymentAnnual(0, 20)).toBe(0);
   });
 });

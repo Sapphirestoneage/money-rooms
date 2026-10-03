@@ -27,5 +27,11 @@
     "status": "Locked (IRS)",
     "owner": "data/tax/2026.json earlyWithdrawalPenalty.beforeAge",
     "meaning": "M1 applies the penalty when age at year end is below this, so the year a person turns 59 is penalized and the year they turn 60 is not."
+  },
+  "estimatedMinimumPayment": {
+    "percentOfBalancePerMonth": 1,
+    "status": "Proposed",
+    "owner": "data dictionary 3.6",
+    "meaning": "Until a debt's minimum payment is entered, the app shows an estimate: each month's interest plus this percent of the balance. It is marked roughly and flagged, never silently zero."
   }
 }
