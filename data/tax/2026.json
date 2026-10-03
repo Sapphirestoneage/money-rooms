@@ -1,0 +1,2528 @@
+{
+  "_meta": {
+    "year": 2026,
+    "description": "Tax tables for the M1 tax set (docs/engine-spec.md section 5). Rates are percents. Brackets are marginal: each 'from' is the taxable income above which that rate applies, and the last bracket runs to infinity. The engine reads tax numbers only from this file.",
+    "version": 1,
+    "retrieved": "2026-10-02",
+    "retrievedBy": "Claude Code, from the documents cited in each section. Reviewed by Eli before use.",
+    "conventions": {
+      "rates": "percent (6.2 means 6.2%)",
+      "brackets": "ascending list of { from, rate }; marginal; last bracket open-ended",
+      "stateMethod": "Decision E9. M1 applies each state's brackets to income minus the state standard deduction where that deduction is a plain dollar amount. Personal exemptions, credits, local (city and county) income taxes, benefit recapture, and special provisions are not modeled until M2. States whose source is 'secondary' carry confidence lookUp until verified against the state's own revenue department in M2."
+    }
+  },
+  "federal": {
+    "sources": {
+      "bracketsAndStandardDeduction": {
+        "document": "IRS Revenue Procedure 2025-32, sections 4.01 (tax rate tables) and 4.14 (standard deduction)",
+        "url": "https://www.irs.gov/pub/irs-drop/rp-25-32.pdf",
+        "summary": "https://www.irs.gov/newsroom/irs-releases-tax-inflation-adjustments-for-tax-year-2026-including-amendments-from-the-one-big-beautiful-bill",
+        "retrieved": "2026-10-02"
+      },
+      "fica": {
+        "document": "Social Security Administration, 2026 Cost-of-Living Adjustment Fact Sheet",
+        "url": "https://www.ssa.gov/cola/factsheets/2026.html",
+        "retrieved": "2026-10-02"
+      },
+      "additionalMedicare": {
+        "document": "IRS, Questions and Answers for the Additional Medicare Tax",
+        "url": "https://www.irs.gov/businesses/small-businesses-self-employed/questions-and-answers-for-the-additional-medicare-tax",
+        "retrieved": "2026-10-02"
+      },
+      "selfEmployment": {
+        "document": "IRS Tax Topic 554, Self-Employment Tax",
+        "url": "https://www.irs.gov/taxtopics/tc554",
+        "retrieved": "2026-10-02"
+      },
+      "earlyWithdrawal": {
+        "document": "IRS Tax Topic 558, Additional Tax on Early Distributions from Retirement Plans Other Than IRAs",
+        "url": "https://www.irs.gov/taxtopics/tc558",
+        "retrieved": "2026-10-02"
+      },
+      "retirementLimits": {
+        "document": "IRS Notice 2025-67 (news release IR-2025-111)",
+        "url": "https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500",
+        "retrieved": "2026-10-02"
+      },
+      "hsaLimits": {
+        "document": "IRS Revenue Procedure 2025-19, section 2.01; catch-up is statutory under IRC section 223(b)(3)",
+        "url": "https://www.irs.gov/pub/irs-drop/rp-25-19.pdf",
+        "retrieved": "2026-10-02"
+      }
+    },
+    "ordinaryBrackets": {
+      "single": [
+        {
+          "from": 0,
+          "rate": 10
+        },
+        {
+          "from": 12400,
+          "rate": 12
+        },
+        {
+          "from": 50400,
+          "rate": 22
+        },
+        {
+          "from": 105700,
+          "rate": 24
+        },
+        {
+          "from": 201775,
+          "rate": 32
+        },
+        {
+          "from": 256225,
+          "rate": 35
+        },
+        {
+          "from": 640600,
+          "rate": 37
+        }
+      ],
+      "marriedJoint": [
+        {
+          "from": 0,
+          "rate": 10
+        },
+        {
+          "from": 24800,
+          "rate": 12
+        },
+        {
+          "from": 100800,
+          "rate": 22
+        },
+        {
+          "from": 211400,
+          "rate": 24
+        },
+        {
+          "from": 403550,
+          "rate": 32
+        },
+        {
+          "from": 512450,
+          "rate": 35
+        },
+        {
+          "from": 768700,
+          "rate": 37
+        }
+      ],
+      "marriedSeparate": [
+        {
+          "from": 0,
+          "rate": 10
+        },
+        {
+          "from": 12400,
+          "rate": 12
+        },
+        {
+          "from": 50400,
+          "rate": 22
+        },
+        {
+          "from": 105700,
+          "rate": 24
+        },
+        {
+          "from": 201775,
+          "rate": 32
+        },
+        {
+          "from": 256225,
+          "rate": 35
+        },
+        {
+          "from": 384350,
+          "rate": 37
+        }
+      ],
+      "headOfHousehold": [
+        {
+          "from": 0,
+          "rate": 10
+        },
+        {
+          "from": 17700,
+          "rate": 12
+        },
+        {
+          "from": 67450,
+          "rate": 22
+        },
+        {
+          "from": 105700,
+          "rate": 24
+        },
+        {
+          "from": 201750,
+          "rate": 32
+        },
+        {
+          "from": 256200,
+          "rate": 35
+        },
+        {
+          "from": 640600,
+          "rate": 37
+        }
+      ]
+    },
+    "standardDeduction": {
+      "single": 16100,
+      "marriedJoint": 32200,
+      "marriedSeparate": 16100,
+      "headOfHousehold": 24150,
+      "additionalAgedOrBlind": 1650,
+      "additionalAgedOrBlindUnmarried": 2050
+    },
+    "fica": {
+      "socialSecurityRate": 6.2,
+      "socialSecurityWageBase": 184500,
+      "medicareRate": 1.45,
+      "medicareWageBase": null,
+      "additionalMedicareRate": 0.9,
+      "additionalMedicareThreshold": {
+        "single": 200000,
+        "marriedJoint": 250000,
+        "marriedSeparate": 125000,
+        "headOfHousehold": 200000
+      },
+      "notes": [
+        "Employee share shown. The employer pays a matching 6.2% and 1.45%.",
+        "Thresholds for the additional Medicare tax are not indexed."
+      ]
+    },
+    "selfEmployment": {
+      "rate": 15.3,
+      "socialSecurityPortion": 12.4,
+      "medicarePortion": 2.9,
+      "netEarningsFactor": 0.9235,
+      "halfDeductibleFromIncome": true,
+      "minimumNetEarnings": 400,
+      "notes": [
+        "The 12.4% portion stops at the Social Security wage base. The 2.9% portion has no cap. The additional 0.9% Medicare tax applies above the thresholds."
+      ]
+    },
+    "earlyWithdrawalPenalty": {
+      "rate": 10,
+      "beforeAge": 59.5,
+      "notes": [
+        "Exceptions (72(t), rule of 55, and others) are M2 strategies. M1 applies the penalty to every pretax or Roth-earnings withdrawal before 59.5."
+      ]
+    },
+    "contributionLimits": {
+      "workplaceElective": 24500,
+      "workplaceCatchUp50": 8000,
+      "workplaceCatchUp60to63": 11250,
+      "ira": 7500,
+      "iraCatchUp50": 1100,
+      "hsaSelfOnly": 4400,
+      "hsaFamily": 8750,
+      "hsaCatchUp55": 1000,
+      "rothIraPhaseOut": {
+        "single": [
+          153000,
+          168000
+        ],
+        "headOfHousehold": [
+          153000,
+          168000
+        ],
+        "marriedJoint": [
+          242000,
+          252000
+        ],
+        "marriedSeparate": null
+      },
+      "notes": [
+        "Married filing separately Roth phase-out was not in the cited source and is left null until sourced.",
+        "The IRA limit is shared between traditional and Roth. Workplace limits cover 401(k), 403(b), governmental 457, and the TSP."
+      ]
+    }
+  },
+  "states": {
+    "AK": {
+      "name": "Alaska",
+      "structure": "none",
+      "brackets": null,
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "AL": {
+      "name": "Alabama",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 2
+          },
+          {
+            "from": 500,
+            "rate": 4
+          },
+          {
+            "from": 3000,
+            "rate": 5
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 2
+          },
+          {
+            "from": 1000,
+            "rate": 4
+          },
+          {
+            "from": 6000,
+            "rate": 5
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 3000,
+        "marriedJoint": 8500
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "AR": {
+      "name": "Arkansas",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 2
+          },
+          {
+            "from": 4600,
+            "rate": 3.9
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 2
+          },
+          {
+            "from": 4600,
+            "rate": 3.9
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 2470,
+        "marriedJoint": 4940
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Separate lower tables apply under about $92,300 of net income (footnote g); M1 uses the main schedule."
+      ]
+    },
+    "AZ": {
+      "name": "Arizona",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 2.5
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 2.5
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8350,
+        "marriedJoint": 16700
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "CA": {
+      "name": "California",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 1
+          },
+          {
+            "from": 11079,
+            "rate": 2
+          },
+          {
+            "from": 26264,
+            "rate": 4
+          },
+          {
+            "from": 41452,
+            "rate": 6
+          },
+          {
+            "from": 57542,
+            "rate": 8
+          },
+          {
+            "from": 72724,
+            "rate": 9.3
+          },
+          {
+            "from": 371479,
+            "rate": 10.3
+          },
+          {
+            "from": 445771,
+            "rate": 11.3
+          },
+          {
+            "from": 742953,
+            "rate": 12.3
+          },
+          {
+            "from": 1000000,
+            "rate": 13.3
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 1
+          },
+          {
+            "from": 22158,
+            "rate": 2
+          },
+          {
+            "from": 52528,
+            "rate": 4
+          },
+          {
+            "from": 82904,
+            "rate": 6
+          },
+          {
+            "from": 115084,
+            "rate": 8
+          },
+          {
+            "from": 145448,
+            "rate": 9.3
+          },
+          {
+            "from": 742958,
+            "rate": 10.3
+          },
+          {
+            "from": 891542,
+            "rate": 11.3
+          },
+          {
+            "from": 1000000,
+            "rate": 12.3
+          },
+          {
+            "from": 1485906,
+            "rate": 13.3
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 5540,
+        "marriedJoint": 11080
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Bracket widths are 2025 inflation-adjusted values; 2026 widths were not published at compilation (Tax Foundation footnote j).",
+        "Includes the 1% mental health services tax above $1,000,000. Excludes the 1.3% state disability insurance payroll tax."
+      ]
+    },
+    "CO": {
+      "name": "Colorado",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 4.4
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 4.4
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "marriedJoint": 32200
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "CT": {
+      "name": "Connecticut",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 2
+          },
+          {
+            "from": 10000,
+            "rate": 4.5
+          },
+          {
+            "from": 50000,
+            "rate": 5.5
+          },
+          {
+            "from": 100000,
+            "rate": 6
+          },
+          {
+            "from": 200000,
+            "rate": 6.5
+          },
+          {
+            "from": 250000,
+            "rate": 6.9
+          },
+          {
+            "from": 500000,
+            "rate": 6.99
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 2
+          },
+          {
+            "from": 20000,
+            "rate": 4.5
+          },
+          {
+            "from": 100000,
+            "rate": 5.5
+          },
+          {
+            "from": 200000,
+            "rate": 6
+          },
+          {
+            "from": 400000,
+            "rate": 6.5
+          },
+          {
+            "from": 500000,
+            "rate": 6.9
+          },
+          {
+            "from": 1000000,
+            "rate": 6.99
+          }
+        ]
+      },
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Connecticut's benefit recapture and phase-outs (footnote p) are not modeled in M1."
+      ]
+    },
+    "DC": {
+      "name": "Washington DC",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 4
+          },
+          {
+            "from": 10000,
+            "rate": 6
+          },
+          {
+            "from": 40000,
+            "rate": 6.5
+          },
+          {
+            "from": 60000,
+            "rate": 8.5
+          },
+          {
+            "from": 250000,
+            "rate": 9.25
+          },
+          {
+            "from": 500000,
+            "rate": 9.75
+          },
+          {
+            "from": 1000000,
+            "rate": 10.75
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 4
+          },
+          {
+            "from": 10000,
+            "rate": 6
+          },
+          {
+            "from": 40000,
+            "rate": 6.5
+          },
+          {
+            "from": 60000,
+            "rate": 8.5
+          },
+          {
+            "from": 250000,
+            "rate": 9.25
+          },
+          {
+            "from": 500000,
+            "rate": 9.75
+          },
+          {
+            "from": 1000000,
+            "rate": 10.75
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "marriedJoint": 32200
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "DE": {
+      "name": "Delaware",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 2000,
+            "rate": 2.2
+          },
+          {
+            "from": 5000,
+            "rate": 3.9
+          },
+          {
+            "from": 10000,
+            "rate": 4.8
+          },
+          {
+            "from": 20000,
+            "rate": 5.2
+          },
+          {
+            "from": 25000,
+            "rate": 5.55
+          },
+          {
+            "from": 60000,
+            "rate": 6.6
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 2000,
+            "rate": 2.2
+          },
+          {
+            "from": 5000,
+            "rate": 3.9
+          },
+          {
+            "from": 10000,
+            "rate": 4.8
+          },
+          {
+            "from": 20000,
+            "rate": 5.2
+          },
+          {
+            "from": 25000,
+            "rate": 5.55
+          },
+          {
+            "from": 60000,
+            "rate": 6.6
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 3250,
+        "marriedJoint": 6500
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "FL": {
+      "name": "Florida",
+      "structure": "none",
+      "brackets": null,
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "GA": {
+      "name": "Georgia",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 5.19
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 5.19
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 12000,
+        "marriedJoint": 24000
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "HI": {
+      "name": "Hawaii",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 1.4
+          },
+          {
+            "from": 9600,
+            "rate": 3.2
+          },
+          {
+            "from": 14400,
+            "rate": 5.5
+          },
+          {
+            "from": 19200,
+            "rate": 6.4
+          },
+          {
+            "from": 24000,
+            "rate": 6.8
+          },
+          {
+            "from": 36000,
+            "rate": 7.2
+          },
+          {
+            "from": 48000,
+            "rate": 7.6
+          },
+          {
+            "from": 125000,
+            "rate": 7.9
+          },
+          {
+            "from": 175000,
+            "rate": 8.25
+          },
+          {
+            "from": 225000,
+            "rate": 9
+          },
+          {
+            "from": 275000,
+            "rate": 10
+          },
+          {
+            "from": 325000,
+            "rate": 11
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 1.4
+          },
+          {
+            "from": 19200,
+            "rate": 3.2
+          },
+          {
+            "from": 28800,
+            "rate": 5.5
+          },
+          {
+            "from": 38400,
+            "rate": 6.4
+          },
+          {
+            "from": 48000,
+            "rate": 6.8
+          },
+          {
+            "from": 72000,
+            "rate": 7.2
+          },
+          {
+            "from": 96000,
+            "rate": 7.6
+          },
+          {
+            "from": 250000,
+            "rate": 7.9
+          },
+          {
+            "from": 350000,
+            "rate": 8.25
+          },
+          {
+            "from": 450000,
+            "rate": 9
+          },
+          {
+            "from": 550000,
+            "rate": 10
+          },
+          {
+            "from": 650000,
+            "rate": 11
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 4400,
+        "marriedJoint": 8800
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "IA": {
+      "name": "Iowa",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 3.8
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 3.8
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "marriedJoint": 32200
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "ID": {
+      "name": "Idaho",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 4811,
+            "rate": 5.3
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 9622,
+            "rate": 5.3
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "marriedJoint": 32200
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Bracket widths are 2025 inflation-adjusted values (footnote j)."
+      ]
+    },
+    "IL": {
+      "name": "Illinois",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 4.95
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 4.95
+          }
+        ]
+      },
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "IN": {
+      "name": "Indiana",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 2.95
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 2.95
+          }
+        ]
+      },
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "KS": {
+      "name": "Kansas",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 5.2
+          },
+          {
+            "from": 23000,
+            "rate": 5.58
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 5.2
+          },
+          {
+            "from": 46000,
+            "rate": 5.58
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 3605,
+        "marriedJoint": 8240
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "KY": {
+      "name": "Kentucky",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 3.5
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 3.5
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 3360,
+        "marriedJoint": 3360
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Kentucky's standard deduction is not doubled for joint filers."
+      ]
+    },
+    "LA": {
+      "name": "Louisiana",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 3
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 3
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 12875,
+        "marriedJoint": 25750
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "MA": {
+      "name": "Massachusetts",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 5
+          },
+          {
+            "from": 1083150,
+            "rate": 9
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 5
+          },
+          {
+            "from": 1083150,
+            "rate": 9
+          }
+        ]
+      },
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Bracket widths are 2025 inflation-adjusted values (footnote j)."
+      ]
+    },
+    "MD": {
+      "name": "Maryland",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 2
+          },
+          {
+            "from": 1000,
+            "rate": 3
+          },
+          {
+            "from": 2000,
+            "rate": 4
+          },
+          {
+            "from": 3000,
+            "rate": 4.75
+          },
+          {
+            "from": 100000,
+            "rate": 5
+          },
+          {
+            "from": 125000,
+            "rate": 5.25
+          },
+          {
+            "from": 150000,
+            "rate": 5.5
+          },
+          {
+            "from": 250000,
+            "rate": 5.75
+          },
+          {
+            "from": 500000,
+            "rate": 6.25
+          },
+          {
+            "from": 1000000,
+            "rate": 6.5
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 2
+          },
+          {
+            "from": 1000,
+            "rate": 3
+          },
+          {
+            "from": 2000,
+            "rate": 4
+          },
+          {
+            "from": 3000,
+            "rate": 4.75
+          },
+          {
+            "from": 150000,
+            "rate": 5
+          },
+          {
+            "from": 175000,
+            "rate": 5.25
+          },
+          {
+            "from": 225000,
+            "rate": 5.5
+          },
+          {
+            "from": 300000,
+            "rate": 5.75
+          },
+          {
+            "from": 600000,
+            "rate": 6.25
+          },
+          {
+            "from": 1200000,
+            "rate": 6.5
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 3350,
+        "marriedJoint": 6700
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "ME": {
+      "name": "Maine",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 5.8
+          },
+          {
+            "from": 27399,
+            "rate": 6.75
+          },
+          {
+            "from": 64849,
+            "rate": 7.15
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 5.8
+          },
+          {
+            "from": 54849,
+            "rate": 6.75
+          },
+          {
+            "from": 129749,
+            "rate": 7.15
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8350,
+        "marriedJoint": 16700
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "MI": {
+      "name": "Michigan",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 4.25
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 4.25
+          }
+        ]
+      },
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "MN": {
+      "name": "Minnesota",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 5.35
+          },
+          {
+            "from": 33310,
+            "rate": 6.8
+          },
+          {
+            "from": 109430,
+            "rate": 7.85
+          },
+          {
+            "from": 203150,
+            "rate": 9.85
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 5.35
+          },
+          {
+            "from": 48700,
+            "rate": 6.8
+          },
+          {
+            "from": 193480,
+            "rate": 7.85
+          },
+          {
+            "from": 337930,
+            "rate": 9.85
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 15300,
+        "marriedJoint": 30600
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "MO": {
+      "name": "Missouri",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 1348,
+            "rate": 2
+          },
+          {
+            "from": 2696,
+            "rate": 2.5
+          },
+          {
+            "from": 4044,
+            "rate": 3
+          },
+          {
+            "from": 5392,
+            "rate": 3.5
+          },
+          {
+            "from": 6740,
+            "rate": 4
+          },
+          {
+            "from": 8088,
+            "rate": 4.5
+          },
+          {
+            "from": 9436,
+            "rate": 4.7
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 1348,
+            "rate": 2
+          },
+          {
+            "from": 2696,
+            "rate": 2.5
+          },
+          {
+            "from": 4044,
+            "rate": 3
+          },
+          {
+            "from": 5392,
+            "rate": 3.5
+          },
+          {
+            "from": 6740,
+            "rate": 4
+          },
+          {
+            "from": 8088,
+            "rate": 4.5
+          },
+          {
+            "from": 9436,
+            "rate": 4.7
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "marriedJoint": 32200
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "MS": {
+      "name": "Mississippi",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 10000,
+            "rate": 4
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 10000,
+            "rate": 4
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 2300,
+        "marriedJoint": 4600
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Mississippi's first $10,000 is untaxed; shown as a 0% bracket."
+      ]
+    },
+    "MT": {
+      "name": "Montana",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 4.7
+          },
+          {
+            "from": 47500,
+            "rate": 5.65
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 4.7
+          },
+          {
+            "from": 95000,
+            "rate": 5.65
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "marriedJoint": 32200
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "NC": {
+      "name": "North Carolina",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 3.99
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 3.99
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 12750,
+        "marriedJoint": 25500
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "ND": {
+      "name": "North Dakota",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 48475,
+            "rate": 1.95
+          },
+          {
+            "from": 244825,
+            "rate": 2.5
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 80975,
+            "rate": 1.95
+          },
+          {
+            "from": 298075,
+            "rate": 2.5
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "marriedJoint": 32200
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Bracket widths are 2025 inflation-adjusted values (footnote j)."
+      ]
+    },
+    "NE": {
+      "name": "Nebraska",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 2.46
+          },
+          {
+            "from": 4130,
+            "rate": 3.51
+          },
+          {
+            "from": 24760,
+            "rate": 4.55
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 2.46
+          },
+          {
+            "from": 8250,
+            "rate": 3.51
+          },
+          {
+            "from": 49530,
+            "rate": 4.55
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8850,
+        "marriedJoint": 17700
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "NH": {
+      "name": "New Hampshire",
+      "structure": "none",
+      "brackets": null,
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "New Hampshire repealed its interest and dividends tax as of 2025."
+      ]
+    },
+    "NJ": {
+      "name": "New Jersey",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 1.4
+          },
+          {
+            "from": 20000,
+            "rate": 1.75
+          },
+          {
+            "from": 35000,
+            "rate": 3.5
+          },
+          {
+            "from": 40000,
+            "rate": 5.525
+          },
+          {
+            "from": 75000,
+            "rate": 6.37
+          },
+          {
+            "from": 500000,
+            "rate": 8.97
+          },
+          {
+            "from": 1000000,
+            "rate": 10.75
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 1.4
+          },
+          {
+            "from": 20000,
+            "rate": 1.75
+          },
+          {
+            "from": 50000,
+            "rate": 2.45
+          },
+          {
+            "from": 70000,
+            "rate": 3.5
+          },
+          {
+            "from": 80000,
+            "rate": 5.525
+          },
+          {
+            "from": 150000,
+            "rate": 6.37
+          },
+          {
+            "from": 500000,
+            "rate": 8.97
+          },
+          {
+            "from": 1000000,
+            "rate": 10.75
+          }
+        ]
+      },
+      "standardDeduction": null,
+      "source": {
+        "kind": "official",
+        "document": "New Jersey Division of Taxation, Tax Rate Schedules (2020 and after), NJ-1040 instructions",
+        "url": "https://www.nj.gov/treasury/taxation/pdf/current/njtaxratesch.pdf",
+        "compiledFrom": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "known",
+      "verified": "2026-10-02",
+      "notes": [
+        "Schedule unchanged since 2020. Matches the compiled table exactly.",
+        "New Jersey has no standard deduction; the $1,000 personal exemption is not modeled in M1.",
+        "Rate of 5.525% taken from the official schedule; the compiled table rounds it to 5.53%."
+      ]
+    },
+    "NM": {
+      "name": "New Mexico",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 1.5
+          },
+          {
+            "from": 5500,
+            "rate": 3.2
+          },
+          {
+            "from": 16500,
+            "rate": 4.3
+          },
+          {
+            "from": 33500,
+            "rate": 4.7
+          },
+          {
+            "from": 66500,
+            "rate": 4.9
+          },
+          {
+            "from": 210000,
+            "rate": 5.9
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 1.5
+          },
+          {
+            "from": 8000,
+            "rate": 3.2
+          },
+          {
+            "from": 25000,
+            "rate": 4.3
+          },
+          {
+            "from": 50000,
+            "rate": 4.7
+          },
+          {
+            "from": 100000,
+            "rate": 4.9
+          },
+          {
+            "from": 315000,
+            "rate": 5.9
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "marriedJoint": 32200
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "NV": {
+      "name": "Nevada",
+      "structure": "none",
+      "brackets": null,
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "NY": {
+      "name": "New York",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 3.9
+          },
+          {
+            "from": 8500,
+            "rate": 4.4
+          },
+          {
+            "from": 11700,
+            "rate": 5.15
+          },
+          {
+            "from": 13900,
+            "rate": 5.4
+          },
+          {
+            "from": 80650,
+            "rate": 5.9
+          },
+          {
+            "from": 215400,
+            "rate": 6.85
+          },
+          {
+            "from": 1077550,
+            "rate": 9.65
+          },
+          {
+            "from": 5000000,
+            "rate": 10.3
+          },
+          {
+            "from": 25000000,
+            "rate": 10.9
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 3.9
+          },
+          {
+            "from": 17150,
+            "rate": 4.4
+          },
+          {
+            "from": 23600,
+            "rate": 5.15
+          },
+          {
+            "from": 27900,
+            "rate": 5.4
+          },
+          {
+            "from": 161550,
+            "rate": 5.9
+          },
+          {
+            "from": 323200,
+            "rate": 6.85
+          },
+          {
+            "from": 2155350,
+            "rate": 9.65
+          },
+          {
+            "from": 5000000,
+            "rate": 10.3
+          },
+          {
+            "from": 25000000,
+            "rate": 10.9
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8000,
+        "marriedJoint": 16050
+      },
+      "source": {
+        "kind": "official",
+        "document": "New York Tax Law section 601, as amended by Chapter 59 of the Laws of 2025, Part B (2026 rate schedule: the lower brackets cut 0.1 point for 2026, a further 0.1 in 2027)",
+        "url": "https://legislation.nysenate.gov/pdf/bills/2025/S3009C",
+        "compiledFrom": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "known",
+      "verified": "2026-10-02",
+      "notes": [
+        "The Tax Department has not yet posted a 2026 rate schedule page; the statute is the source.",
+        "New York City and Yonkers resident taxes are not modeled (no city field in the data dictionary).",
+        "Tax benefit recapture for high incomes is not modeled in M1."
+      ]
+    },
+    "OH": {
+      "name": "Ohio",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 26050,
+            "rate": 2.75
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 26050,
+            "rate": 2.75
+          }
+        ]
+      },
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Ohio's first $26,050 is untaxed; shown as a 0% bracket."
+      ]
+    },
+    "OK": {
+      "name": "Oklahoma",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 3750,
+            "rate": 2.5
+          },
+          {
+            "from": 4900,
+            "rate": 3.5
+          },
+          {
+            "from": 7200,
+            "rate": 4.5
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 7500,
+            "rate": 2.5
+          },
+          {
+            "from": 9800,
+            "rate": 3.5
+          },
+          {
+            "from": 14400,
+            "rate": 4.5
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 6350,
+        "marriedJoint": 12700
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "OR": {
+      "name": "Oregon",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 4.75
+          },
+          {
+            "from": 4550,
+            "rate": 6.75
+          },
+          {
+            "from": 11400,
+            "rate": 8.75
+          },
+          {
+            "from": 125000,
+            "rate": 9.9
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 4.75
+          },
+          {
+            "from": 9100,
+            "rate": 6.75
+          },
+          {
+            "from": 22800,
+            "rate": 8.75
+          },
+          {
+            "from": 250000,
+            "rate": 9.9
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 2910,
+        "marriedJoint": 5820
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "PA": {
+      "name": "Pennsylvania",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 3.07
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 3.07
+          }
+        ]
+      },
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "RI": {
+      "name": "Rhode Island",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 3.75
+          },
+          {
+            "from": 82050,
+            "rate": 4.75
+          },
+          {
+            "from": 186450,
+            "rate": 5.99
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 3.75
+          },
+          {
+            "from": 82050,
+            "rate": 4.75
+          },
+          {
+            "from": 186450,
+            "rate": 5.99
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 11200,
+        "marriedJoint": 22400
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "SC": {
+      "name": "South Carolina",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 3640,
+            "rate": 3
+          },
+          {
+            "from": 18230,
+            "rate": 6
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 3640,
+            "rate": 3
+          },
+          {
+            "from": 18230,
+            "rate": 6
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8350,
+        "marriedJoint": 16700
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Top rate scheduled to revert to 6.2% on 2026-07-01 (footnote qq)."
+      ]
+    },
+    "SD": {
+      "name": "South Dakota",
+      "structure": "none",
+      "brackets": null,
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "TN": {
+      "name": "Tennessee",
+      "structure": "none",
+      "brackets": null,
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "TX": {
+      "name": "Texas",
+      "structure": "none",
+      "brackets": null,
+      "standardDeduction": null,
+      "source": {
+        "kind": "official",
+        "document": "Texas Constitution, Article 8, Section 24-a (added 2019-11-05): the legislature may not impose a tax on the net incomes of individuals",
+        "url": "https://statutes.capitol.texas.gov/Docs/CN/htm/CN.8/CN.8.24-a.htm",
+        "compiledFrom": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "known",
+      "verified": "2026-10-02"
+    },
+    "UT": {
+      "name": "Utah",
+      "structure": "flat",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 4.5
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 4.5
+          }
+        ]
+      },
+      "standardDeduction": null,
+      "standardDeductionNote": "Structured as a tax credit in this state; not modeled in M1.",
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Utah's standard deduction is a credit, not a deduction, so M1 applies none."
+      ]
+    },
+    "VA": {
+      "name": "Virginia",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 2
+          },
+          {
+            "from": 3000,
+            "rate": 3
+          },
+          {
+            "from": 5000,
+            "rate": 5
+          },
+          {
+            "from": 17000,
+            "rate": 5.75
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 2
+          },
+          {
+            "from": 3000,
+            "rate": 3
+          },
+          {
+            "from": 5000,
+            "rate": 5
+          },
+          {
+            "from": 17000,
+            "rate": 5.75
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8750,
+        "marriedJoint": 17500
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "VT": {
+      "name": "Vermont",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 3.35
+          },
+          {
+            "from": 49400,
+            "rate": 6.6
+          },
+          {
+            "from": 119700,
+            "rate": 7.6
+          },
+          {
+            "from": 249700,
+            "rate": 8.75
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 3.35
+          },
+          {
+            "from": 82500,
+            "rate": 6.6
+          },
+          {
+            "from": 199450,
+            "rate": 7.6
+          },
+          {
+            "from": 304000,
+            "rate": 8.75
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 7650,
+        "marriedJoint": 15300
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Bracket widths are 2025 inflation-adjusted values (footnote j)."
+      ]
+    },
+    "WA": {
+      "name": "Washington",
+      "structure": "none",
+      "brackets": null,
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null,
+      "notes": [
+        "Washington taxes long-term capital gains only (7% above a $278,000 standard deduction, 9% above $1,000,000). Wage and withdrawal income is untaxed, so M1 treats Washington as no income tax."
+      ]
+    },
+    "WI": {
+      "name": "Wisconsin",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 3.5
+          },
+          {
+            "from": 15110,
+            "rate": 4.4
+          },
+          {
+            "from": 51950,
+            "rate": 5.3
+          },
+          {
+            "from": 332720,
+            "rate": 7.65
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 3.5
+          },
+          {
+            "from": 20150,
+            "rate": 4.4
+          },
+          {
+            "from": 69260,
+            "rate": 5.3
+          },
+          {
+            "from": 443630,
+            "rate": 7.65
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 13960,
+        "marriedJoint": 25840
+      },
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "WV": {
+      "name": "West Virginia",
+      "structure": "graduated",
+      "brackets": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 2.22
+          },
+          {
+            "from": 10000,
+            "rate": 2.96
+          },
+          {
+            "from": 25000,
+            "rate": 3.33
+          },
+          {
+            "from": 40000,
+            "rate": 4.44
+          },
+          {
+            "from": 60000,
+            "rate": 4.82
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 2.22
+          },
+          {
+            "from": 10000,
+            "rate": 2.96
+          },
+          {
+            "from": 25000,
+            "rate": 3.33
+          },
+          {
+            "from": 40000,
+            "rate": 4.44
+          },
+          {
+            "from": 60000,
+            "rate": 4.82
+          }
+        ]
+      },
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    },
+    "WY": {
+      "name": "Wyoming",
+      "structure": "none",
+      "brackets": null,
+      "standardDeduction": null,
+      "source": {
+        "kind": "secondary",
+        "document": "Tax Foundation, State Individual Income Tax Rates and Brackets, 2026 (Janelle Fritts and Katherine Loughead), data as of 2026-02-11, published 2026-02-17",
+        "url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+      },
+      "confidence": "lookUp",
+      "verified": null
+    }
+  }
+}

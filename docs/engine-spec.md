@@ -78,7 +78,7 @@ M2 replaces this with an optimized drawdown: Roth conversion ladders, filling lo
 
 | Milestone | Covers |
 |---|---|
-| **M1** | Federal ordinary income brackets and standard deduction; FICA and self-employment tax; state tax as a flat effective rate per state; the 10% early withdrawal penalty |
+| **M1** | Federal ordinary income brackets and standard deduction; FICA and self-employment tax; state brackets and standard deduction per state (decision E9; no exemptions, credits, or local taxes); the 10% early withdrawal penalty |
 | **M2** | Full depth: long-term capital gains brackets and basis, ACA premium subsidies, Roth conversions, full state brackets, required distributions |
 
 Tax tables live in `data/tax/<year>.json`, sourced from the IRS and state revenue departments, with the source and date recorded in each file. Engine code never contains a tax rate.

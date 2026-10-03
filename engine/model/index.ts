@@ -11,3 +11,4 @@ export * from "./presets";
 export * from "./categories";
 export * from "./assumptions";
 export * from "./household";
+export * from "./tax-tables";

@@ -9,7 +9,7 @@ Each file must include:
 - Federal ordinary brackets and standard deduction by filing status
 - FICA rates and the Social Security wage base
 - Contribution limits (401(k), IRA, HSA, catch-up)
-- State effective rates (M1) or state brackets (M2)
+- State brackets and standard deductions for all 50 states and DC (M1, per decision E9); exemptions, credits, and local taxes arrive in M2
 
 Engine code never contains a tax rate. If a number isn't in a file here with a source, the engine doesn't use it.
 
