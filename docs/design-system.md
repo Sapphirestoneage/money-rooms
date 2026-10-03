@@ -213,6 +213,9 @@ An SVG of circles around a center circle (you and your FI date), one per area, t
 ### Entry mode switch
 Three toggle buttons at the top of Your numbers: One at a time (guided: one section per step with Back and Next), All on one form (express), Paste everything (dump: the template paste box moves to the top). The choice is remembered and can change at any time without losing anything.
 
+### Level cards
+One card per level on the Levels screen: the level's headline sentence with a Computed badge, then subtitled parts (the Rule of 5, the staircase, the runway stack, shock tests; the spectrum line and each milestone with its condition and what moves it; the estate by money type, giving, legacy projects, Legacy FI, the freedom budget, the basics). Each card ends with a collapsed details card of that level's inputs, every one with a default and a plain help line.
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 

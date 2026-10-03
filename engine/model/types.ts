@@ -408,6 +408,8 @@ export interface GoalBucket {
   startAge: number;
   endAge: number;
   priority: GoalPriority;
+  /** Level 5: a dream that outlasts you moves into the legacy projects while keeping its price card. */
+  legacy?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -456,6 +458,68 @@ export interface Household {
   drawdown?: DrawdownInputs;
   /** M3, dictionary 9.7 (Proposed): what the person did with each small win, by win id. */
   smallWins?: Record<string, "done" | "notForMe" | "later">;
+  /** Level 2 (dictionary 9.8, Proposed): resilience inputs. */
+  resilience?: ResilienceInputs;
+  /** Level 3 (dictionary 9.9, Proposed): milestone settings. */
+  milestones?: MilestoneSettings;
+  /** Level 5 (dictionary 9.10, Proposed): legacy inputs. */
+  legacy?: LegacyInputs;
+}
+
+/** Level 2 (docs/levels/level-2-resilience.md section 11). */
+export type IncomeStability = "steady" | "normal" | "variable";
+
+export interface ResilienceInputs {
+  incomeStability?: Value<IncomeStability>;
+  /** Months to close the emergency gap. Blank means 12. */
+  monthsToClose?: Value<number>;
+  /** Blank means from the income type: W-2 eligible, self-employed and gigs not. */
+  unemploymentEligible?: Value<boolean>;
+  /** Weeks of pay the job would give on the way out. Blank means 0. */
+  severanceWeeks?: Value<number>;
+  /** Employer disability coverage: the share of pay it replaces (percent) and the waiting period in weeks. Blank means unsure. */
+  disability?: { replacesPercentOfPay: Value<number>; waitingWeeks: Value<number> };
+  /** People who depend on this income. Blank means none. */
+  dependents?: Value<number>;
+  /** Monthly must-pays that survive every step down (health insurance, phone, debt minimums are added by the engine). Dollars per year. */
+  extraMustPaysAnnual?: Value<number>;
+  /** Whether retirement accounts count as runway (break glass). Blank means no. */
+  breakGlass?: Value<boolean>;
+}
+
+/** Level 3 (docs/levels/level-3-life-plans.md section 9). Every one has a default from data/milestones.json. */
+export interface MilestoneSettings {
+  coastAge?: Value<number>;
+  baristaIncomeAnnual?: Value<number>;
+  fatFiMultiplier?: Value<number>;
+  flexFiTrimPercent?: Value<number>;
+  slowFiTargetAge?: Value<number>;
+  walkAwayMonths?: Value<number>;
+  businessRunwayMonths?: Value<number>;
+}
+
+/** Level 5 (docs/levels/level-5-legacy.md section 9). */
+export type BasicsAnswer = "yes" | "no" | "unsure";
+
+export interface LegacyProject {
+  id: string;
+  name: string;
+  type: "book" | "mentoring" | "scholarship" | "community" | "family" | "business" | "creative" | "other";
+  oneOffCost: Value<number>;
+  annualCost: Value<number>;
+  hoursPerWeek: Value<number>;
+  startAge: number;
+  /** Years, or null for forever. */
+  horizonYears: number | null;
+}
+
+export interface LegacyInputs {
+  projects?: LegacyProject[];
+  /** Share of the FI number set aside for legacy. Blank means 10%. */
+  breathingRoomPercent?: Value<number>;
+  basics?: { beneficiaries: Value<BasicsAnswer>; will: Value<BasicsAnswer>; healthcareProxy: Value<BasicsAnswer>; powerOfAttorney: Value<BasicsAnswer> };
+  /** Free hours a week after FI. Blank means 45. */
+  freeHoursPerWeek?: Value<number>;
 }
 
 /** M2 spec section 7, the level-two inputs that are not on an account. */

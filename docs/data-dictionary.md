@@ -516,3 +516,37 @@ Past conversions are facts the person enters. Future conversions are decisions t
 | `smallWins` | Decision | A map from win id (`data/small-wins.json`) to `done`, `notForMe`, or `later`. A win not in the map is open | Empty |
 
 **Feeds:** the Small wins running total and its promotion to the main path (M3 spec section 10). The dollar values are never stored; they are recomputed from the win definitions and the household's spending each time.
+
+### 9.8 Resilience inputs (Level 2)
+
+Stored under `resilience`. Every field has a default, so nothing is required.
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `incomeStability` | Goal | `steady`, `normal`, `variable` | `normal` |
+| `monthsToClose` | Goal | Months | 12 |
+| `unemploymentEligible` | Fact | Boolean | From the income type (W-2 yes, self-employed and gigs no) |
+| `severanceWeeks` | Fact | Weeks of pay | 0 |
+| `disability` | Fact | `{ replacesPercentOfPay, waitingWeeks }` | Unsure (shown at 60% and 13 weeks) |
+| `dependents` | Fact | Count | 0 |
+| `extraMustPaysAnnual` | Fact | Dollars a year | 0 (health insurance, phone, and debt minimums come from the rows) |
+| `breakGlass` | Decision | Boolean | No |
+
+**Feeds:** the Rule of 5, the staircase, the runway stack, the shock tests, the walk-away and business milestones.
+
+### 9.9 Milestone settings (Level 3)
+
+Stored under `milestones`, each with its default from `data/milestones.json` (G5): `coastAge` 65, `baristaIncomeAnnual` 20,000, `fatFiMultiplier` 1.5, `flexFiTrimPercent` 10, `slowFiTargetAge` (FI plus 5), `walkAwayMonths` 12, `businessRunwayMonths` 12.
+
+### 9.10 Legacy inputs (Level 5)
+
+Stored under `legacy`.
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `projects` | Goal | List of `{ id, name, type, oneOffCost, annualCost, hoursPerWeek, startAge, horizonYears }` | None |
+| `breathingRoomPercent` | Goal | Percent of the FI number | 10 |
+| `basics` | Fact | `beneficiaries`, `will`, `healthcareProxy`, `powerOfAttorney`, each yes, no, or unsure | Unsure |
+| `freeHoursPerWeek` | Assumption | Hours | 45 |
+
+A goal bucket (5.1) gains an optional `legacy` tag; a tagged dream appears among the projects while keeping its price card. The heir tax rate lives with the drawdown inputs (M2 spec section 7). Annual giving is read from the giving spending category, never stored twice.
