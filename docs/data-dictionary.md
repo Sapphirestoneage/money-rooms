@@ -293,7 +293,7 @@ Retirement spending is computed from three layers. Nobody types in a target.
 | Slow-go | 75 to 84 | 85% |
 | No-go | 85 and up | 70% |
 
-Phase ages and multipliers are proposed defaults (see `decisions.md`) and are editable.
+Phase ages and multipliers are defaults from decision D17 and are editable. They live in `data/life-phases.json`.
 
 **Healthcare line.** Before 65, a pre-Medicare estimate (ACA-based in M2). From 65, a Medicare-based estimate. Values live in `data/` once sourced.
 

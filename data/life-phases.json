@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "description": "Default life phases for retirement spending (data dictionary 5.1, layer 2). Discretionary categories scale by the multiplier. Essential categories do not.",
+    "version": 1,
+    "updated": "2026-10-02",
+    "status": "PLACEHOLDER VALUES per decision D17. Open question O1: source these from retiree spending research.",
+    "fields": "startAge null means from retirement. endAge null means and up. discretionaryMultiplier 1.0 means 100%."
+  },
+  "phases": [
+    { "id": "goGo",   "label": "Go-go",   "startAge": null, "endAge": 74,   "discretionaryMultiplier": 1.0 },
+    { "id": "slowGo", "label": "Slow-go", "startAge": 75,   "endAge": 84,   "discretionaryMultiplier": 0.85 },
+    { "id": "noGo",   "label": "No-go",   "startAge": 85,   "endAge": null, "discretionaryMultiplier": 0.7 }
+  ],
+  "citations": []
+}
