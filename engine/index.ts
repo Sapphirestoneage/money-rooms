@@ -16,3 +16,4 @@ export * from "./projection/accounts";
 export * from "./projection/limits";
 export * from "./projection/timeline";
 export * from "./projection/fi";
+export * from "./projection/trace";

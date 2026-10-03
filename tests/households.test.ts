@@ -72,7 +72,7 @@ describe("Maya tie-out (hand-checked, likely band) [OPEN, see tests/tie-out/READ
   const enteredOnlyRows = project(householdFromExample(maya as ExampleHouseholdFile, asOf)).bands.likely.timeline.rows;
   const year0 = enteredOnlyRows[0]!;
 
-  open(`take-home in year 1 within 1% of ${expected.takeHomeYear1} (engine 2026 annualized: ${Math.round(year0.takeHome / year0.fraction)})`, () => {
+  it(`take-home in year 1 within 1% of ${expected.takeHomeYear1} (engine 2026 annualized: ${Math.round(year0.takeHome / year0.fraction)})`, () => {
     expect(within1Percent(year0.takeHome / year0.fraction, expected.takeHomeYear1)).toBe(true);
   });
 

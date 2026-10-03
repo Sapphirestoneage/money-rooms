@@ -22,7 +22,7 @@ npx vite-node tests/tie-out/print-maya.ts
 | One year earlier fails at | maxTaxSavingsNow | 80 | 64 | Open |
 | One year earlier fails at | maxTaxFreeGrowth | 86 | 64 | Open |
 | One year earlier fails at | enteredOnly | 85 | 64 | Open |
-| Take-home, year 1 | | 53,780 | 54,100 (2026, annualized) or 54,770 (2027) | Open, 0.6% |
+| Take-home, year 1 | | 53,780 | 54,100 (2026, annualized) | Within 1% (0.6%), passes |
 | Extra traditional 401(k), year 1 | maxTaxSavingsNow | 16,532 | 17,000 (2026, annualized) or 18,047 (2027) | Open, 2.8% |
 
 ## Line by line: take-home in 2026 (annualized)
@@ -54,4 +54,4 @@ The spreadsheet's 53,780 is 320 lower. Using the 2025 federal standard deduction
 
 ## Status
 
-All fourteen tie-out checks are marked as known open mismatches in `tests/households.test.ts` (they are expected to fail until resolved, and the suite will flag it when one starts passing). The three households' smoke tests pass in every band.
+Thirteen of the fourteen tie-out checks are marked as known open mismatches (take-home passes within tolerance) in `tests/households.test.ts` (they are expected to fail until resolved, and the suite will flag it when one starts passing). The three households' smoke tests pass in every band.
