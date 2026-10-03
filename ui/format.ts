@@ -77,3 +77,10 @@ export function yearWord(n: number): string {
 export function monthWord(n: number): string {
   return n === 1 ? "1 month" : `${n} months`;
 }
+
+/** A number as it should sit in an amount field: commas, and cents only when there are any. */
+export function amountForInput(n: number): string {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2, minimumFractionDigits: Number.isInteger(n) ? 0 : 2 }).format(n);
+}
+
+export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] as const;

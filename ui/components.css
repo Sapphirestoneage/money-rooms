@@ -670,3 +670,40 @@
     padding: 0 var(--space-2);
   }
 }
+
+/* ---- Even rows in the two-column form ---- */
+
+/* Every control is one height, so a select beside an input lines up. */
+.input,
+.select {
+  height: 44px;
+}
+
+/* Fields sit at the top of their row and keep their own height. Nothing stretches. */
+.field-grid {
+  align-items: start;
+}
+
+.field {
+  align-content: start;
+}
+
+/* The label row is the same height with or without a badge, and stays on one line where it can. */
+.field__label-row label,
+.field__label {
+  line-height: var(--leading-tight);
+}
+
+/* The yearly amount under a money input always holds its line, so rows do not shift as numbers appear. */
+.money-input__normalized {
+  min-height: 1.25em;
+}
+
+.field > .money-input__normalized {
+  margin-top: calc(var(--space-1) * -1 + var(--space-1));
+}
+
+.row-actions .select {
+  width: auto;
+  min-width: 10rem;
+}

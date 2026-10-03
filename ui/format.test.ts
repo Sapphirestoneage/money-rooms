@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { age, dollars, dollarsShort, dollarsWithConfidence, parseMoney, percent, withCadence } from "./format";
+import { age, amountForInput, dollars, dollarsShort, dollarsWithConfidence, parseMoney, percent, withCadence } from "./format";
 
 describe("style guide number formats", () => {
   it("dollars: whole, with commas", () => {
@@ -39,5 +39,18 @@ describe("money input parsing", () => {
     expect(parseMoney("")).toBeNull();
     expect(parseMoney("lots")).toBeNull();
     expect(parseMoney("4,1,20x")).toBeNull();
+  });
+});
+
+describe("amounts shown in a field", () => {
+  it("uses commas, and cents only when there are any", () => {
+    expect(amountForInput(72000)).toBe("72,000");
+    expect(amountForInput(4120.5)).toBe("4,120.50");
+    expect(amountForInput(0)).toBe("0");
+  });
+
+  it("round-trips through the parser", () => {
+    expect(parseMoney(amountForInput(1234567))).toBe(1234567);
+    expect(parseMoney(amountForInput(4120.5))).toBe(4120.5);
   });
 });

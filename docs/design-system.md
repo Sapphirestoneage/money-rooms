@@ -105,6 +105,20 @@ A list of account or category types with plain names and a one-line description.
 ### Money input
 Accepts "4120", "4,120", "$4,120", or "4.1k". Has a cadence selector beside it (per hour, paycheck, month, year). Shows the normalized annual amount underneath in muted text.
 
+- The amount shows with commas once the field is left, and plain while typing.
+- Changing the cadence on a number the person just typed reinterprets it ("6,000" then "per month" means 6,000 a month). Changing it on a number that was already stored converts what is shown and leaves the stored amount alone.
+- The chosen cadence is remembered while the screen is open.
+
+### Entry forms
+Rules every entry screen follows, so entering numbers never fights the person.
+
+- **Nothing jumps.** When the form refreshes itself (a row is added, a kind changes), the page stays where it was, the cursor stays in the same field, and open sections stay open.
+- **Even rows.** Every input and picker is the same height (44px). In two-column layouts, fields in a row line up at the top, and labels are short enough to stay on one line.
+- **New rows get the cursor.** Adding an income or an account puts the cursor in its first field.
+- **Plain pickers for dates.** Month and year are two pickers, not the browser's own month control, which some browsers lack.
+- **Places by name.** States are listed by name, in alphabetical order.
+- **Number fields ignore the scroll wheel**, so scrolling the page never changes a value.
+
 ### Headline result
 The FI date in hero type, with the best and worst range beneath it in a single line:
 

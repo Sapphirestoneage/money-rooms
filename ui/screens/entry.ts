@@ -22,6 +22,7 @@ import {
   loadQuickAllocations,
   loadSocialSecurityParams,
   loadSpendingCategories,
+  loadTaxTables,
   missingLevelOneAnswers,
   notForMe,
   parseYearMonth,
@@ -31,6 +32,7 @@ import {
   type Account,
   type AccountPresetKey,
   type AnnualDeduction,
+  type Cadence,
   type Confidence,
   type DebtAccount,
   type ExampleHouseholdFile,
@@ -49,10 +51,10 @@ import {
 import { confirmPanel } from "../components/confirm-panel";
 import { gentleFlag } from "../components/gentle-flag";
 import { kindBadge, type EditableKind } from "../components/kind-badge";
-import { moneyInput } from "../components/money-input";
+import { moneyInput, type MoneyInputOptions } from "../components/money-input";
 import { presetPicker } from "../components/preset-picker";
 import { clear, el, uid } from "../dom";
-import { dollars, parseMoney, percent } from "../format";
+import { MONTH_NAMES, amountForInput, dollars, parseMoney, percent } from "../format";
 import type { Store } from "../store";
 import { transferCard } from "./transfer-card";
 
@@ -101,10 +103,18 @@ const MISSING_LABEL: Record<ReturnType<typeof missingLevelOneAnswers>[number], s
   accounts: "accounts (or \"I don't have any\")",
 };
 
+/**
+ * Each field has a stable key (its section or row, plus its label), so the screen can put the
+ * cursor back where it was after it refreshes.
+ */
+let fieldScope = "";
+const keyFor = (text: string): string => `${fieldScope}|${text}`;
+
 /** A label, an optional kind badge beside it, and a control underneath. */
 function field(text: string, control: HTMLElement, badge?: HTMLElement | null, help?: HTMLElement | null): HTMLElement {
   const id = uid("f");
   control.id = id;
+  control.dataset.key = keyFor(text);
   return el("div", { class: "field" }, el("div", { class: "field__label-row" }, el("label", { for: id }, text), badge ?? null), control, help ?? null);
 }
 
@@ -141,7 +151,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
                   if (!current) return;
                   write({ ...current, source: "user", confidence: next });
                   ctx.save();
-                  render();
+                  schedule();
                 },
               }
             : {},
@@ -154,7 +164,38 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
 
   const isRough = (c: Confidence | undefined) => c === "roughly";
 
+  /** What each amount field's cadence was last set to, so it does not snap back when the screen refreshes. */
+  const cadenceMemory = new Map<string, Cadence>();
+  /** A field to put the cursor in after the next refresh (a row that was just added). */
+  let pendingFocusKey: string | null = null;
+
+  /** A money input that remembers its cadence and can be found again after a refresh. */
+  const money = (o: MoneyInputOptions): HTMLElement => {
+    const key = keyFor(o.label);
+    const remembered = cadenceMemory.get(key);
+    return moneyInput({ ...o, key, ...(remembered ? { initialCadence: remembered } : {}), onCadenceChange: (c) => cadenceMemory.set(key, c) });
+  };
+
+  /** Refreshes the screen after the current event finishes, so a field the person is moving to keeps the cursor. */
+  let scheduled = false;
+  const schedule = (): void => {
+    if (scheduled) return;
+    scheduled = true;
+    window.setTimeout(() => {
+      scheduled = false;
+      render();
+    }, 0);
+  };
+
   function render(): void {
+    // Remember where the person is: scroll position, the field with the cursor, and any open section.
+    const scrollY = window.scrollY;
+    const active = document.activeElement instanceof HTMLElement && root.contains(document.activeElement) ? document.activeElement : null;
+    const isNewRow = pendingFocusKey !== null;
+    const focusKey = pendingFocusKey ?? active?.dataset.key ?? null;
+    pendingFocusKey = null;
+    const openSections = [...root.querySelectorAll("details")].map((d) => d.open);
+
     clear(root);
     root.append(
       el("h1", { class: "screen-title" }, "Your numbers"),
@@ -168,20 +209,39 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       transferCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
       footer(),
     );
+
+    // Put everything back.
+    [...root.querySelectorAll("details")].forEach((d, i) => { if (openSections[i]) d.open = true; });
+    window.scrollTo(0, scrollY);
+    if (focusKey) {
+      const target = [...root.querySelectorAll<HTMLElement>("[data-key]")].find((n) => n.dataset.key === focusKey);
+      if (target) {
+        target.focus({ preventScroll: !isNewRow });
+        if (isNewRow) target.scrollIntoView({ block: "center" });
+      }
+    }
   }
 
   // ---- About you -----------------------------------------------------------
   function aboutYou(): HTMLElement {
-    const birth = el("input", { class: "input", type: "month", value: h().self.birthDate?.value ?? "", max: asOf().slice(0, 7) });
+    fieldScope = "about";
+    // Two plain pickers. The browser's own month control is missing in Safari and Firefox.
+    const born = h().self.birthDate ? parseYearMonth(h().self.birthDate!.value) : null;
+    const thisYear = parseYearMonth(asOf().slice(0, 7)).year;
+    const years: { value: string; label: string }[] = [];
+    for (let y = thisYear - 16; y >= thisYear - 100; y--) years.push({ value: String(y), label: String(y) });
     const birthBadge = badgeSlot(() => h().self.birthDate, () => undefined, false);
-    birth.addEventListener("change", () => {
-      if (birth.value) h().self.birthDate = userValue(birth.value, asOf());
+    const setBirth = () => {
+      if (birthMonth.value && birthYear.value) h().self.birthDate = userValue(`${birthYear.value}-${birthMonth.value}`, asOf());
       else delete h().self.birthDate;
       ctx.save();
       birthBadge.refresh();
-    });
+    };
+    const birthMonth = select(MONTH_NAMES.map((name, i) => ({ value: String(i + 1).padStart(2, "0"), label: name })), born ? String(born.month).padStart(2, "0") : undefined, setBirth, "Month");
+    const birthYear = select(years, born ? String(born.year) : undefined, setBirth, "Year");
+    const stateNames = loadTaxTables().states;
     const state = select(
-      STATE_CODES.map((s) => ({ value: s, label: s })),
+      STATE_CODES.map((s) => ({ value: s, label: stateNames[s].name })).sort((a, b) => a.label.localeCompare(b.label)),
       h().self.state?.value,
       (v: StateCode) => {
         h().self.state = userValue(v, asOf());
@@ -192,7 +252,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const filing = select(FILING, h().self.filingStatus.value, (v: FilingStatus) => {
       h().self.filingStatus = userValue(v, asOf());
       ctx.save();
-      render();
+      schedule();
     });
     return el(
       "section",
@@ -201,7 +261,8 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       el(
         "div",
         { class: "field-grid" },
-        field("Birth month", birth, birthBadge.node),
+        field("Birth month", birthMonth, birthBadge.node),
+        field("Birth year", birthYear),
         field("State", state),
         field("Filing status", filing, kindBadge(h().self.filingStatus.confidence)),
       ),
@@ -232,12 +293,13 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       };
       if (type === "salary" || type === "hourly") stream.payFrequency = { ...userValue("biweekly" as const, asOf()), confidence: "roughly" };
       h().self.income = { kind: "rows", rows: [...rows, stream] };
+      pendingFocusKey = `${stream.id}|Gross pay`;
       ctx.save();
-      render();
+      schedule();
     }, "Add income");
     addType.setAttribute("aria-label", "Add income");
 
-    const none = el("button", { type: "button", class: "button button--quiet", onClick: () => { h().self.income = { kind: "none", asOf: asOf() }; ctx.save(); render(); } }, "I don't have income right now");
+    const none = el("button", { type: "button", class: "button button--quiet", onClick: () => { h().self.income = { kind: "none", asOf: asOf() }; ctx.save(); schedule(); } }, "I don't have income right now");
 
     return el(
       "section",
@@ -249,6 +311,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   }
 
   function streamEditor(s: IncomeStream): HTMLElement {
+    fieldScope = s.id;
     const typeLabel = INCOME_TYPES.find((t) => t.type === s.type)?.label ?? s.type;
     const isWage = s.type === "salary" || s.type === "hourly";
     const isSe = s.type === "selfEmployed" || s.type === "sideGig";
@@ -256,7 +319,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
 
     const grossBadge = badgeSlot(() => (s.grossAnnual.value > 0 ? s.grossAnnual : undefined), (v) => { s.grossAnnual = v; });
     const fields: HTMLElement[] = [
-      moneyInput({
+      money({
         label: "Gross pay",
         annual: s.grossAnnual.value || null,
         cadences,
@@ -290,7 +353,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     }
     if (isSe) {
       const expBadge = badgeSlot(() => s.businessExpensesAnnual, (v) => { s.businessExpensesAnnual = v; });
-      fields.push(moneyInput({
+      fields.push(money({
         label: "Business expenses",
         annual: s.businessExpensesAnnual?.value ?? null,
         cadences: ["month", "year"],
@@ -321,8 +384,8 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       };
       matchPct.addEventListener("input", updateMatch);
       matchCap.addEventListener("input", updateMatch);
-      fields.push(field("Employer match, percent matched", matchPct, pctBadge.node));
-      fields.push(field("Match cap, percent of pay", matchCap, capBadge.node));
+      fields.push(field("Employer match (%)", matchPct, pctBadge.node));
+      fields.push(field("Match cap (% of pay)", matchCap, capBadge.node));
 
       const setDeductions = (list: PreTaxDeduction[]) => {
         if (list.length) s.preTaxDeductions = list;
@@ -362,13 +425,13 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         showPercentHelp();
         percentBadge.refresh();
       });
-      fields.push(field("Your 401(k) or 403(b) contribution, percent of pay", percentInput, percentBadge.node, percentHelp));
+      fields.push(field("Your 401(k) or 403(b) (% of pay)", percentInput, percentBadge.node, percentHelp));
       fields.push(field("Contribution type", accountType));
 
       const hsa = () => s.preTaxDeductions?.find((d): d is AnnualDeduction => d.type === "hsa");
       const hsaBadge = badgeSlot(() => hsa()?.annual, (v) => { const x = hsa(); if (x) x.annual = v; });
       fields.push(
-        moneyInput({
+        money({
           label: "Your HSA contribution",
           annual: hsa()?.annual.value ?? null,
           cadences: ["paycheck", "month", "year"],
@@ -392,7 +455,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       (v) => {
         s.end = v === "age" ? { kind: "age", age: 30 } : { kind: "retirement" };
         ctx.save();
-        render();
+        schedule();
       },
     );
     fields.push(field("This income lasts", endSelect));
@@ -408,7 +471,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       const rows = inc.rows.filter((r) => r.id !== s.id);
       h().self.income = rows.length ? { kind: "rows", rows } : { kind: "unanswered" };
       ctx.save();
-      render();
+      schedule();
     } }, "Remove");
 
     return el(
@@ -427,6 +490,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   })();
 
   function spending(): HTMLElement {
+    fieldScope = "spending";
     const currentRows = (): SpendingRow[] => {
       const sp = h().spending;
       return sp.kind === "rows" ? sp.rows : [];
@@ -438,7 +502,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       { class: "choice-row", role: "radiogroup", "aria-label": "How to enter spending" },
       ...(["total", "categories"] as const).map((mode) => {
         const input = el("input", { type: "radio", name: "spending-mode", value: mode, checked: spendingMode === mode });
-        input.addEventListener("change", () => { spendingMode = mode; render(); });
+        input.addEventListener("change", () => { spendingMode = mode; schedule(); });
         return el("label", {}, input, el("span", {}, mode === "total" ? "One total" : "By category"));
       }),
     );
@@ -451,7 +515,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
 
     const rowInput = (label: string, find: () => SpendingRow | undefined, make: (annual: number) => SpendingRow, keep: (r: SpendingRow) => boolean): HTMLElement => {
       const badge = badgeSlot(() => find()?.annual, (v) => { const r = find(); if (r) r.annual = v; });
-      return moneyInput({
+      return money({
         label,
         annual: find()?.annual.value ?? null,
         cadences: ["month", "year"],
@@ -470,7 +534,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     if (spendingMode === "total") {
       body.append(
         rowInput(
-          "Everything you spend (not saving, not debt payments)",
+          "Everything you spend",
           () => currentRows().find((r) => r.id === "total"),
           (annual) => ({ id: "total", category: "everythingElse", annual: userValue(annual, asOf(), "roughly") }),
           (r) => r.id !== "total",
@@ -508,8 +572,8 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const actions = el(
       "div",
       { class: "row-actions" },
-      el("button", { type: "button", class: "button", onClick: () => { pickerOpen = !pickerOpen; render(); } }, pickerOpen ? "Close the list" : "Add account"),
-      answer.kind !== "none" ? el("button", { type: "button", class: "button button--quiet", onClick: () => { h().accounts = { kind: "none", asOf: asOf() }; ctx.save(); render(); } }, "I don't have any accounts") : null,
+      el("button", { type: "button", class: "button", onClick: () => { pickerOpen = !pickerOpen; schedule(); } }, pickerOpen ? "Close the list" : "Add account"),
+      answer.kind !== "none" ? el("button", { type: "button", class: "button button--quiet", onClick: () => { h().accounts = { kind: "none", asOf: asOf() }; ctx.save(); schedule(); } }, "I don't have any accounts") : null,
     );
 
     const picker = pickerOpen
@@ -533,9 +597,10 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
             account = debtFromPreset(key, id, balance, { rate, minimumPaymentAnnual: estimate, actualPaymentAnnual: { ...estimate } }, asOf());
           }
           h().accounts = { kind: "rows", rows: [...rows, account] };
+          pendingFocusKey = `${id}|${preset.side === "asset" ? "Balance" : "Balance owed"}`;
           pickerOpen = false;
           ctx.save();
-          render();
+          schedule();
         })
       : null;
 
@@ -552,8 +617,13 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   }
 
   function accountEditor(a: Account): HTMLElement {
+    fieldScope = a.id;
     const preset = getAccountPreset(a.preset);
-    const balanceInput = el("input", { class: "input input--money", type: "text", inputmode: "decimal", value: a.balance.value ? String(a.balance.value) : "" });
+    const balanceInput = el("input", { class: "input input--money", type: "text", inputmode: "decimal", placeholder: "0", autocomplete: "off", value: a.balance.value ? amountForInput(a.balance.value) : "" });
+    balanceInput.addEventListener("blur", () => {
+      const v = parseMoney(balanceInput.value);
+      if (v !== null) balanceInput.value = amountForInput(v);
+    });
     const balanceBadge = badgeSlot(
       () => (a.balance.value !== null && a.balance.value > 0 ? (a.balance as Value<number>) : undefined),
       (v) => { a.balance = v; },
@@ -566,7 +636,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       ctx.save();
       balanceBadge.refresh();
     });
-    if (a.side === "debt") balanceInput.addEventListener("change", () => { if (a.minimumPaymentAnnual.source === "preset") render(); });
+    if (a.side === "debt") balanceInput.addEventListener("change", () => { if (a.minimumPaymentAnnual.source === "preset") schedule(); });
 
     const fields: HTMLElement[] = [field(a.side === "asset" ? "Balance" : "Balance owed", balanceInput, balanceBadge.node)];
     const flags: HTMLElement[] = [];
@@ -581,7 +651,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       ] as const;
       const current = (Object.keys(quick) as (keyof typeof quick)[]).find((k) => JSON.stringify(quick[k]) === JSON.stringify(a.allocation.value)) ?? "preset";
       fields.push(field("Mix of stocks, bonds, cash", select([...options], current, (v) => {
-        if (v !== "preset") { a.allocation = userValue(quick[v], asOf()); ctx.save(); render(); }
+        if (v !== "preset") { a.allocation = userValue(quick[v], asOf()); ctx.save(); schedule(); }
       }), kindBadge(a.allocation.confidence)));
       fields.push(el("div", { class: "field" }, el("div", { class: "field__label-row" }, el("span", { class: "field__label" }, "Fees"), kindBadge(a.fees.confidence)), el("div", { class: "numbers" }, `${percent(a.fees.value)} a year`)));
     } else {
@@ -597,13 +667,13 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
           ctx.save();
         }
       });
-      rate.addEventListener("change", () => render());
-      fields.push(field("Interest rate, percent per year", rate, rateBadge.node));
+      rate.addEventListener("change", () => schedule());
+      fields.push(field("Interest rate (% a year)", rate, rateBadge.node));
       if (needsRate) flags.push(gentleFlag("This debt needs its interest rate before a plan can run. It is on your statement or in your lender's app."));
 
       const estimated = a.minimumPaymentAnnual.source === "preset";
       const minBadge = badgeSlot(() => (a.minimumPaymentAnnual.value > 0 ? a.minimumPaymentAnnual : undefined), (v) => { a.minimumPaymentAnnual = v; });
-      fields.push(moneyInput({
+      fields.push(money({
         label: "Minimum payment",
         annual: a.minimumPaymentAnnual.value || null,
         cadences: ["month", "year"],
@@ -621,7 +691,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         },
       }));
       const actBadge = badgeSlot(() => (a.actualPaymentAnnual.value > 0 ? a.actualPaymentAnnual : undefined), (v) => { a.actualPaymentAnnual = v; });
-      fields.push(moneyInput({
+      fields.push(money({
         label: "What you actually pay",
         annual: a.actualPaymentAnnual.value || null,
         cadences: ["month", "year"],
@@ -651,7 +721,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       const rows = acc.rows.filter((r) => r.id !== a.id);
       h().accounts = rows.length ? { kind: "rows", rows } : { kind: "unanswered" };
       ctx.save();
-      render();
+      schedule();
     } }, "Remove");
 
     return el(
@@ -665,6 +735,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
 
   // ---- Sharpeners ------------------------------------------------------------
   function sharpeners(): HTMLElement {
+    fieldScope = "sharpen";
     const hsa = select([{ value: "no", label: "No" }, { value: "yes", label: "Yes, I have a high-deductible health plan" }], h().self.hsaEligible.value ? "yes" : "no", (v) => { h().self.hsaEligible = userValue(v === "yes", asOf()); ctx.save(); });
     const strategy = select(STRATEGIES, h().savingsStrategy.value, (v: SavingsStrategy) => { h().savingsStrategy = userValue(v, asOf()); ctx.save(); });
     const sets = select(listAssumptionSets().map((s) => ({ value: s.key, label: s.label })), h().assumptions.set, (v) => { h().assumptions.set = v; ctx.save(); });
@@ -726,14 +797,14 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       { class: "card" },
       el("div", { class: "card__title" }, el("h2", {}, "Or start from an example")),
       el("p", { class: "muted" }, "These are the checked example households from the tests. Loading one replaces what you have entered."),
-      el("div", { class: "row-actions" }, ...files.map((f) => el("button", { type: "button", class: "button button--quiet", onClick: () => { pendingExample = f; render(); } }, f.label))),
+      el("div", { class: "row-actions" }, ...files.map((f) => el("button", { type: "button", class: "button button--quiet", onClick: () => { pendingExample = f; schedule(); } }, f.label))),
       pending
         ? confirmPanel({
             sentence: `This replaces everything you have entered with ${pending.label}.`,
             confirmLabel: "Replace my numbers",
             cancelLabel: "Keep what I have",
             onConfirm: () => { pendingExample = null; ctx.replace(householdFromExample(pending, asOf())); },
-            onCancel: () => { pendingExample = null; render(); },
+            onCancel: () => { pendingExample = null; schedule(); },
           })
         : null,
     );
@@ -755,6 +826,12 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     wrap.append(el("p", { class: "notice" }, "Amounts are in today's dollars."));
     return wrap;
   }
+
+  // A number field under the pointer must not change when the person scrolls the page.
+  root.addEventListener("wheel", () => {
+    const a = document.activeElement;
+    if (a instanceof HTMLInputElement && a.type === "number") a.blur();
+  }, { passive: true });
 
   render();
   return root;
