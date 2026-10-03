@@ -285,3 +285,12 @@ describe("income that is expected but not confirmed", () => {
     expect(again.household).toEqual(preview.household);
   });
 });
+
+describe("a template pasted from a chat", () => {
+  it("ignores code-block marks around the rows", () => {
+    const pasted = ["```csv", TEMPLATE_HEADER, "profile,,state,NY,,known,,", "```", ""].join("\n");
+    const preview = readTemplate(pasted, "2026-10-03");
+    expect(preview.fileProblems).toEqual([]);
+    expect(preview.household.self.state?.value).toBe("NY");
+  });
+});

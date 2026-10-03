@@ -8,7 +8,7 @@
 import { exportTemplate, readTemplate, templateFileName, type TemplatePreview, type TemplateSection } from "../../engine";
 import promptText from "../../templates/ai-fill-prompt.txt?raw";
 import templateText from "../../templates/money-rooms-template.csv?raw";
-import { dropZone, saveTextFile } from "../components/drop-zone";
+import { dropZone, handleFiles, saveTextFile } from "../components/drop-zone";
 import { gentleFlag } from "../components/gentle-flag";
 import { clear, el } from "../dom";
 import { todayIso } from "../store";
@@ -61,7 +61,7 @@ export function templateCard(ctx: TransferContext): HTMLElement {
       el(
         "div",
         { class: "import-preview", role: "group", "aria-label": "Import preview" },
-        el("h3", {}, `What "${fileName}" holds`),
+        el("h3", {}, fileName === "What you pasted" ? "What you pasted holds" : `What "${fileName}" holds`),
         el("p", { class: "muted" }, "Nothing has changed yet."),
         counts,
         list("Needs a look", "A row that could not be read is not imported. Fix these in the file and drop it again, or enter them by hand after.", preview.needsALook, (n) =>
@@ -74,34 +74,32 @@ export function templateCard(ctx: TransferContext): HTMLElement {
     window.setTimeout(() => apply.focus(), 0);
   };
 
-  /** Reads one file in the browser and shows what it holds. Nothing is applied here. */
-  const readFile = async (file: File): Promise<void> => {
+  /** Shows what a template holds, whether it was dropped anywhere, chosen, or pasted. Nothing is applied here. */
+  const readText = (name: string, text: string): void => {
     clear(status);
-    let text: string;
-    try {
-      text = await file.text();
-    } catch {
-      flag(`"${file.name}" could not be read. Try choosing it again.`);
-      return;
-    }
-    if (/\.json$/i.test(file.name)) {
-      flag(`"${file.name}" looks like a full Money Rooms export. Drop it on "Save and restore" below.`);
-      return;
-    }
     const preview = readTemplate(text, todayIso());
-    if (preview.fileProblems.length > 0) {
-      flag(`"${file.name}" could not be read as a template. ${preview.fileProblems.join(" ")}`);
-      return;
-    }
-    showPreview(file.name, preview);
+    if (preview.fileProblems.length > 0) flag(`"${name}" could not be read as a template. ${preview.fileProblems.join(" ")}`);
+    else showPreview(name, preview);
+    status.scrollIntoView({ block: "center" });
   };
+  handleFiles("template", readText);
 
-  const zone = dropZone({
-    text: "Drop a filled template here",
-    accept: ".csv,text/csv",
-    onFile: (file) => void readFile(file),
-    onProblem: flag,
+  const zone = dropZone({ text: "Drop a filled template here, or anywhere on this page", onProblem: flag });
+
+  // Pasting: an AI usually returns the template as text in a chat, not as a file.
+  const pasteBox = el("textarea", { class: "input paste-box", rows: 4, id: "template-paste", placeholder: "section,item,field,value,cadence,kind,as_of,notes", spellcheck: false });
+  const pasteButton = el("button", { type: "button", class: "button button--quiet" }, "Preview what I pasted");
+  pasteButton.addEventListener("click", () => {
+    if (pasteBox.value.trim() === "") flag("Paste the filled template into the box first.");
+    else readText("What you pasted", pasteBox.value);
   });
+  const paste = el(
+    "div",
+    { class: "stack" },
+    el("label", { class: "field__label", for: "template-paste" }, "Or paste the filled template here"),
+    pasteBox,
+    el("div", { class: "row-actions" }, pasteButton),
+  );
 
   return el(
     "section",
@@ -119,6 +117,7 @@ export function templateCard(ctx: TransferContext): HTMLElement {
       el("button", { type: "button", class: "button button--quiet", onClick: () => saveTextFile("ai-fill-prompt.txt", promptText, "text/plain") }, "Get the AI prompt"),
     ),
     zone,
+    paste,
     el(
       "div",
       { class: "row-actions" },

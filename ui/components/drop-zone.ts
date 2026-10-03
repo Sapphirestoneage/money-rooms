@@ -9,11 +9,57 @@ import { el, uid } from "../dom";
 export interface DropZoneOptions {
   /** What to drop, in plain words: "Drop your Money Rooms file here". */
   text: string;
-  /** The file picker's filter, like ".csv,text/csv". */
-  accept: string;
-  onFile(file: File): void;
-  /** Called with a plain sentence when the drop can't be used (more than one file). */
+  /** Called with a plain sentence when the drop can't be used (more than one file, or a file that can't be read). */
   onProblem(sentence: string): void;
+}
+
+/** What a dropped file can be: a filled template (CSV) or a full Money Rooms export (JSON). */
+export type FileKind = "template" | "full";
+type TextHandler = (name: string, text: string) => void;
+const handlers: Partial<Record<FileKind, TextHandler>> = {};
+
+/** A card says "hand me files of this kind". The newest card of each kind wins. */
+export function handleFiles(kind: FileKind, handler: TextHandler): void {
+  handlers[kind] = handler;
+}
+
+/** Sends text to the card that reads it, judged by what is inside, not by the file's name. */
+export function routeText(name: string, text: string): void {
+  const kind: FileKind = text.trimStart().startsWith("{") ? "full" : "template";
+  handlers[kind]?.(name, text);
+}
+
+/** Reads a file in the browser and sends it to the card that reads it. Nothing leaves the browser. */
+export async function routeFile(file: File, onProblem: (sentence: string) => void): Promise<void> {
+  let text: string;
+  try {
+    text = await file.text();
+  } catch {
+    onProblem(`"${file.name}" could not be read. Try choosing it again.`);
+    return;
+  }
+  routeText(file.name, text);
+}
+
+/** One listener for the whole window: a file dropped anywhere on a screen with a drop zone is taken in. */
+let windowListening = false;
+function listenOnWindow(): void {
+  if (windowListening) return;
+  windowListening = true;
+  const overAZone = (e: DragEvent) => e.target instanceof Element && e.target.closest(".drop-zone") !== null;
+  window.addEventListener("dragover", (e) => {
+    if (!carriesFiles(e) || overAZone(e)) return;
+    // Never let the browser leave the app to open the file.
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = document.querySelector(".drop-zone") ? "copy" : "none";
+  });
+  window.addEventListener("drop", (e) => {
+    if (!carriesFiles(e) || overAZone(e)) return;
+    e.preventDefault();
+    if (!document.querySelector(".drop-zone")) return;
+    const file = e.dataTransfer?.files[0];
+    if (file) void routeFile(file, () => undefined);
+  });
 }
 
 /** True when a drag carries files (and not, say, selected text). */
@@ -22,11 +68,12 @@ function carriesFiles(e: DragEvent): boolean {
 }
 
 export function dropZone(o: DropZoneOptions): HTMLElement {
-  const fileInput = el("input", { type: "file", accept: o.accept, class: "visually-hidden", id: uid("file") });
+  listenOnWindow();
+  const fileInput = el("input", { type: "file", accept: ".csv,.json,.txt,text/csv,text/plain,application/json", class: "visually-hidden", id: uid("file") });
   fileInput.addEventListener("change", () => {
     const file = fileInput.files?.[0];
     fileInput.value = "";
-    if (file) o.onFile(file);
+    if (file) void routeFile(file, o.onProblem);
   });
 
   const zone = el(
@@ -67,24 +114,8 @@ export function dropZone(o: DropZoneOptions): HTMLElement {
       o.onProblem("Drop one file at a time.");
       return;
     }
-    o.onFile(file);
+    void routeFile(file, o.onProblem);
   });
-
-  // A file dropped beside every zone must not make the browser leave the app and open the file.
-  const guard = (e: DragEvent) => {
-    if (!zone.isConnected) {
-      window.removeEventListener("dragover", guard);
-      window.removeEventListener("drop", guard);
-      return;
-    }
-    const overAZone = e.target instanceof Element && e.target.closest(".drop-zone") !== null;
-    if (carriesFiles(e) && !overAZone) {
-      e.preventDefault();
-      if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
-    }
-  };
-  window.addEventListener("dragover", guard);
-  window.addEventListener("drop", guard);
 
   return zone;
 }

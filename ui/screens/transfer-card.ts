@@ -5,7 +5,7 @@
  */
 
 import { exportFileName, exportToJson, importFromJson, type Household } from "../../engine";
-import { dropZone, saveTextFile } from "../components/drop-zone";
+import { dropZone, handleFiles, saveTextFile } from "../components/drop-zone";
 import { gentleFlag } from "../components/gentle-flag";
 import { clear, el } from "../dom";
 import type { Store } from "../store";
@@ -29,35 +29,20 @@ export function transferCard(ctx: TransferContext): HTMLElement {
     saveTextFile(exportFileName(today), exportToJson(ctx.household(), today), "application/json");
   };
 
-  /** Reads one file and imports it, the same way whether it was dropped or chosen. */
-  const importFile = async (file: File): Promise<void> => {
+  /** Imports a full export, the same way whether it was dropped anywhere or chosen. */
+  handleFiles("full", (name, text) => {
     clear(status);
-    let text: string;
-    try {
-      text = await file.text();
-    } catch {
-      flag(`"${file.name}" could not be read. Try choosing it again.`);
-      return;
-    }
-    if (/\.csv$/i.test(file.name)) {
-      flag(`"${file.name}" looks like a template. Drop it on "Import from a template" below.`);
-      return;
-    }
     const result = importFromJson(text);
     if (!result.ok) {
-      flag(`"${file.name}" could not be imported. ${result.problems.join(" ")}`);
+      flag(`"${name}" could not be imported. ${result.problems.join(" ")}`);
+      status.scrollIntoView({ block: "center" });
       return;
     }
     ctx.store.saveSnapshot(ctx.household(), new Date().toISOString());
     ctx.replace(result.household);
-  };
-
-  const zone = dropZone({
-    text: "Drop your Money Rooms file here",
-    accept: "application/json,.json",
-    onFile: (file) => void importFile(file),
-    onProblem: flag,
   });
+
+  const zone = dropZone({ text: "Drop your Money Rooms file here", onProblem: flag });
 
   const snapshot = ctx.store.loadSnapshot();
   if (snapshot) {

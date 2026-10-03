@@ -129,7 +129,7 @@ Birth month is always stored as Known (data dictionary 3.1).
 
 ## 4. Importing
 
-1. The person drops the file on "Import from a template", or chooses it. The same card hands out the blank template and the AI prompt ("Get the template", "Get the AI prompt").
+1. The person drops the file anywhere on the "Your numbers" screen, chooses it, or pastes its text into the box under the drop zone (handy when an AI returns the template in a chat). Code-block marks around pasted text are ignored. The same card hands out the blank template and the AI prompt ("Get the template", "Get the AI prompt").
 2. The app shows a preview and changes nothing yet: how many items each section has, the rows that need a look with a plain reason for each ("Ally savings: balance '20k' isn't a number"). A row that could not be read is not imported, and the rows to look up later.
 3. Apply replaces the household. A snapshot of what was there is kept first, so the import can be undone.
 

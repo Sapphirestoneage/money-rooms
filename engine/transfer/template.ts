@@ -228,7 +228,8 @@ export function readTemplate(text: string, asOf: IsoDate): TemplatePreview {
   const planDate: IsoDate = `${planMonth}-01`;
   const preview: TemplatePreview = { fileProblems: [], household: emptyHousehold(asOf), counts: emptyCounts(), needsALook: [], toLookUp: [] };
 
-  const table = parseCsv(text);
+  // Text pasted from a chat often arrives wrapped in code-block marks. They are not rows.
+  const table = parseCsv(text.split(/\r?\n/).filter((l) => !/^\s*```/.test(l)).join("\n"));
   const headerIndex = table.findIndex((r) => r.some((c) => c.trim() !== ""));
   if (headerIndex < 0) {
     preview.fileProblems.push("The file is empty.");
