@@ -67,6 +67,8 @@
   --border-width: 1px;
 
   /* Layout */
+  --tap-target: 44px;            /* the smallest height of anything tappable */
+  --section-gap: var(--space-5); /* between sections of a screen */
   --content-width: 720px;
   --wide-width: 1080px;
 

@@ -21,7 +21,7 @@
 .topbar__brand {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--tap-target);
   font-weight: var(--weight-bold);
   font-size: var(--text-md);
   color: var(--color-ink);
@@ -36,7 +36,7 @@
 .topbar__nav a {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--tap-target);
   padding: 0 var(--space-3);
   border-radius: var(--radius-md);
   color: var(--color-ink-muted);
@@ -97,7 +97,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: var(--tap-target);
   padding: 0 var(--space-4);
   border-radius: var(--radius-md);
   border: var(--border-width) solid var(--color-brand-700);
@@ -123,7 +123,7 @@
   background: var(--color-brand-100);
 }
 
-/* A button that reads as a line of text: for small, optional choices under a field. Still a 44px target. */
+/* A button that reads as a line of text: for small, optional choices under a field. Still a var(--tap-target) target. */
 .button--text {
   justify-content: flex-start;
   padding: 0;
@@ -157,7 +157,7 @@
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-  min-height: 44px;
+  min-height: var(--tap-target);
   padding: var(--space-2) 0;
   border-bottom: var(--border-width) solid var(--color-rule);
 }
@@ -190,7 +190,7 @@
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  min-height: 44px;
+  min-height: var(--tap-target);
 }
 
 .field-row__value button.value-button:hover {
@@ -212,7 +212,7 @@
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-rule);
   border-radius: var(--radius-sm);
-  min-height: 44px;
+  min-height: var(--tap-target);
   padding: 0 var(--space-3);
   width: 100%;
 }
@@ -268,7 +268,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 44px;
+  min-height: var(--tap-target);
   padding: 0 var(--space-3);
   border: var(--border-width) solid var(--color-rule);
   border-radius: var(--radius-pill);
@@ -283,13 +283,13 @@
 
 /* ---- Kind badge ---- */
 
-/* The button is the tap target (44px). The pill inside is the small visible badge. */
+/* The button is the tap target (var(--tap-target)). The pill inside is the small visible badge. */
 .kind-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  min-width: 44px;
+  min-height: var(--tap-target);
+  min-width: var(--tap-target);
   padding: 0 var(--space-1);
   background: transparent;
   border: 0;
@@ -323,7 +323,7 @@
 
 .badge-slot {
   display: inline-flex;
-  min-height: 44px;
+  min-height: var(--tap-target);
   align-items: center;
 }
 
@@ -349,7 +349,7 @@
   border: var(--border-width) solid var(--color-rule);
   border-radius: var(--radius-md);
   padding: var(--space-3);
-  min-height: 44px;
+  min-height: var(--tap-target);
   cursor: pointer;
 }
 
@@ -575,7 +575,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 44px;
+  min-height: var(--tap-target);
   font-size: var(--text-sm);
   color: var(--color-ink-muted);
 }
@@ -599,7 +599,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  min-height: 44px;
+  min-height: var(--tap-target);
 }
 
 .field__label-row label,
@@ -617,7 +617,7 @@
 .card__summary {
   display: flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--tap-target);
   cursor: pointer;
 }
 
@@ -648,7 +648,7 @@
 .toggle-button {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--tap-target);
   padding: 0 var(--space-4);
   border-radius: var(--radius-pill);
   border: var(--border-width) solid var(--color-rule);
@@ -693,7 +693,7 @@
 /* Every control is one height, so a select beside an input lines up. */
 .input,
 .select {
-  height: 44px;
+  height: var(--tap-target);
 }
 
 /* Fields sit at the top of their row and keep their own height. Nothing stretches. */
@@ -826,7 +826,7 @@
   align-items: flex-start;
   gap: var(--space-2);
   width: 100%;
-  min-height: 44px;
+  min-height: var(--tap-target);
   padding: var(--space-1) 0;
   border: 0;
   background: transparent;
@@ -909,13 +909,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 44px;
+  min-height: var(--tap-target);
 }
 
 .dense-row__main {
   flex: 1;
   min-width: 0;
-  min-height: 44px;
+  min-height: var(--tap-target);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -972,4 +972,39 @@
 
 .dense-row--open > * + * {
   margin-top: var(--space-3);
+}
+
+/* ---- Entry screen spacing: tight inside a section, clear space between sections ---- */
+
+.card--section {
+  padding: var(--space-2) var(--space-4);
+  margin-bottom: var(--section-gap);
+}
+
+.card--section-open {
+  padding-bottom: var(--space-4);
+}
+
+.card--section .section-body {
+  margin-top: var(--space-1);
+}
+
+.section-body > * + * {
+  margin-top: var(--space-3);
+}
+
+.section-body > .row-actions {
+  margin-top: var(--space-3);
+}
+
+.rows > .empty-state {
+  padding: var(--space-2) 0;
+}
+
+.rows > .group-header {
+  padding-top: var(--space-3);
+}
+
+.rows > .group-header:first-child {
+  padding-top: var(--space-1);
 }

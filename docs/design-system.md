@@ -149,6 +149,9 @@ Under the template drop zone, a text box for pasting a filled template straight 
 ### Import preview
 Shown under the drop zone after a template is read and before anything changes. It names the file, says plainly that nothing has changed yet, then lists: how many things each section holds, the rows that need a look (each with its row number, its name, and a plain reason; a row that could not be read is not imported, and a row that was imported but looks wrong, like a 0% rate with no end, says so), and the rows marked as not known ("to look up later"). It ends with one sentence saying what Apply does and two buttons: "Apply" and a way out ("Keep what I have"). Focus moves to Apply when the preview appears. Lists are plain text, not color alone.
 
+### Entry screen spacing
+Tight inside a section, clear space between sections. Rows are at least 44px tall (`--tap-target`) with a divider between them and no other gap. Sections sit 24px apart (`--section-gap`). Both values are tokens in `ui/tokens.css`. No screen file sets a spacing value of its own.
+
 ### Collapsible section
 The entry screen's five sections (About you, Income, Spending, Accounts, Debts) each have a header that opens and closes them. The header is a real button inside the heading, with a caret that points right when closed and down when open, and `aria-expanded`. Under the title it always shows one summary line: the item count, the dollar total, how many are rough or missing, and a checkmark when the section is complete ("Debts: 7 items, $35,829, 2 rough" and a check). Complete means every required field is answered; roughly counts as answered, look-it-up does not. When the screen opens, only the first section that needs attention is open: the first with a required answer missing; if none, the first with a rough value; if none, all are closed. Closing a section hides it. Nothing is ever removed. The numbers in the summary come from the engine.
 
