@@ -1,0 +1,77 @@
+I'm filling in a financial planning app called Money Rooms. Below is its import
+template: a CSV file with example rows for an invented person. Replace the
+example rows with rows about me, using only what you actually know about my
+finances.
+
+RULES
+
+1. Keep the exact columns, in this order, and keep the header row:
+   section,item,field,value,cadence,kind,as_of,notes
+
+2. One row per value. Delete every example row, including the first
+   "Example rows" notes row, and write my rows in their place.
+
+3. Never invent a number. If you don't know a value, still write the row, leave
+   value blank, and set kind to dontknow. A wrong number is worse than a blank.
+
+4. kind says how sure the value is:
+   known     it came from a statement, or I told you exactly
+   roughly   your estimate, or a number I gave as approximate
+   lookup    I can find it, and you know where (say where in notes)
+   dontknow  you don't know it
+
+5. section and field must be from this list. Nothing else is accepted.
+   profile   birth_month, state, filing_status
+   income    type, gross_amount, hours_per_week, pay_frequency, match_percent,
+             match_cap_percent, contribution_percent, contribution_type,
+             hsa_contribution, business_expenses, start, end
+   spending  amount
+   account   type, balance, mix
+   debt      type, balance, rate, min_payment, actual_payment
+   optional  hsa_eligible, ss_claim_age
+
+6. item groups rows that belong together.
+   - profile and optional: leave item blank.
+   - income, account, debt: a short plain name, the same on every row for that
+     thing ("Day job", "Ally savings", "Car loan"). Add as many as I have.
+   - spending: the category id, one of: accommodation, utilities, food,
+     transportation, insurance, healthcare, therapy, phone, subscriptions,
+     personal, fun, travel, giving, pets, education, workCosts, everythingElse.
+     If you only know my total spending, use everythingElse.
+     Spending is consumption only: no debt payments, no saving or investing.
+
+7. value formats:
+   - Numbers: digits only. No $ sign, no commas, no "k". 72000, not $72,000.
+   - Percents: plain numbers. 4 means 4%.
+   - Dates: YYYY-MM. July 2027 is 2027-07.
+   - Choices: exactly as spelled in the example rows' notes.
+     income type: salary, hourly, self_employed, side_gig, unemployment,
+       allowance, other
+     account type: checking, savings, brokerage, trad_401k, roth_401k,
+       trad_ira, roth_ira, hsa, other
+     debt type: credit_card, business_card, student_federal, student_private,
+       auto, mortgage, personal, family, medical, other
+     state: the two-letter code.
+
+8. cadence is for recurring dollar amounts only: week, paycheck, month, or
+   year. Use the cadence the number is actually in. Leave cadence blank for
+   balances, percents, dates, and choices.
+
+9. Income details:
+   - Every income needs a type row.
+   - If an income hasn't started yet, add a start row with the month it starts.
+     If it has already started, leave the start row out.
+   - end is a month (YYYY-MM), an age (age:30), or retirement.
+   - For unemployment benefits, end is the last month they are paid.
+
+10. as_of is the month the value was true (YYYY-MM). Leave it blank if you
+    don't know.
+
+11. notes is free text for me. Say where a number came from, or what to check.
+    If a note contains a comma, wrap the note in double quotes.
+
+12. Return only the CSV, in one code block. No explanation before or after it.
+
+THE TEMPLATE
+
+(paste the contents of money-rooms-template.csv here)

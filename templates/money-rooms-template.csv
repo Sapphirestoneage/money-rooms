@@ -1,0 +1,39 @@
+section,item,field,value,cadence,kind,as_of,notes
+,,,,,,,Example rows: replace with your own
+profile,,birth_month,2001-03,,known,2026-10,Month and year only
+profile,,state,NY,,known,2026-10,Two-letter code
+profile,,filing_status,single,,known,2026-10,single | married_joint | married_separate | head_of_household
+income,Day job,type,salary,,known,2026-10,salary | hourly | self_employed | side_gig | unemployment | allowance | other
+income,Day job,gross_amount,72000,year,known,2026-10,Before taxes
+income,Day job,pay_frequency,biweekly,,known,2026-10,weekly | biweekly | semimonthly | monthly
+income,Day job,match_percent,100,,known,2026-10,The employer matches 100% of what she puts in
+income,Day job,match_cap_percent,4,,known,2026-10,The match stops at 4% of pay
+income,Day job,contribution_percent,4,,known,2026-10,Her own 401(k) contribution as a percent of pay
+income,Day job,contribution_type,traditional,,known,2026-10,traditional | roth
+income,Day job,hsa_contribution,0,year,known,2026-10,She has no HSA
+income,Day job,end,retirement,,known,2026-10,YYYY-MM | age:NN | retirement
+income,Tutoring side gig,type,side_gig,,roughly,2026-10,A second income shows the fields a salary does not use
+income,Tutoring side gig,gross_amount,,year,dontknow,,Not known yet: this row is skipped and listed to look up later
+income,Tutoring side gig,hours_per_week,5,,roughly,2026-10,1 to 80
+income,Tutoring side gig,business_expenses,300,year,roughly,2026-10,Self-employed and side gig only
+income,Tutoring side gig,start,2027-01,,roughly,2026-10,Leave this row out if the income has already started
+income,Tutoring side gig,end,age:30,,roughly,2026-10,
+spending,accommodation,amount,1600,month,roughly,2026-10,Rent
+spending,food,amount,500,month,roughly,2026-10,
+spending,transportation,amount,200,month,roughly,2026-10,
+spending,everythingElse,amount,800,month,roughly,2026-10,"Everything not listed above. Consumption only: no debt payments, no saving"
+account,Checking,type,checking,,known,2026-10,checking | savings | brokerage | trad_401k | roth_401k | trad_ira | roth_ira | hsa | other
+account,Checking,balance,3500,,known,2026-10,No cadence on a balance
+account,High-yield savings,type,savings,,known,2026-10,
+account,High-yield savings,balance,6000,,known,2026-10,
+account,High-yield savings,mix,mostly_cash,,known,2026-10,mostly_stocks | balanced | mostly_cash
+account,Work 401(k),type,trad_401k,,known,2026-10,
+account,Work 401(k),balance,8200,,known,2026-10,
+account,Work 401(k),mix,mostly_stocks,,known,2026-10,
+debt,Federal student loan,type,student_federal,,known,2026-10,credit_card | business_card | student_federal | student_private | auto | mortgage | personal | family | medical | other
+debt,Federal student loan,balance,24000,,known,2026-10,
+debt,Federal student loan,rate,5.5,,known,2026-10,Percent per year
+debt,Federal student loan,min_payment,260,month,known,2026-10,
+debt,Federal student loan,actual_payment,260,month,known,2026-10,What is actually paid
+optional,,hsa_eligible,no,,known,2026-10,yes | no
+optional,,ss_claim_age,67,,roughly,2026-10,A whole age from 62 to 70
