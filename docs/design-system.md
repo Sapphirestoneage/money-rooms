@@ -118,6 +118,7 @@ Rules every entry screen follows, so entering numbers never fights the person.
 - **Plain pickers for dates.** Month and year are two pickers, not the browser's own month control, which some browsers lack.
 - **Places by name.** States are listed by name, in alphabetical order.
 - **Number fields ignore the scroll wheel**, so scrolling the page never changes a value.
+- **Saved as you go.** Every change is saved the moment it is made and is there on the next visit, along with the cadence chosen for each amount. If the browser cannot save, a gentle flag says so at the top of the screen.
 
 ### Headline result
 The FI date in hero type, with the best and worst range beneath it in a single line:

@@ -55,7 +55,7 @@ import { gentleFlag } from "../components/gentle-flag";
 import { kindBadge, type EditableKind } from "../components/kind-badge";
 import { moneyInput, type MoneyInputOptions } from "../components/money-input";
 import { presetPicker } from "../components/preset-picker";
-import { clear, el, uid } from "../dom";
+import { clear, el, rowId, uid } from "../dom";
 import { MONTH_NAMES, amountForInput, dollars, parseMoney, percent } from "../format";
 import type { Store } from "../store";
 import { transferCard } from "./transfer-card";
@@ -168,7 +168,12 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   const isRough = (c: Confidence | undefined) => c === "roughly";
 
   /** What each amount field's cadence was last set to, so it does not snap back when the screen refreshes. */
-  const cadenceMemory = new Map<string, Cadence>();
+  const prefs = ctx.store.loadPrefs();
+  const cadenceMemory = new Map<string, Cadence>(Object.entries(prefs.cadence) as [string, Cadence][]);
+  const rememberCadence = (key: string, c: Cadence): void => {
+    cadenceMemory.set(key, c);
+    ctx.store.savePrefs({ cadence: Object.fromEntries(cadenceMemory) });
+  };
   /** A field to put the cursor in after the next refresh (a row that was just added). */
   let pendingFocusKey: string | null = null;
 
@@ -176,7 +181,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   const money = (o: MoneyInputOptions): HTMLElement => {
     const key = keyFor(o.label);
     const remembered = cadenceMemory.get(key);
-    return moneyInput({ ...o, key, ...(remembered ? { initialCadence: remembered } : {}), onCadenceChange: (c) => cadenceMemory.set(key, c) });
+    return moneyInput({ ...o, key, ...(remembered ? { initialCadence: remembered } : {}), onCadenceChange: (c) => rememberCadence(key, c) });
   };
 
   /** Refreshes the screen after the current event finishes, so a field the person is moving to keeps the cursor. */
@@ -200,9 +205,12 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const openSections = [...root.querySelectorAll("details")].map((d) => d.open);
 
     clear(root);
-    root.append(
+    const parts: (HTMLElement | null)[] = [
       el("h1", { class: "screen-title" }, "Your numbers"),
       el("p", { class: "lede" }, "Five answers give you a first FI date. Everything else sharpens it. Every question has an \"I don't\" answer."),
+      ctx.store.isPersistent()
+        ? null
+        : gentleFlag("This browser is not keeping what you enter (a private window does this). Your numbers will be gone when you close it. Export a file below to keep them."),
       aboutYou(),
       income(),
       spending(),
@@ -211,7 +219,8 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       examples(),
       transferCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
       footer(),
-    );
+    ];
+    for (const part of parts) if (part) root.append(part);
 
     // Put everything back.
     [...root.querySelectorAll("details")].forEach((d, i) => { if (openSections[i]) d.open = true; });
@@ -289,7 +298,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       const inc = h().self.income;
       const rows = inc.kind === "rows" ? inc.rows : [];
       const stream: IncomeStream = {
-        id: uid("income"),
+        id: rowId("income"),
         type,
         grossAnnual: userValue(0, asOf(), type === "salary" || type === "unemployment" ? "known" : "roughly"),
         // Unemployment benefits start with an end six months out (most states pay up to 26 weeks).
@@ -612,7 +621,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
           const acc = h().accounts;
           const rows = acc.kind === "rows" ? acc.rows : [];
           const preset = getAccountPreset(key);
-          const id = uid("acct");
+          const id = rowId("acct");
           const balance = userValue(0, asOf(), "roughly");
           let account: Account;
           if (preset.side === "asset") {

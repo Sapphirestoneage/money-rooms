@@ -47,3 +47,14 @@ export function uid(prefix = "id"): string {
   counter += 1;
   return `${prefix}-${counter}`;
 }
+
+/**
+ * An id for a stored row (an income stream, an account). Unlike uid, it cannot repeat on a
+ * later visit: it mixes the time, a counter, and a random part.
+ */
+export function rowId(prefix: string): string {
+  counter += 1;
+  const time = Date.now().toString(36);
+  const random = Math.floor(Math.random() * 36 ** 6).toString(36).padStart(6, "0");
+  return `${prefix}-${time}${counter.toString(36)}-${random}`;
+}

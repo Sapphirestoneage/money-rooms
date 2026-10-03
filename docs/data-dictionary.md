@@ -377,12 +377,14 @@ Everything above is stored together as one household.
 | Field | Stored as | Meaning |
 |---|---|---|
 | `schemaVersion` | A whole number, currently 1 | The version of this dictionary's shape the household was saved in. Export files carry it, and import refuses a newer version than the app knows |
-| `asOf` | `YYYY-MM-DD` | The plan date. The projection starts in this month (decision E8) |
+| `asOf` | `YYYY-MM-DD` | The plan date. The projection starts in this month (decision E8). It becomes today's date each time the app opens. Every stored value keeps its own `asOf`, the date it was true |
 | `self`, `partner` | A person | Birth date, filing status, state, income, HSA eligibility, and the Social Security parts the person owns. `partner` is shape only in M1 (D18) |
 | `spending`, `accounts` | Lists | Each is unanswered, answered "none", or answered with rows |
 | `assumptions` | A set name plus overrides | The set's numbers are never copied in (D2) |
 | `savingsStrategy` | Pick list | Section 4.6 |
 | `goals` | List | Later |
+
+**Kept from visit to visit.** Every change is saved in the browser as it is made, so entered numbers are there on the next visit. Each row has an id that never repeats, even across visits. Display choices (such as showing an amount per month) are remembered too, in a separate place, because they are not part of the plan. If the browser will not store anything, as in some private windows, the app says so and points to export.
 
 **Export and import.** A household exports as a JSON file with a format name, a format version, the export date, and the household. Import checks the shape before anything changes and lists every problem in plain words.
 

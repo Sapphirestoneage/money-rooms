@@ -1,13 +1,21 @@
 /**
  * Where the household lives in the browser: local storage, one key, the whole
  * household as JSON. Stores parts only; every total is computed by the engine.
- * A second key holds the snapshot taken before an import, so it can be undone.
+ *
+ * Keeping things from visit to visit:
+ * - Every change is saved as it is made.
+ * - On each visit the plan date becomes today. Each value keeps its own as-of date.
+ * - Older saved shapes are upgraded on load.
+ * - A second key holds the snapshot taken before an import, so it can be undone.
+ * - A third key holds display choices (like "per month" on an amount), which are not part of the plan.
+ * - If the browser will not store anything (a private window), the store says so.
  */
 
 import { emptyHousehold, migrateHousehold, type Household, type IsoDate } from "../engine";
 
 export const STORAGE_KEY = "moneyRooms.household.v1";
 export const SNAPSHOT_KEY = "moneyRooms.snapshotBeforeImport.v1";
+export const PREFS_KEY = "moneyRooms.display.v1";
 
 export function todayIso(): IsoDate {
   const d = new Date();
@@ -21,14 +29,25 @@ export interface Snapshot {
   household: Household;
 }
 
+/** Display choices that are remembered but are not part of the plan. */
+export interface DisplayPrefs {
+  /** The cadence last chosen for each amount field, by field key. */
+  cadence: Record<string, string>;
+}
+
 export interface Store {
   load(): Household;
-  save(h: Household): void;
+  /** Saves the household. Returns false if the browser refused to store it. */
+  save(h: Household): boolean;
   clear(): void;
+  /** True when this browser will keep what is saved (false in some private windows). */
+  isPersistent(): boolean;
   /** Keeps a copy of the current household so an import can be undone. */
   saveSnapshot(h: Household, takenAt: string): void;
   loadSnapshot(): Snapshot | null;
   clearSnapshot(): void;
+  loadPrefs(): DisplayPrefs;
+  savePrefs(p: DisplayPrefs): void;
 }
 
 function isHousehold(x: unknown): x is Household {
@@ -37,7 +56,7 @@ function isHousehold(x: unknown): x is Household {
 
 type Storage = { getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void };
 
-export function browserStore(storage: Storage | null): Store {
+export function browserStore(storage: Storage | null, today: () => IsoDate = todayIso): Store {
   const read = (key: string): unknown => {
     try {
       const raw = storage?.getItem(key);
@@ -46,11 +65,14 @@ export function browserStore(storage: Storage | null): Store {
       return null;
     }
   };
-  const write = (key: string, value: unknown) => {
+  const write = (key: string, value: unknown): boolean => {
+    if (!storage) return false;
     try {
-      storage?.setItem(key, JSON.stringify(value));
+      storage.setItem(key, JSON.stringify(value));
+      return true;
     } catch {
-      // Private mode or blocked storage: the session still works in memory.
+      // Private mode, a full disk, or blocked storage: the session still works in memory.
+      return false;
     }
   };
   const remove = (key: string) => {
@@ -61,14 +83,24 @@ export function browserStore(storage: Storage | null): Store {
     }
   };
 
+  // Find out once whether this browser keeps what we write.
+  const probeKey = "moneyRooms.probe";
+  const persistent = write(probeKey, 1) && read(probeKey) === 1;
+  remove(probeKey);
+
   return {
     load() {
       const parsed = read(STORAGE_KEY);
-      return isHousehold(parsed) ? migrateHousehold(parsed) : emptyHousehold(todayIso());
+      if (!isHousehold(parsed)) return emptyHousehold(today());
+      const h = migrateHousehold(parsed);
+      // The plan date is always today. Every stored value keeps the date it was true.
+      h.asOf = today();
+      return h;
     },
     save: (h) => write(STORAGE_KEY, h),
     clear: () => remove(STORAGE_KEY),
-    saveSnapshot: (h, takenAt) => write(SNAPSHOT_KEY, { takenAt, household: h } satisfies Snapshot),
+    isPersistent: () => persistent,
+    saveSnapshot: (h, takenAt) => void write(SNAPSHOT_KEY, { takenAt, household: h } satisfies Snapshot),
     loadSnapshot() {
       const parsed = read(SNAPSHOT_KEY);
       if (typeof parsed !== "object" || parsed === null) return null;
@@ -76,5 +108,11 @@ export function browserStore(storage: Storage | null): Store {
       return typeof s.takenAt === "string" && isHousehold(s.household) ? { takenAt: s.takenAt, household: migrateHousehold(s.household) } : null;
     },
     clearSnapshot: () => remove(SNAPSHOT_KEY),
+    loadPrefs() {
+      const parsed = read(PREFS_KEY);
+      const cadence = typeof parsed === "object" && parsed !== null && typeof (parsed as DisplayPrefs).cadence === "object" && (parsed as DisplayPrefs).cadence !== null ? (parsed as DisplayPrefs).cadence : {};
+      return { cadence: { ...cadence } };
+    },
+    savePrefs: (p) => void write(PREFS_KEY, p),
   };
 }
