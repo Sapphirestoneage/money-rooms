@@ -19,7 +19,9 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 10 Foundations | Done (CI gate left for review) | `foundations` | (see git log) |
 | 11 Coaching spec | Done (docs only) | `coaching-specs` | (see git log) |
 | 12 Feature register | Done (docs only) | `feature-register` | (see git log) |
-| 13 Readiness audit | Not started | `readiness` | |
+| 13 Readiness audit | Done (docs only) | `readiness` | (see git log) |
+
+**Phase 13 in plain English.** `docs/readiness.md` grades the app across Math, Data, Trust and legal, Users, Upkeep, and Launch as Ready, Partial, or Missing, each with evidence and the work left. Ready: the Maya tie-out, the dictionary discipline, the disclaimer, sourced and dated rules, privacy, documentation. Missing: an M2-depth tie-out and any household beyond Maya, professional review, statement upload, sync, the weekly loop, retention signals, support, monitoring. The Trust section ends with eight questions for a securities attorney, no conclusions drawn. The top ten moves are in section 9.
 
 **Phase 12 in plain English.** Every feature from v1 (cloned and inventoried: 37 live rooms, 60-odd engines, the D&D game, the coach console, the marketing board), the build's minimum list, the named frameworks, the coaching spec's parts, and this repo's unbuilt specs, one row each, scored on the six-part rubric with the points shown, ranked, top quartile marked, and sorted into a plan (above 25) or the icebox (25 or below). Section 8 has the totals and the top twenty. The luxury-strategies catalog turned out not to exist in v1; the four corrections are recorded, and seventeen other v1 claims that fail against the registry are listed with evidence. Decisions R1 to R3.
 
@@ -170,10 +172,25 @@ On `feature-register`, docs only: `data/feature-register.json`, `docs/features/f
 
 ## 9. Readiness audit top ten
 
-Not started.
+From `docs/readiness.md`, in order:
+
+1. A second Maya workpaper at M2 depth, then Jordan and Dev with expected values (only you can produce them).
+2. Replace the return series and verify the spousal and survivor rule (two unverified data items flag every Risk result and every couple's late years).
+3. Protect `main` and merge the CI gate from `foundations`.
+4. Five people through the first five minutes, timed.
+5. The eight attorney questions in the Trust section.
+6. Extend the instructing-phrase scan to the plan text and the lessons, and decide the frame for "the plan does X".
+7. The rules update routine's first run, with an owner.
+8. Axe on every route and one screen-reader session.
+9. Measure on a phone and move long work to a Web Worker.
+10. A "something looks wrong" link and a visible version number.
 
 ## 10. Handoff
 
-**Where I am:** Phases 0 to 12 complete and pushed. **Next:** branch `readiness` from `feature-register`, write `docs/readiness.md`, fill report section 9, final handoff.
+**Where I stopped:** every phase, 0 to 13, is complete and pushed; the last branch is `readiness`, which carries the final report. Nothing was merged to `main`. The branch chain, each from the one before: `prep-oct4`, `m2-engine`, `m2-optimizer`, `m3-flow`, `levels`, `m5-whatifs`, `m4-meaning`, `m6-risk`, `household-two`, `packs-specs`, `foundations`, `coaching-specs`, `feature-register`, `readiness`. Merging `readiness` into `main` brings everything; reviewing the Proposed specs in section 3 and the decisions in section 4 first is the order the build assumed.
+
+**What is next, in the order the readiness audit gives:** the M2 workpaper (yours), the two unverified data items, protect `main` and merge the CI gate, five timed people, the attorney questions. The leftover `preflight-check` branch and the branch protection on `main` are still the two fixes from the preflight that the session could not make.
+
+**Instructions found in fetched content:** none. No page or tool output fetched during the build contained instructions aimed at it.
 
 **Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.
