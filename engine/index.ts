@@ -4,6 +4,7 @@
  */
 
 export * from "./model";
+export * from "./transfer/template";
 export * from "./tax/brackets";
 export * from "./tax/federal";
 export * from "./tax/state";

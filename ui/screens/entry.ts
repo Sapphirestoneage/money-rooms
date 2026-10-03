@@ -58,6 +58,7 @@ import { presetPicker } from "../components/preset-picker";
 import { clear, el, rowId, uid } from "../dom";
 import { MONTH_NAMES, amountForInput, dollars, parseMoney, percent } from "../format";
 import type { Store } from "../store";
+import { templateCard } from "./template-card";
 import { transferCard } from "./transfer-card";
 
 export interface EntryContext {
@@ -217,6 +218,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       accounts(),
       sharpeners(),
       examples(),
+      templateCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
       transferCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
       footer(),
     ];

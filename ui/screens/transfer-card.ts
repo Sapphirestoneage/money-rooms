@@ -5,8 +5,9 @@
  */
 
 import { exportFileName, exportToJson, importFromJson, type Household } from "../../engine";
+import { dropZone, saveTextFile } from "../components/drop-zone";
 import { gentleFlag } from "../components/gentle-flag";
-import { clear, el, uid } from "../dom";
+import { clear, el } from "../dom";
 import type { Store } from "../store";
 import { todayIso } from "../store";
 
@@ -16,23 +17,16 @@ export interface TransferContext {
   replace(h: Household): void;
 }
 
-/** True when a drag carries files (and not, say, selected text). */
-function carriesFiles(e: DragEvent): boolean {
-  return Array.from(e.dataTransfer?.types ?? []).includes("Files");
-}
-
 export function transferCard(ctx: TransferContext): HTMLElement {
   const status = el("div", { class: "stack", "aria-live": "polite" });
+  const flag = (sentence: string) => {
+    clear(status);
+    status.append(gentleFlag(sentence));
+  };
 
   const download = () => {
     const today = todayIso();
-    const blob = new Blob([exportToJson(ctx.household(), today)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = el("a", { href: url, download: exportFileName(today) });
-    document.body.append(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    saveTextFile(exportFileName(today), exportToJson(ctx.household(), today), "application/json");
   };
 
   /** Reads one file and imports it, the same way whether it was dropped or chosen. */
@@ -42,81 +36,28 @@ export function transferCard(ctx: TransferContext): HTMLElement {
     try {
       text = await file.text();
     } catch {
-      status.append(gentleFlag(`"${file.name}" could not be read. Try choosing it again.`));
+      flag(`"${file.name}" could not be read. Try choosing it again.`);
+      return;
+    }
+    if (/\.csv$/i.test(file.name)) {
+      flag(`"${file.name}" looks like a template. Drop it on "Import from a template" below.`);
       return;
     }
     const result = importFromJson(text);
     if (!result.ok) {
-      status.append(gentleFlag(`"${file.name}" could not be imported. ${result.problems.join(" ")}`));
+      flag(`"${file.name}" could not be imported. ${result.problems.join(" ")}`);
       return;
     }
     ctx.store.saveSnapshot(ctx.household(), new Date().toISOString());
     ctx.replace(result.household);
   };
 
-  const fileInput = el("input", { type: "file", accept: "application/json,.json", class: "visually-hidden", id: uid("import") });
-  fileInput.addEventListener("change", () => {
-    const file = fileInput.files?.[0];
-    fileInput.value = "";
-    if (file) void importFile(file);
+  const zone = dropZone({
+    text: "Drop your Money Rooms file here",
+    accept: "application/json,.json",
+    onFile: (file) => void importFile(file),
+    onProblem: flag,
   });
-
-  // The drop zone: drop a file on it, or use the button inside it.
-  const zone = el(
-    "div",
-    { class: "drop-zone" },
-    el("p", { class: "drop-zone__text" }, "Drop your Money Rooms file here"),
-    el("p", { class: "muted" }, "or"),
-    el("label", { class: "button button--quiet", for: fileInput.id }, "Choose a file"),
-    fileInput,
-  );
-  let depth = 0;
-  const setActive = (on: boolean) => zone.classList.toggle("drop-zone--active", on);
-  zone.addEventListener("dragenter", (e) => {
-    if (!carriesFiles(e)) return;
-    e.preventDefault();
-    depth += 1;
-    setActive(true);
-  });
-  zone.addEventListener("dragover", (e) => {
-    if (!carriesFiles(e)) return;
-    e.preventDefault();
-    if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
-  });
-  zone.addEventListener("dragleave", () => {
-    depth = Math.max(0, depth - 1);
-    if (depth === 0) setActive(false);
-  });
-  zone.addEventListener("drop", (e) => {
-    if (!carriesFiles(e)) return;
-    e.preventDefault();
-    depth = 0;
-    setActive(false);
-    const files = Array.from(e.dataTransfer?.files ?? []);
-    const file = files[0];
-    if (!file) return;
-    if (files.length > 1) {
-      clear(status);
-      status.append(gentleFlag("Drop one file at a time."));
-      return;
-    }
-    void importFile(file);
-  });
-
-  // A file dropped beside the zone must not make the browser leave the app and open the file.
-  const guard = (e: DragEvent) => {
-    if (!zone.isConnected) {
-      window.removeEventListener("dragover", guard);
-      window.removeEventListener("drop", guard);
-      return;
-    }
-    if (carriesFiles(e) && !(e.target instanceof Node && zone.contains(e.target))) {
-      e.preventDefault();
-      if (e.dataTransfer) e.dataTransfer.dropEffect = "none";
-    }
-  };
-  window.addEventListener("dragover", guard);
-  window.addEventListener("drop", guard);
 
   const snapshot = ctx.store.loadSnapshot();
   if (snapshot) {

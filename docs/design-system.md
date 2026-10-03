@@ -143,6 +143,9 @@ Shown inline, where the person tapped, before anything replaces or removes their
 ### Drop zone
 A dashed box for bringing a file into the app. It says what to drop, and holds a "Choose a file" button for people who can't or don't drag, so keyboard and touch use need nothing extra. While a file is dragged over it, the border and background change and the change is not color alone (the border turns solid). It takes one file at a time. A bad file gets a gentle flag naming the file and the problem. A file dropped beside the zone does nothing, so the browser never leaves the app to open it.
 
+### Import preview
+Shown under the drop zone after a template is read and before anything changes. It names the file, says plainly that nothing has changed yet, then lists: how many things each section holds, the rows that need a look (each with its row number, its name, and a plain reason), and the rows marked as not known ("to look up later"). It ends with one sentence saying what Apply does and two buttons: "Apply" and a way out ("Keep what I have"). Focus moves to Apply when the preview appears. Lists are plain text, not color alone.
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 

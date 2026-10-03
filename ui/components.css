@@ -737,3 +737,51 @@
   border-color: var(--color-brand-500);
   background: var(--color-brand-100);
 }
+
+/* ---- Import preview ---- */
+
+.import-preview {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--color-rule);
+  background: var(--color-paper);
+}
+
+.import-preview h3,
+.import-preview h4,
+.import-preview p {
+  margin: 0;
+}
+
+.import-preview > * + * {
+  margin-top: var(--space-3);
+}
+
+.import-preview__counts,
+.import-preview__notes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.import-preview__counts li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.import-preview__count {
+  font-variant-numeric: tabular-nums;
+}
+
+.import-preview__group > * + * {
+  margin-top: var(--space-2);
+}
+
+.import-preview__notes li {
+  padding: var(--space-1) 0;
+  overflow-wrap: anywhere;
+}
