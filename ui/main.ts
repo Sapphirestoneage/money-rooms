@@ -3,7 +3,8 @@
  * Screens read the engine. They never calculate.
  */
 
-import type { Household } from "../engine";
+import { emptyHousehold, type Household } from "../engine";
+import { backupNudge } from "./components/backup-nudge";
 import { sharedDrawer } from "./components/trace-drawer";
 import { clear, el } from "./dom";
 import { entryScreen } from "./screens/entry";
@@ -12,10 +13,11 @@ import { meaningScreen } from "./screens/meaning";
 import { nextScreen } from "./screens/next";
 import { resultScreen } from "./screens/result";
 import { riskScreen } from "./screens/risk";
+import { aboutScreen, privacyScreen } from "./screens/trust";
 import { whatIfsScreen } from "./screens/whatifs";
-import { browserStore } from "./store";
+import { browserStore, todayIso } from "./store";
 
-type Route = "entry" | "result" | "next" | "levels" | "whatifs" | "meaning" | "risk";
+type Route = "entry" | "result" | "next" | "levels" | "whatifs" | "meaning" | "risk" | "about" | "privacy";
 
 function currentRoute(): Route {
   if (window.location.hash === "#/result") return "result";
@@ -24,6 +26,8 @@ function currentRoute(): Route {
   if (window.location.hash === "#/whatifs") return "whatifs";
   if (window.location.hash === "#/meaning") return "meaning";
   if (window.location.hash === "#/risk") return "risk";
+  if (window.location.hash === "#/about") return "about";
+  if (window.location.hash === "#/privacy") return "privacy";
   return "entry";
 }
 
@@ -47,8 +51,22 @@ function boot(): void {
   const topbar = el("header", { class: "topbar" }, el("a", { class: "topbar__brand", href: "#/entry" }, "Money Rooms"), nav);
   document.body.prepend(topbar);
 
+  const nudge = el("div", {});
   const main = el("div", {});
-  app.append(main);
+  app.append(nudge, main);
+  const footer = el(
+    "footer",
+    { class: "sitefooter" },
+    el("nav", { "aria-label": "About this app" }, el("a", { href: "#/about" }, "About"), el("a", { href: "#/privacy" }, "Your data and privacy")),
+    el("p", { class: "muted" }, "Educational, not individualized financial, tax, or legal advice. Your numbers stay in this browser."),
+  );
+  app.after(footer);
+  const reset = () => {
+    store.clear();
+    store.clearSnapshot();
+    store.savePrefs({ cadence: {} });
+    household = emptyHousehold(todayIso());
+  };
 
   function render(): void {
     const route = currentRoute();
@@ -58,7 +76,16 @@ function boot(): void {
     }
     drawer.close();
     clear(main);
-    if (route === "result") {
+    clear(nudge);
+    if (route !== "about" && route !== "privacy") {
+      const card = backupNudge(() => household, store, render);
+      if (card) nudge.append(card);
+    }
+    if (route === "about") {
+      main.append(aboutScreen());
+    } else if (route === "privacy") {
+      main.append(privacyScreen({ store, reset, goToEntry: () => { window.location.hash = "#/entry"; render(); } }));
+    } else if (route === "result") {
       main.append(resultScreen({ household, store, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
     } else if (route === "risk") {
       main.append(riskScreen({ household, store, save, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));

@@ -470,6 +470,19 @@ export interface Household {
   blocks?: ScenarioBlock[];
   /** M6 (m6-spec.md section 3, Proposed). */
   risk?: { successThresholdPercent?: Value<number>; guardrailsOn?: Value<boolean> };
+  /** Progress history (dictionary 9.12, Proposed): one frozen snapshot per date, taken by the result screen. */
+  history?: ProgressSnapshot[];
+}
+
+/** Dictionary 9.12. A plan's headline numbers frozen on a date. The only stored derived values, because a past date cannot be recomputed. */
+export interface ProgressSnapshot {
+  date: IsoDate;
+  fiYear: { best: number | null; likely: number | null; worst: number | null };
+  fiAge: { likely: number | null };
+  netWorth: number;
+  savingsRatePercent: number | null;
+  fiNumber: number;
+  conventions: "m1" | "m2";
 }
 
 /** Dictionary 9.5. One proposed change inside a block. */

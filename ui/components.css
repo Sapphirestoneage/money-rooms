@@ -1499,3 +1499,51 @@
   font-weight: var(--weight-bold);
   background: var(--color-brand-100);
 }
+
+/* Site footer: the trust links, on every screen. */
+.sitefooter {
+  max-width: var(--content-width);
+  margin: var(--space-7) auto var(--space-6);
+  padding: var(--space-4) var(--space-4) 0;
+  border-top: var(--border-width) solid var(--color-rule);
+  font-size: var(--text-sm);
+}
+
+.sitefooter nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.sitefooter a {
+  color: var(--color-ink-muted);
+  min-height: var(--tap-target);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Backup nudge (design system 5): a quiet card above the screen, never a modal. */
+.backup-nudge {
+  margin-top: var(--space-4);
+  border-left: 3px solid var(--color-attention);
+}
+
+/* Progress history table on the result screen. */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+}
+
+.history-table th,
+.history-table td {
+  text-align: right;
+  padding: var(--space-1) var(--space-2);
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.history-table th:first-child,
+.history-table td:first-child {
+  text-align: left;
+}

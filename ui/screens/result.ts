@@ -10,6 +10,9 @@
 import {
   OBJECTIVES,
   OBJECTIVE_QUESTION,
+  addSnapshot,
+  snapshotFrom,
+  trendSentence,
   debtsNeedingRate,
   defaultDeps,
   drawdownUnlockItems,
@@ -37,6 +40,7 @@ import {
   type StressCase,
 } from "../../engine";
 import { bandChart } from "../components/band-chart";
+import { confirmPanel } from "../components/confirm-panel";
 import { fieldRow } from "../components/field-row";
 import { gentleFlag } from "../components/gentle-flag";
 import { headlineResult } from "../components/headline-result";
@@ -54,8 +58,8 @@ export interface ResultContext {
   drawer: Drawer;
 }
 
-type SectionId = "date" | "trueFi" | "chart" | "plan" | "strategies" | "figures" | "tripwires" | "rules" | "flags";
-const DEFAULT_ORDER: readonly SectionId[] = ["date", "trueFi", "chart", "plan", "strategies", "figures", "tripwires", "rules", "flags"];
+type SectionId = "date" | "trueFi" | "chart" | "plan" | "strategies" | "figures" | "tripwires" | "rules" | "flags" | "progress";
+const DEFAULT_ORDER: readonly SectionId[] = ["date", "trueFi", "chart", "plan", "strategies", "figures", "tripwires", "rules", "flags", "progress"];
 const SECTION_TITLE: Record<SectionId, string> = {
   date: "Your FI date",
   trueFi: "Your True FI number",
@@ -66,6 +70,7 @@ const SECTION_TITLE: Record<SectionId, string> = {
   tripwires: "Rules that could change",
   rules: "Rules behind this plan",
   flags: "Things to look at",
+  progress: "Your progress",
 };
 
 const isObjective = (x: string | undefined): x is Objective => OBJECTIVES.includes(x as Objective);
@@ -98,6 +103,15 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
   }
 
   const likelyBand = resolveBand(resolveAssumptions(ctx.household.assumptions), "likely");
+  // Progress history (docs/history-spec.md): one snapshot a day, taken here and saved with the household.
+  {
+    const snap = snapshotFrom(ctx.household, result, ctx.household.asOf);
+    const next = addSnapshot(ctx.household.history ?? [], snap);
+    if (JSON.stringify(next) !== JSON.stringify(ctx.household.history ?? [])) {
+      ctx.household.history = next;
+      ctx.store.save(ctx.household);
+    }
+  }
   const prefs = () => ctx.store.loadPrefs();
   const savePrefs = (patch: Partial<ReturnType<Store["loadPrefs"]>>) => ctx.store.savePrefs({ ...prefs(), ...patch });
   let nominal = false;
@@ -179,6 +193,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     const sections: Record<SectionId, () => HTMLElement> = {
       date: () => el("div", {}, headlineResult(result, openTrace), rearranging ? el("div", { class: "section-order section-order--center" }, el("button", { type: "button", class: "button button--quiet button--small", disabled: order().indexOf("date") === 0, onClick: () => move("date", -1) }, "Up"), el("button", { type: "button", class: "button button--quiet button--small", onClick: () => move("date", 1) }, "Down")) : null),
       trueFi: () => trueFiSection(),
+      progress: () => progressSection(),
       chart: () => sectionCard("chart", [bandChart(result, { display, dollarsLabel: dollarsLabel(), width: chartWidth() })]),
       plan: () => planSection(),
       strategies: () => strategiesSection(),
@@ -233,6 +248,38 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
       el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: ctx.goToEntry }, "Change my numbers")),
       el("p", { class: "notice" }, "Money Rooms is educational software, not individualized financial, tax, or legal advice. Amounts are in today's dollars unless marked as future dollars. Results describe what the numbers show under the rules as verified; they are not recommendations."),
     );
+  }
+
+  // ---- Progress history (docs/history-spec.md) ---------------------------------
+  let confirmingClear = false;
+  function progressSection(): HTMLElement {
+    const history = ctx.household.history ?? [];
+    const recent = history.slice(-8).reverse();
+    const table = el(
+      "div",
+      { class: "table-wrap", tabindex: "0", role: "region", "aria-label": "Snapshots of your plan" },
+      el(
+        "table",
+        { class: "history-table" },
+        el("thead", {}, el("tr", {}, el("th", {}, "Date"), el("th", {}, "Likely FI age"), el("th", {}, "Net worth"), el("th", {}, "Savings rate"))),
+        el("tbody", {}, ...recent.map((s) => el("tr", {}, el("td", {}, s.date), el("td", {}, s.fiAge.likely === null ? "Not funded" : String(s.fiAge.likely)), el("td", {}, dollars(s.netWorth)), el("td", {}, s.savingsRatePercent === null ? "" : percent(s.savingsRatePercent))))),
+      ),
+    );
+    const clearControl = confirmingClear
+      ? confirmPanel({
+          sentence: "This removes every snapshot. Your numbers are not affected.",
+          confirmLabel: "Clear history",
+          cancelLabel: "Keep it",
+          onConfirm: () => { confirmingClear = false; delete ctx.household.history; ctx.store.save(ctx.household); render(); },
+          onCancel: () => { confirmingClear = false; render(); },
+        })
+      : el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet button--small", onClick: () => { confirmingClear = true; render(); } }, "Clear history"));
+    return sectionCard_("progress", [
+      el("div", { class: "true-fi__row" }, el("p", {}, trendSentence(history)), kindBadge("computed")),
+      el("p", { class: "muted" }, "One snapshot a day, taken when this screen runs, kept with your numbers in this browser and in your export."),
+      recent.length ? table : null,
+      history.length ? clearControl : null,
+    ]);
   }
 
   // ---- True FI (spec section 9) ------------------------------------------------

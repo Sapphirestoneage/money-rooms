@@ -5,7 +5,8 @@ How Money Rooms gets from this computer to a public web page. Written 2026-10-03
 ## What is already in place
 
 - The code is a git repository with every change committed.
-- `.github/workflows/deploy.yml` builds the site and publishes it to GitHub Pages on every push to `main`. It runs the tests first, so a red test stops the deploy.
+- `.github/workflows/deploy.yml` builds the site and publishes it to GitHub Pages on every push to `main`. Since 2026-10-04 (branch `foundations`, Proposed) it is three jobs: `test` (types, every test, the Maya tie-out), then `build`, then `deploy`, each needing the one before, so a red test or a broken tie-out stops the deploy before anything is built.
+- `.github/workflows/ci.yml` runs the same checks plus the build on every other branch and every pull request, so a problem is seen before it reaches `main`.
 - The site builds for the address `https://<your-username>.github.io/money-rooms/`.
 
 ## What has to happen once

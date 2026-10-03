@@ -554,3 +554,7 @@ A goal bucket (5.1) gains an optional `legacy` tag; a tagged dream appears among
 ### 9.11 Risk settings (M6)
 
 Stored under `risk`: `successThresholdPercent` (Goal, default 90) and `guardrailsOn` (Decision, default off). The Flex FI trim lives with the milestone settings (9.9).
+
+### 9.12 Progress history (Proposed, `docs/history-spec.md`)
+
+Stored under `history` as a list of snapshots, one per date: `date`, `fiYear` by band, `fiAge.likely`, `netWorth`, `savingsRatePercent`, `fiNumber` (25 times spending), `conventions`. The one allowed exception to "never persist a derived value": a past date's results cannot be derived again once the inputs change. Taken by the result screen, at most once a day, capped at 400 (the first is always kept). In the export; removed by delete.

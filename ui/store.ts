@@ -45,6 +45,10 @@ export interface DisplayPrefs {
   materialShare?: number;
   /** The FI date (year and months into the year) when the Refresh card was last cleared, for "since last time". */
   lastRefreshFiYear?: number;
+  /** The date the numbers were last exported from this browser, for the backup nudge. */
+  lastExportAt?: string;
+  /** The backup nudge stays quiet until this date after "Not now". */
+  backupSnoozedUntil?: string;
 }
 
 export interface Store {
@@ -131,6 +135,8 @@ export function browserStore(storage: Storage | null, today: () => IsoDate = tod
       if (typeof p.entryMode === "string") out.entryMode = p.entryMode;
       if (typeof p.materialShare === "number") out.materialShare = p.materialShare;
       if (typeof p.lastRefreshFiYear === "number") out.lastRefreshFiYear = p.lastRefreshFiYear;
+      if (typeof p.lastExportAt === "string") out.lastExportAt = p.lastExportAt;
+      if (typeof p.backupSnoozedUntil === "string") out.backupSnoozedUntil = p.backupSnoozedUntil;
       return out;
     },
     savePrefs: (p) => void write(PREFS_KEY, p),

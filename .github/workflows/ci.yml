@@ -1,0 +1,26 @@
+name: Tests
+
+# Runs on every branch and pull request, so a red test is seen before anything
+# reaches main. The deploy workflow runs the same checks again as its gate.
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npm run tie-out:compare
+      - run: npm run build

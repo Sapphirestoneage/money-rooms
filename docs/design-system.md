@@ -237,6 +237,15 @@ The return series card (source, years, verified date, and a gentle flag while un
 ### Partner block and owner pickers
 On About you, "Add a partner" opens a second set of person fields under a "Your partner" subheading (birth month and year, HSA eligible, Social Security claiming age). Removing the partner shows the confirm panel first and says what goes with them. Once a partner exists, each income row's editor gains a "Whose income" select (Mine, My partner's), the Income section gains an "Add partner's income" picker and marks the partner's rows "partner's", and each account editor gains a "Whose account" select (Mine, My partner's, Joint; retirement accounts never offer Joint).
 
+### Backup nudge card
+A quiet card above the screen (never a modal, never on the trust pages) when the numbers have not been exported in 30 days, or ever. One sentence on where the numbers live and when the last copy was saved, then "Export my numbers" (primary) and "Not now" (quiet, which keeps it quiet for 30 days). An attention-colored left rule, since it is "needs a look", not a judgment.
+
+### Progress section
+On the result screen, in the rearrangeable order: the trend sentence with a Computed badge ("Since July 2026, your likely FI date moved 2 years earlier, your net worth rose $12,400, and your savings rate went from 22% to 25%."), a muted line on how snapshots are taken, a dense table of the last eight snapshots (date, likely FI age, net worth, savings rate) in a keyboard-reachable scroll region, and a quiet "Clear history" that asks first.
+
+### Site footer and trust pages
+Every screen ends with a footer: links to About and Your data and privacy, and the one-line promise ("Educational, not individualized financial, tax, or legal advice. Your numbers stay in this browser."). The two pages are plain text in cards; Privacy carries the one destructive action in the app, "Delete my numbers from this browser", behind the confirm panel.
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 

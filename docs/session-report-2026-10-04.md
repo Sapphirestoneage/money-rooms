@@ -16,10 +16,12 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 7 M6 risk | Done, with the series unverified | `m6-risk` | (see git log) |
 | 8 Households of two | Done, with the spousal rule unverified | `household-two` | (see git log) |
 | 9 Pack specs | Done (docs only) | `packs-specs` | (see git log) |
-| 10 Foundations | Not started | `foundations` | |
+| 10 Foundations | Done (CI gate left for review) | `foundations` | (see git log) |
 | 11 Coaching spec | Not started | `coaching-specs` | |
 | 12 Feature register | Not started | `feature-register` | |
 | 13 Readiness audit | Not started | `readiness` | |
+
+**Phase 10 in plain English.** Five pieces. (a) The Pages workflow is now test, then build, then deploy, each needing the one before, and a new `ci.yml` runs types, tests, the Maya tie-out, and the build on every other branch and pull request; both are on `foundations` for your review, main is untouched. (b) A backup nudge card (design system entry first) appears above any screen when the numbers have not been exported in 30 days, or ever, with Export and Not now. (c) `docs/history-spec.md` written, then built: one snapshot a day (date, FI year by band, net worth, savings rate, FI number) saved with the household so it is in the export, a "Your progress" section on the result screen with a trend sentence ("Since July 2026, your likely FI date moved 2 years earlier, your net worth rose $12,400, and your savings rate went from 22% to 25%") and a table of the last eight; eight engine tests. (d) About and Privacy pages with a footer on every screen; About says "Educational, not individualized financial, tax, or legal advice"; Privacy says the data stays in the browser, nothing is sent, and offers export and a delete-everything button behind the confirm panel. (e) Three specs, not built: `docs/statement-upload-spec.md`, `docs/rules-update-routine.md`, `docs/performance-budget.md`. Decisions F1 to F6.
 
 **Phase 9 in plain English.** Ten expansion pack specs in `docs/packs/` with an index: Earn more, Self-employed, Home, Partner, Family, Move, Health, Taxes, Debt freedom, Coach. Each says who it is for, when it unlocks (always a condition read from the household, never a purchase), the questions it adds mapped to the dictionary, the engine pieces it reuses by name, what is new, acceptance tests, and what waits. The index table flags which packs need new engine capability: Earn more and Debt freedom need none; Self-employed (QBI, solo 401(k) room, S-corp salary), Home (a property bucket and a sale event), Family (credits and a 529 bucket), and Coach (a shared view, which waits on the audience decision) need the most. Decisions P1 to P3. Nothing built.
 
@@ -43,12 +45,16 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 
 ## 2. Maya tie-out (M1 conventions mode)
 
-After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after the households-of-two engine change (branch `household-two`). Full suite: 50 files, 512 tests, all passing.
+After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after the foundations build (branch `foundations`). Full suite: 51 files, 522 tests, all passing.
 
 ## 3. Proposed specs written (review first)
 
 | Spec | Branch | What it covers |
 |---|---|---|
+| `docs/history-spec.md` | `foundations` | Progress snapshots: what is stored and why, when taken, the trend sentence, where it shows, five acceptance tests (built) |
+| `docs/statement-upload-spec.md` | `foundations` | Browser-only reading of PDF and CSV statements by a pattern table, the preview, six acceptance tests (not built) |
+| `docs/rules-update-routine.md` | `foundations` | The November and January verification calendar, the steps, the yearly table roll, two questions (a routine, not code) |
+| `docs/performance-budget.md` | `foundations` | Measured sizes and timings, the budget and hard limits, the worker rule, how to measure on a phone (not built) |
 | `docs/packs/README.md` and ten pack specs | `packs-specs` | Who, unlock condition, questions, reused pieces, what is new, and the new-engine-capability flag for each pack |
 | `docs/household-two-spec.md` | `household-two` | The partner as a second person, ages and limits per person, taxes together or apart, Social Security for two, one retirement date, entry, eight acceptance tests |
 | `docs/m6-spec.md` | `m6-risk` | The return series, historical backtests, the sturdy FI date, guardrails, Flex FI, seven acceptance tests |
@@ -58,6 +64,7 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 
 | # | Where | Decision |
 |---|---|---|
+| F1 to F6 | `decisions.md` | Foundations: the CI gate shape, the nudge reads preferences only, snapshots as the one stored derived value, the trend baseline, the trust pages and the delete button, the three specs |
 | P1 to P3 | `decisions.md` | Packs: unlock by condition, dictionary and registry first, which packs need new engine capability |
 | H1 to H8 | `decisions.md` | Households of two: one retirement date, how filing separately splits the returns, the unverified spousal and survivor rule and its flag, the optimizer moves the self's claiming age only, the waterfall fills the partner's workplace plan only, removing a partner, joint accounts read the older or younger owner, health care per adult |
 | (engine) | `engine/model/rules.ts` | A ledger door for unverified rules, `getUnverified`, which records the rule with its blank verified date; the only rule read through it is `ss.spousalAndSurvivor`. Two-way |
@@ -82,6 +89,8 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 6. The engine's default policy under m2 draws in the conventional order with no strategies, so the app's headline date now includes Roth earnings penalties, capital gains tax, and marketplace premiums. Maya's app-default likely date moved from 40 (m1) to 41 (m2). Is that the right default, or should the optimizer's best plan be the headline?
 7. `data/healthcare.json` placeholders: benchmark silver premium $7,200 a year, Part D $480, supplement and out of pocket $1,200. All marked lookUp. Open question O3 still needs a source.
 8. Accessibility judgment calls 1 to 5 in `docs/accessibility-audit-2026-10.md`: the preset picker's list roles, chart label contrast, and the darker theme's new brand shades.
+11. The CI gate (`deploy.yml` and `ci.yml` on `foundations`): the deploy now also runs the Maya tie-out as a gate. Is that the right bar, and should the bundle-size check from `docs/performance-budget.md` join it?
+12. The rules update routine asks who owns the November check and whether a rule verified more than 15 months ago should be refused or only flagged.
 9. Households of two: should a married filing status with no partner be an error (the dictionary's validation) or the flag it is now? And is the survivor rule's start (the year after the first plan-to age) acceptable until mortality is modeled?
 10. Spousal and survivor benefits: the registry entry `ss.spousalAndSurvivor` (50% spousal, reduced by the claimant's own factor; 100% survivor; larger of the two) was typed from memory. Please check it against ssa.gov; the real reduction schedules differ from the retirement one.
 
@@ -125,6 +134,6 @@ Not started.
 
 ## 10. Handoff
 
-**Where I am:** Phases 0 to 9 complete and pushed. **Next:** branch `foundations` from `packs-specs`: CI gate on the Pages workflow, the backup nudge card, `docs/history-spec.md` then progress history, the About and Privacy pages, and the three specs (statement upload, rules update routine, performance budget). Then `coaching-specs`, `feature-register`, `readiness`.
+**Where I am:** Phases 0 to 10 complete and pushed. **Next:** branch `coaching-specs` from `foundations` and write `docs/coaching-spec.md` (the twelve parts and "what we will not copy"), then `feature-register`, then `readiness`, then finish report sections 8 to 10.
 
 **Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.
