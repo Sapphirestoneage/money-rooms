@@ -213,14 +213,14 @@ Assets and debts share one list. Net worth is computed.
 | Field | Stored as | Default |
 |---|---|---|
 | Rate | Percent per year | Required. A preset's typical rate is shown as a starting point marked `roughly`. With no preset rate, the debt is not complete until a rate is entered |
-| Promo | Promo rate, promo end date, rate after | None |
+| Promo | Promo rate, promo end date (a month, the last one the promo rate applies), rate after | None. Offered on the entry screen when the rate is 0% |
 | Minimum payment | Entered monthly, stored annual | Required. Until entered, the app shows an estimate (each month's interest plus 1% of the balance), marked `roughly` and flagged. It is never silently zero |
 | Actual payment | Entered monthly, stored annual | Equal to minimum |
 | Personal or business | Pick list, stored as `purpose`: `personal` or `business` | `personal` |
 | Interest deductible | Yes or no | From preset |
 | Forgiveness path | `none`, `idr`, `pslf` | Later |
 
-**Validation.** Balance not negative (side carries the sign). Payment at least covers interest, or the app flags that the balance will grow. A 0% promo requires an end date. Tax bucket must match the preset family (a Roth 401(k) can't be `taxable`).
+**Validation.** Balance not negative (side carries the sign). Payment at least covers interest, or the app flags that the balance will grow. A 0% rate with no promo end date is flagged, because a 0% rate usually ends (it is allowed, for example on a family loan). In the year a promo ends, the months through the end month use the promo rate and the rest use the rate after. Tax bucket must match the preset family (a Roth 401(k) can't be `taxable`).
 
 **Accounts the engine adds are never stored.** When a savings strategy needs an account the person has not listed, the engine uses an empty one from the preset for that run and flags it (engine spec section 4). The person's stored list is not changed.
 

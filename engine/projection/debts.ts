@@ -45,11 +45,24 @@ export function realRate(nominalPercent: number, inflationPercent: number): numb
   return (1 + nominalPercent / 100) / (1 + inflationPercent / 100) - 1;
 }
 
-/** The nominal rate in force for a year, honoring a promo rate until its end month. */
-export function nominalRateFor(debt: DebtAccount, year: number): number {
-  if (debt.promo && year < parseYearMonth(debt.promo.endDate.value).year) return debt.promo.rate.value;
-  if (debt.promo) return debt.promo.rateAfter.value;
-  return debt.rate.value;
+/**
+ * The nominal rate in force for a year (percent per year). A promo rate holds through its end
+ * month, and the rate after it starts the next month. In the year the promo ends, the two are
+ * blended by months, compounding, so the year's interest is exactly the promo months at the
+ * promo rate and the remaining months at the rate after. `firstMonth` is the first month the
+ * year covers: 1, or the plan month in the stub year.
+ */
+export function nominalRateFor(debt: DebtAccount, year: number, firstMonth = 1): number {
+  if (!debt.promo) return debt.rate.value;
+  const end = parseYearMonth(debt.promo.endDate.value);
+  const promo = debt.promo.rate.value;
+  const after = debt.promo.rateAfter.value;
+  if (year < end.year) return promo;
+  if (year > end.year) return after;
+  const months = 12 - firstMonth + 1;
+  const promoMonths = Math.max(0, Math.min(months, end.month - firstMonth + 1));
+  const share = promoMonths / months;
+  return (Math.pow(1 + promo / 100, share) * Math.pow(1 + after / 100, 1 - share) - 1) * 100;
 }
 
 /**

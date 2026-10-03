@@ -32,7 +32,7 @@ account,Work 401(k),balance,8200,,known,2026-10,
 account,Work 401(k),mix,mostly_stocks,,known,2026-10,
 debt,Federal student loan,type,student_federal,,known,2026-10,credit_card | business_card | student_federal | student_private | auto | mortgage | personal | family | medical | other
 debt,Federal student loan,balance,24000,,known,2026-10,
-debt,Federal student loan,rate,5.5,,known,2026-10,Percent per year
+debt,Federal student loan,rate,5.5,,known,2026-10,"Percent per year. For a promo rate, add promo_end (YYYY-MM) and rate_after (percent) rows"
 debt,Federal student loan,min_payment,260,month,known,2026-10,
 debt,Federal student loan,actual_payment,260,month,known,2026-10,What is actually paid
 optional,,hsa_eligible,no,,known,2026-10,yes | no

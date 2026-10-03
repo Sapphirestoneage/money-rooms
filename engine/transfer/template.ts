@@ -62,7 +62,7 @@ export interface TemplatePreview {
   household: Household;
   /** How many things each section has: fields for profile and optional, items for the rest. */
   counts: Record<TemplateSection, number>;
-  /** Rows that could not be read. They were not imported. */
+  /** Rows that need a look, each with a plain reason. A row that could not be read was not imported. */
   needsALook: TemplateNote[];
   /** Rows marked dontknow. They were skipped. */
   toLookUp: TemplateNote[];
@@ -171,6 +171,8 @@ const FIELDS: Readonly<Record<TemplateSection, Readonly<Record<string, FieldSpec
     type: { kind: "choice", choices: DEBT_TYPES },
     balance: { kind: "balance" },
     rate: { kind: "number", min: 0, max: 100, unit: "percent" },
+    promo_end: { kind: "yearMonth" },
+    rate_after: { kind: "number", min: 0, max: 100, unit: "percent" },
     min_payment: { kind: "money" },
     actual_payment: { kind: "money" },
   },
@@ -509,6 +511,21 @@ export function readTemplate(text: string, asOf: IsoDate): TemplatePreview {
       actualPaymentAnnual: actualCell ? pay(actualCell) : { ...minimum },
     }, planDate);
     debt.name = { value: item, asOf: planDate, source: "user", confidence: "known" };
+    // A promo: the rate row is the promo rate, promo_end its last month, rate_after what follows.
+    const promoEnd = g.get("promo_end");
+    const rateAfter = g.get("rate_after");
+    if (promoEnd && rateAfter && rateCell) {
+      debt.promo = {
+        rate: val(rateCell, rateCell.parsed as number),
+        endDate: { value: String(promoEnd.parsed) as YearMonth, asOf: promoEnd.asOf, source: "user", confidence: promoEnd.confidence },
+        rateAfter: val(rateAfter, rateAfter.parsed as number),
+      };
+    } else if (promoEnd || rateAfter) {
+      skip((promoEnd ?? rateAfter)!.line, item, "a promo needs three rows: rate (the promo rate), promo_end, and rate_after. The promo was left out");
+    }
+    if (rateCell && (rateCell.parsed as number) === 0 && !debt.promo) {
+      skip(rateCell.line, item, "the rate is 0 with no promo_end. It was imported as 0% for good. If the 0% is a promo, add promo_end and rate_after rows");
+    }
     accounts.push(debt);
     preview.counts.debt += 1;
   }
@@ -631,7 +648,11 @@ export function exportTemplate(h: Household): string {
       const item = debtName(a.name?.value ?? getAccountPreset(a.preset).label);
       row("debt", item, "type", DEBT_OUT.get(a.preset) ?? "other", "", known(a.balance.asOf));
       if (a.balance.value !== null) row("debt", item, "balance", a.balance.value, "", a.balance);
-      if (entered(a.rate)) row("debt", item, "rate", a.rate.value, "", a.rate);
+      if (a.promo) {
+        row("debt", item, "rate", a.promo.rate.value, "", a.promo.rate);
+        row("debt", item, "promo_end", a.promo.endDate.value, "", a.promo.endDate);
+        row("debt", item, "rate_after", a.promo.rateAfter.value, "", a.promo.rateAfter);
+      } else if (entered(a.rate)) row("debt", item, "rate", a.rate.value, "", a.rate);
       if (entered(a.minimumPaymentAnnual)) row("debt", item, "min_payment", a.minimumPaymentAnnual.value, "year", a.minimumPaymentAnnual);
       if (entered(a.actualPaymentAnnual)) row("debt", item, "actual_payment", a.actualPaymentAnnual.value, "year", a.actualPaymentAnnual);
     }

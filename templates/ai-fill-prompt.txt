@@ -27,7 +27,8 @@ RULES
              hsa_contribution, business_expenses, start, end
    spending  amount
    account   type, balance, mix
-   debt      type, balance, rate, min_payment, actual_payment
+   debt      type, balance, rate, promo_end, rate_after, min_payment,
+             actual_payment
    optional  hsa_eligible, ss_claim_age
 
 6. item groups rows that belong together.
@@ -63,6 +64,11 @@ RULES
      If it has already started, leave the start row out.
    - end is a month (YYYY-MM), an age (age:30), or retirement.
    - For unemployment benefits, end is the last month they are paid.
+
+   - For a debt on a promotional rate (like 0% for 12 months): rate is the
+     promo rate, promo_end is the last month of the promo (YYYY-MM), and
+     rate_after is the percent charged after it. If you don't know when it
+     ends or the rate after, write those rows with kind dontknow.
 
 10. as_of is the month the value was true (YYYY-MM). Leave it blank if you
     don't know.

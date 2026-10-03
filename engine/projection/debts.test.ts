@@ -18,7 +18,33 @@ describe("nominalRateFor", () => {
     expect(nominalRateFor(card, 2030)).toBe(24);
     const promo = { ...card, promo: { rate: userValue(0, asOf), endDate: userValue("2028-06", asOf), rateAfter: userValue(24, asOf) } };
     expect(nominalRateFor(promo, 2027)).toBe(0);
-    expect(nominalRateFor(promo, 2028)).toBe(24);
+    // 2028: six months at 0%, six months at 24%.
+    expect(nominalRateFor(promo, 2028)).toBeCloseTo((Math.pow(1.24, 0.5) - 1) * 100, 10);
+    expect(nominalRateFor(promo, 2029)).toBe(24);
+  });
+
+  it("a 0% card with a promo through May 2027 accrues nothing before June 2027 and 24% after", () => {
+    const card = debtFromPreset("creditCard", "c", userValue(1000, asOf), { rate: userValue(0, asOf), minimumPaymentAnnual: userValue(0, asOf) });
+    const promo = { ...card, promo: { rate: userValue(0, asOf), endDate: userValue("2027-05", asOf), rateAfter: userValue(24, asOf) } };
+    // No payments and no inflation, so the balance shows the interest alone.
+    const year = (balance: number, y: number, firstMonth = 1) =>
+      debtYear({ balance, nominalRatePercent: nominalRateFor(promo, y, firstMonth), nominalPaymentAnnual: 0, inflationPercent: 0, t: y - 2026, fraction: (12 - firstMonth + 1) / 12, extraPayment: 0 });
+
+    const y2026 = year(1000, 2026);
+    expect(y2026.interest).toBeCloseTo(0, 10);
+    expect(y2026.endBalance).toBeCloseTo(1000, 10);
+
+    // 2027: January to May at 0%, then June to December (7 months) at 24%.
+    const y2027 = year(y2026.endBalance, 2027);
+    expect(y2027.endBalance).toBeCloseTo(1000 * Math.pow(1.24, 7 / 12), 8);
+
+    const y2028 = year(y2027.endBalance, 2028);
+    expect(y2028.endBalance / y2027.endBalance).toBeCloseTo(1.24, 10);
+
+    // A plan that starts in April 2027 sees two promo months, then seven months at 24%.
+    expect(year(1000, 2027, 4).endBalance).toBeCloseTo(1000 * Math.pow(1.24, 7 / 12), 8);
+    // A plan that starts after the promo ended sees 24% for all of its months.
+    expect(nominalRateFor(promo, 2027, 8)).toBeCloseTo(24, 10);
   });
 });
 

@@ -64,7 +64,7 @@ export function templateCard(ctx: TransferContext): HTMLElement {
         el("h3", {}, `What "${fileName}" holds`),
         el("p", { class: "muted" }, "Nothing has changed yet."),
         counts,
-        list("Needs a look", "These rows could not be read and will not be imported. Fix them in the file and drop it again, or enter them by hand after.", preview.needsALook, (n) =>
+        list("Needs a look", "A row that could not be read is not imported. Fix these in the file and drop it again, or enter them by hand after.", preview.needsALook, (n) =>
           n.line > 0 ? `Row ${n.line}, ${n.label}: ${n.reason}.` : `${n.label}: ${n.reason}.`),
         list("To look up later", "These were marked as not known, so they are left blank.", preview.toLookUp, (n) => (n.label === n.reason ? `${n.label}.` : `${n.label}: ${n.reason}.`)),
         el("p", {}, "Apply replaces the numbers you have now. A copy of them is kept first, so you can undo it."),

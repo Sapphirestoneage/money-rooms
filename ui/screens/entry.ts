@@ -747,6 +747,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         const v = Number(rate.value);
         if (v >= 0) {
           a.rate = userValue(v, asOf());
+          if (a.promo) a.promo.rate = userValue(v, asOf());
           refreshEstimate(a);
           ctx.save();
         }
@@ -754,6 +755,61 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       rate.addEventListener("change", () => schedule());
       fields.push(field("Interest rate (% a year)", rate, rateBadge.node));
       if (needsRate) flags.push(gentleFlag("This debt needs its interest rate before a plan can run. It is on your statement or in your lender's app."));
+
+      // A 0% rate is usually a promo: ask when it ends and what the rate is after.
+      if ((!needsRate && a.rate.value === 0) || a.promo) {
+        const planMonth = asOf().slice(0, 7);
+        const promoSelect = select(
+          [{ value: "none", label: "Does not end" }, { value: "ends", label: "Ends after a month" }],
+          a.promo ? "ends" : "none",
+          (v) => {
+            if (v === "ends") {
+              const typical = preset.side === "debt" ? preset.typicalRate : undefined;
+              a.promo = {
+                rate: { ...a.rate },
+                endDate: userValue(addMonths(planMonth, 12), asOf()),
+                rateAfter: typical !== undefined ? { value: typical, asOf: asOf(), source: "preset", confidence: "roughly" } : { value: 0, asOf: asOf(), source: "preset", confidence: "lookUp" },
+              };
+            } else delete a.promo;
+            ctx.save();
+            schedule();
+          },
+        );
+        fields.push(field("This rate", promoSelect));
+        const promo = a.promo;
+        if (promo) {
+          const through = parseYearMonth(promo.endDate.value);
+          const firstYear = Math.min(through.year, parseYearMonth(planMonth).year);
+          const years: { value: string; label: string }[] = [];
+          for (let y = firstYear; y <= firstYear + 30; y++) years.push({ value: String(y), label: String(y) });
+          const setEnd = () => {
+            promo.endDate = userValue(`${promoYear.value}-${promoMonth.value}`, asOf());
+            ctx.save();
+          };
+          const promoMonth = select(MONTH_NAMES.map((name, i) => ({ value: String(i + 1).padStart(2, "0"), label: name })), String(through.month).padStart(2, "0"), setEnd);
+          const promoYear = select(years, String(through.year), setEnd);
+          fields.push(field("Promo rate lasts through", promoMonth, kindBadge(promo.endDate.confidence)));
+          fields.push(field("Promo end year", promoYear));
+
+          const afterMissing = promo.rateAfter.source === "preset" && promo.rateAfter.confidence === "lookUp";
+          const after = el("input", { class: "input", type: "number", min: 0, max: 100, step: 0.01, value: afterMissing ? "" : promo.rateAfter.value });
+          const afterBadge = badgeSlot(() => (afterMissing ? undefined : promo.rateAfter), (v) => { promo.rateAfter = v; });
+          after.addEventListener("input", () => {
+            if (after.value === "") return;
+            const v = Number(after.value);
+            if (v >= 0 && v <= 100) {
+              promo.rateAfter = userValue(v, asOf());
+              ctx.save();
+            }
+          });
+          after.addEventListener("change", () => schedule());
+          fields.push(field("Rate after the promo (% a year)", after, afterBadge.node));
+          if (afterMissing) flags.push(gentleFlag("Enter the rate this debt charges once the promo ends. Until then the plan treats it as 0%."));
+          else if (promo.rateAfter.source === "preset") flags.push(gentleFlag("The rate after the promo is a typical rate for this kind of debt. Enter the one in your agreement."));
+        } else {
+          flags.push(gentleFlag("A 0% rate usually ends. If this is a promo, choose \"Ends after a month\" and enter the rate that follows."));
+        }
+      }
 
       const estimated = a.minimumPaymentAnnual.source === "preset";
       const minBadge = badgeSlot(() => (a.minimumPaymentAnnual.value > 0 ? a.minimumPaymentAnnual : undefined), (v) => { a.minimumPaymentAnnual = v; });

@@ -88,9 +88,13 @@ Category ids come from `data/spending-categories.json`: `accommodation`, `utilit
 |---|---|---|
 | `type` | `credit_card`, `business_card`, `student_federal`, `student_private`, `auto`, `mortgage`, `personal`, `family`, `medical`, `other` | 3.6 Preset |
 | `balance` | Dollars owed, no cadence | 3.6 Balance |
-| `rate` | Percent per year | 3.6 Rate |
+| `rate` | Percent per year. With a promo, this is the promo rate | 3.6 Rate, and 3.6 Promo rate |
+| `promo_end` | YYYY-MM. The last month the promo rate applies | 3.6 Promo end date |
+| `rate_after` | Percent per year once the promo ends | 3.6 Promo, rate after |
 | `min_payment` | Dollars, with a cadence | 3.6 Minimum payment |
 | `actual_payment` | Dollars, with a cadence | 3.6 Actual payment |
+
+A promo needs all three rows: `rate`, `promo_end`, and `rate_after`. A debt with a rate of 0 and no `promo_end` is imported as 0% for good and is listed in the preview under "Needs a look", because a 0% rate usually ends.
 
 A debt with no `rate` row gets its type's typical rate marked roughly, or must have the rate entered in the app before a plan runs. A debt with no `min_payment` row gets the app's estimate, marked roughly (decision E17).
 
@@ -119,7 +123,7 @@ Birth month is always stored as Known (data dictionary 3.1).
 ## 4. Importing
 
 1. The person drops the file on "Import from a template", or chooses it. The same card hands out the blank template and the AI prompt ("Get the template", "Get the AI prompt").
-2. The app shows a preview and changes nothing yet: how many items each section has, the rows that need a look with a plain reason for each ("Ally savings: balance '20k' isn't a number"), and the rows to look up later.
+2. The app shows a preview and changes nothing yet: how many items each section has, the rows that need a look with a plain reason for each ("Ally savings: balance '20k' isn't a number"). A row that could not be read is not imported, and the rows to look up later.
 3. Apply replaces the household. A snapshot of what was there is kept first, so the import can be undone.
 
 ---
@@ -132,7 +136,7 @@ Birth month is always stored as Known (data dictionary 3.1).
 - A value that is still the app's own default (a preset's rate, an estimated payment, the default filing status) is left out, so it stays a default after re-import.
 - Importing an exported template gives back the same household.
 
-**What the template does not carry.** Savings strategy, assumption set and overrides, the Social Security zero override, promo rates, edited fees, and custom allocations. The full export ("Export my numbers", a JSON file) carries everything and is the one to use as a backup.
+**What the template does not carry.** Savings strategy, assumption set and overrides, the Social Security zero override, edited fees, and custom allocations. The full export ("Export my numbers", a JSON file) carries everything and is the one to use as a backup.
 
 ---
 

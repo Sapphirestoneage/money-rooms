@@ -401,7 +401,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       d,
       r: debtYear({
         balance: d.balance,
-        nominalRatePercent: nominalRateFor(d.account, y),
+        nominalRatePercent: nominalRateFor(d.account, y, ctx.startMonth ?? 1),
         nominalPaymentAnnual: d.account.actualPaymentAnnual.value,
         inflationPercent: band.inflation,
         t,
@@ -497,7 +497,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       if (matchRoomRoth > 0) rothWorkplace += afterTaxStep(Math.min(matchRoomRoth, limits.workplace - enteredTotal - pretaxExtra), "1. Employer match (Roth 401(k))");
       // Step 2: debts above the high-interest threshold, to payoff.
       for (const x of debtPreview) {
-        if (x.d.balance <= 0 || nominalRateFor(x.d.account, y) <= DEFAULTS.highInterest) continue;
+        if (x.d.balance <= 0 || nominalRateFor(x.d.account, y, ctx.startMonth ?? 1) <= DEFAULTS.highInterest) continue;
         const payoffRoom = Math.max(0, (x.d.balance * Math.pow(1 + 0, 1)) - x.r.scheduled / f);
         const extra = afterTaxStep(payoffRoom, `2. High-interest debt: ${x.d.label}`);
         if (extra > 0) debtExtra.set(x.d.id, extra);
@@ -639,7 +639,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       } else {
         const r = debtYear({
           balance: s.balance,
-          nominalRatePercent: nominalRateFor(s.account, y),
+          nominalRatePercent: nominalRateFor(s.account, y, ctx.startMonth ?? 1),
           nominalPaymentAnnual: s.account.actualPaymentAnnual.value,
           inflationPercent: band.inflation,
           t,

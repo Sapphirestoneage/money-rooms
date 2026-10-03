@@ -16,6 +16,7 @@ import {
   TEMPLATE_HEADER,
   exportTemplate,
   findFiDate,
+  nominalRateFor,
   parseCsv,
   readTemplate,
   requireComplete,
@@ -162,5 +163,39 @@ describe("privacy", () => {
   it("the committed template and prompt hold only the invented example", () => {
     expect(exampleTemplate).toContain("Example rows: replace with your own");
     expect(readFileSync(join(root, "templates", "ai-fill-prompt.txt"), "utf8")).toContain("Never invent a number");
+  });
+});
+
+describe("debt promo rates", () => {
+  const card = ["debt,Store card,type,credit_card,,,,", "debt,Store card,balance,1000,,,,", "debt,Store card,rate,0,,,,"];
+
+  it("imports rate, promo_end, and rate_after as a promo, and exports them back", () => {
+    const preview = readTemplate(file(...card, "debt,Store card,promo_end,2027-05,,,,", "debt,Store card,rate_after,24,,,,"), "2026-10-03");
+    expect(preview.needsALook).toEqual([]);
+    if (preview.household.accounts.kind !== "rows") throw new Error("no accounts");
+    const debt = preview.household.accounts.rows[0];
+    if (debt?.side !== "debt") throw new Error("no debt");
+    expect(debt.promo?.rate.value).toBe(0);
+    expect(debt.promo?.endDate.value).toBe("2027-05");
+    expect(debt.promo?.rateAfter.value).toBe(24);
+    expect(nominalRateFor(debt, 2026, 10)).toBe(0);
+    expect(nominalRateFor(debt, 2028)).toBe(24);
+    expect(readTemplate(exportTemplate(preview.household), "2026-10-03").household).toEqual(preview.household);
+  });
+
+  it("flags a 0% rate with no promo_end, and still imports the debt", () => {
+    const preview = readTemplate(file(...card), "2026-10-03");
+    expect(preview.needsALook).toHaveLength(1);
+    expect(preview.needsALook[0]).toMatchObject({ line: 4, label: "Store card" });
+    expect(preview.needsALook[0]?.reason).toContain("the rate is 0 with no promo_end");
+    expect(preview.counts.debt).toBe(1);
+  });
+
+  it("flags a promo with a row missing, and leaves the promo out", () => {
+    const preview = readTemplate(file("debt,Loan,type,personal,,,,", "debt,Loan,balance,1000,,,,", "debt,Loan,rate,3,,,,", "debt,Loan,promo_end,2027-05,,,,"), "2026-10-03");
+    expect(preview.needsALook.map((n) => n.reason)).toEqual(["a promo needs three rows: rate (the promo rate), promo_end, and rate_after. The promo was left out"]);
+    if (preview.household.accounts.kind !== "rows") throw new Error("no accounts");
+    const debt = preview.household.accounts.rows[0];
+    expect(debt?.side === "debt" && debt.promo).toBeUndefined();
   });
 });

@@ -40,7 +40,7 @@ For each year, the engine runs these steps in this order. The order matters, the
 3. **Pre-tax deductions.** 401(k), 403(b), HSA, and health premiums come out before tax. Contribution limits come from `data/`.
 4. **Taxes.** Compute tax on the year's taxable income, including withdrawals from pretax accounts (see section 5 for M1 vs M2 depth).
 5. **Spending.** Working years: current categories. Retirement years: baseline, adjusted by life phase, plus the healthcare line, plus active goal buckets (Later).
-6. **Debt payments.** Pay each debt's actual payment. Apply promo rate changes on their dates. A paid-off debt's payment stops, and the gap grows.
+6. **Debt payments.** Pay each debt's actual payment. Apply promo rate changes on their dates: a promo rate holds through its end month, and in the year it ends the two rates are blended by months, compounding. A paid-off debt's payment stops, and the gap grows.
 7. **Social Security.** Pay the computed benefit from claiming age onward, scaled by the policy assumption.
 8. **Surplus or shortfall.**
    - **Surplus** goes to accounts in the savings order (section 4).

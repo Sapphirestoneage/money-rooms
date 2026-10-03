@@ -71,6 +71,7 @@ Every settled decision, with its date and reason, so nothing gets relitigated by
 | E17 | A new debt never defaults silently. Its rate is the preset's typical rate marked roughly, or it must be entered before a plan runs. Its payment is an estimate (each month's interest plus 1% of the balance) marked roughly and flagged until the real one is entered. | Locked | Two-way | 2026-10-03 | A silent $0 payment made a debt look free. |
 | E18 | Unemployment benefits are an income type: a benefit amount (usually per week) and the last month it is paid. A stream that ends on a date counts only the months it is paid in its last year. | Locked | Two-way | 2026-10-03 | Eli: include unemployment as a form of income, for how long as well. |
 | E19 | Entered numbers are kept from visit to visit: saved on every change, row ids never repeat, and the plan date becomes today on each visit while every value keeps its own as-of date. | Locked | Two-way | 2026-10-03 | Eli: it has to keep its info from round to round. |
+| E20 | A promo rate holds through its end month. In the year it ends, the year's rate blends the promo months and the remaining months, compounding. A 0% rate with no end date is allowed but flagged. | Locked | Two-way | 2026-10-03 | Eli's instruction: a 0% card ending May 2027 accrues nothing before June 2027 and the full rate after. |
 
 ## Meaning and presentation
 
