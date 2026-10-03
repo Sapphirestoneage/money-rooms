@@ -541,8 +541,8 @@
           "8": 55720
         },
         "eachAdditionalPerson": 5680,
-        "alaskaHawaii": "higher; not entered (HHS page blocked from this session)",
-        "note": "Premium tax credits for a coverage year use the guidelines in effect at open enrollment (the prior year's guidelines). Confirm which year's guidelines apply to 2026 credits before use."
+        "alaskaHawaii": "higher; not entered. Unverified: Eli to confirm at https://aspe.hhs.gov/topical-subjects/poverty-economic-mobility/poverty-guidelines",
+        "note": "Premium tax credits for coverage year 2026 use the 2025 poverty guidelines (the guidelines in effect at open enrollment). Confirmed by Eli on 2026-10-04. These are those guidelines."
       },
       "effective": [
         2026
@@ -552,7 +552,7 @@
       "url": "https://www.healthcare.gov/glossary/federal-poverty-level-fpl/",
       "lastVerified": "2026-10-03",
       "status": "watch",
-      "verification": "Values read from HealthCare.gov on 2026-10-03. The HHS/ASPE page (https://aspe.hhs.gov/topical-subjects/poverty-economic-mobility/poverty-guidelines) could not be fetched from this session: Eli to confirm there, including Alaska and Hawaii.",
+      "verification": "Values read from HealthCare.gov on 2026-10-03; the 2025-for-2026 rule confirmed by Eli on 2026-10-04. Alaska and Hawaii still to be read from the ASPE page, which could not be fetched from the build session.",
       "watch": "Published each January",
       "affects": [
         "C1",
@@ -819,11 +819,11 @@
         2028
       ],
       "sunset": 2028,
-      "source": "One Big Beautiful Bill Act (Pub. L. 119-21) section 70103; IRS newsroom summary",
+      "source": "One Big Beautiful Bill Act (Pub. L. 119-21) section 70103 (the 6% phase-out rate); IRS newsroom summary (amount, thresholds, years)",
       "url": "https://www.irs.gov/newsroom/one-big-beautiful-bill-act-tax-deductions-for-working-americans-and-seniors",
-      "lastVerified": "2026-10-03",
+      "lastVerified": "2026-10-04",
       "status": "sunsetting",
-      "verification": "Amount, thresholds, years, and stacking confirmed on the IRS page on 2026-10-03. The 6% phase-out rate is from the statute and is not restated on the IRS page: Eli to confirm (congress.gov could not be reached from this session).",
+      "verification": "Amount, thresholds, years, and stacking confirmed on the IRS page on 2026-10-03. The 6% phase-out rate confirmed by Eli from the statute, OBBBA section 70103, on 2026-10-04.",
       "watch": "Scheduled to end after 2028 unless extended",
       "affects": [
         "B7"
@@ -858,7 +858,8 @@
         "bornThrough1950": 72,
         "born1951to1959": 73,
         "born1960orLater": 75,
-        "firstDeadline": "April 1 of the year after reaching the start age; later years by December 31"
+        "firstDeadline": "April 1 of the year after reaching the start age; later years by December 31",
+        "note1959": "SECURE 2.0 section 107 as enacted assigns both 73 and 75 to people born in 1959 (a drafting ambiguity); the engine uses 73 for 1951 to 1959 births, the reading the IRS has applied in proposed regulations. Re-check when the final regulations or a technical correction settle it."
       },
       "effective": [
         "ongoing"
@@ -866,9 +867,9 @@
       "sunset": null,
       "source": "SECURE 2.0 Act section 107 (Pub. L. 117-328, Division T); IRS RMD topic page",
       "url": "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-required-minimum-distributions-rmds",
-      "lastVerified": "2026-10-03",
+      "lastVerified": "2026-10-04",
       "status": "current",
-      "verification": "Age 73 and the April 1 deadline confirmed on the IRS page on 2026-10-03. The 72 and 75 birth-year rules come from the statute, which is not restated on that page (congress.gov and govinfo.gov could not be reached from this session): Eli to confirm.",
+      "verification": "Age 73 and the April 1 deadline confirmed on the IRS page on 2026-10-03. The birth-year rules (72 through 1950, 73 for 1951 to 1959, 75 for 1960 or later) confirmed by Eli from SECURE 2.0 section 107 on 2026-10-04, with the 1959 ambiguity noted in the value.",
       "watch": null,
       "affects": [
         "B5"
@@ -950,21 +951,35 @@
       "id": "ss.spousalAndSurvivor",
       "name": "Social Security spousal and survivor benefits",
       "value": {
-        "spousalMaxShareOfOtherPia": 50,
-        "spousalRequiresOtherClaimed": true,
-        "spousalReducedBeforeOwnFra": true,
-        "survivorShareOfDeceasedBenefit": 100,
-        "survivorTakesLargerOfTwo": true
+        "spousal": {
+          "maxShareOfWorkerPia": 50,
+          "requiresWorkerClaimed": true,
+          "delayedCreditsApply": false,
+          "reductionBeforeOwnFra": {
+            "firstMonths": 36,
+            "ratePerMonthFirst": 0.6944,
+            "ratePerMonthBeyond": 0.4167,
+            "note": "25/36 of 1% a month for the first 36 months before full retirement age, 5/12 of 1% a month beyond; the spousal schedule, not the retirement one"
+          }
+        },
+        "survivor": {
+          "maxShareOfDeceasedBenefit": 100,
+          "earliestAge": 60,
+          "reductionAtEarliestAgePct": 28.5,
+          "reducedLinearlyToOwnFra": true,
+          "takesLargerOfTwo": true,
+          "note": "Up to 100% of the deceased worker's benefit, reduced when the survivor claims before their own full retirement age, as early as 60 (71.5% at 60)"
+        }
       },
       "effective": [
         "ongoing"
       ],
       "sunset": null,
-      "source": "SSA, Benefits for Spouses and Benefits for Survivors (ssa.gov)",
+      "source": "SSA, Benefits for Spouses (https://www.ssa.gov/benefits/retirement/planner/applying7.html) and Benefits for Survivors (https://www.ssa.gov/benefits/survivors/)",
       "url": "https://www.ssa.gov/benefits/retirement/planner/applying7.html",
       "lastVerified": null,
       "status": "current",
-      "verification": "ssa.gov blocks automated requests from the build session. The rule is entered from the household-two spec and must be confirmed on the SSA planner pages before it is used without a flag. The engine reads it only when a partner exists and flags the result.",
+      "verification": "Restructured on 2026-10-04 at Eli's review into separate spousal and survivor schedules: spousal benefits are up to 50% of the worker's full-retirement-age benefit with their own early-claiming reduction and no delayed credits; survivor benefits are up to 100%, reduced before the survivor's own full retirement age, as early as 60. The schedule numbers are entered from memory and stay unverified until Eli confirms them at the SSA URLs. The engine reads the rule only when a partner exists and flags every plan it changes.",
       "watch": null,
       "affects": [
         "D3"
