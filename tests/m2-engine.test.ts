@@ -151,7 +151,7 @@ describe("Roth conversion ladder (A2, B1, B2)", () => {
     const t = run(h, 2026, { ...defaultPolicy(), conversionTarget: "fillStandardDeduction" });
     const y1 = t.rows[1]!;
     expect(y1.m2!.conversion).toBeCloseTo(16100, 0);
-    expect(y1.m2!.taxDetail.ordinary).toBe(0);
+    expect(y1.m2!.taxDetail.ordinary).toBeCloseTo(0, 6);
     const without = run(h, 2026).rows[1]!;
     expect(y1.balances["k401"]!).toBeLessThan(without.balances["k401"]! - 15000);
     expect(y1.m2!.actions.join(" ")).toMatch(/Convert about 16,100/);
@@ -333,5 +333,49 @@ describe("Maya at M2 depth", () => {
     const ladder = project(h, { ...deps, policy: { ...defaultPolicy(), conversionTarget: "fillStandardDeduction", gainHarvesting: "fillZeroBracket", acaTarget: 200 } }).bands.likely;
     expect(ladder.timeline.lifetimeTaxes).toBeLessThan(plain.likely.timeline.lifetimeTaxes);
     expect(ladder.timeline.rows.some((r) => r.m2!.conversion > 0)).toBe(true);
+  });
+});
+
+describe("fixes from the M2 tie-out (2026-10-04)", () => {
+  // A retiree living on a pretax account: the year's withdrawals must cover spending, health care, and the taxes on the withdrawals themselves.
+  const retiree = household({ birth: "1976-03", income: "none", spending: 50_000, accounts: [pretax(900_000)] });
+
+  it("the shortfall is grossed up for the taxes and penalty on the withdrawals, which are paid from the accounts", () => {
+    const t = run(retiree, 2026);
+    const r = t.rows.find((x) => x.year === 2027)!;
+    const drawn = Object.values(r.withdrawals).reduce((a, b) => a + b, 0);
+    expect(r.taxes.total).toBeGreaterThan(1000);
+    // Withdrawals equal spending (which includes health care) plus the taxes and penalty on the withdrawals themselves.
+    expect(drawn).toBeCloseTo(r.spending + r.taxes.total, 0);
+    expect(r.shortfall).toBe(0);
+  });
+
+  it("qualified Roth earnings (59 and a half and the five-year clock) are not taxable income", () => {
+    const roth = assetFromPreset("rothIRA", "roth", userValue(400_000, asOf), asOf);
+    roth.rothBasis = userValue(50_000, asOf);
+    const h = household({ birth: "1960-03", income: "none", spending: 40_000, accounts: [roth] });
+    const t = run(h, 2026);
+    const r = t.rows.find((x) => x.year === 2028)!;
+    expect(r.m2!.rothDraw.earnings).toBeGreaterThan(0);
+    expect(r.m2!.rothDraw.basis).toBe(0);
+    expect(r.m2!.agi).toBeCloseTo(0, 0);
+    expect(r.taxes.total).toBeCloseTo(0, 0);
+  });
+
+  it("a conversion to the ACA target counts the year's pretax withdrawals as income, so the two together stay at the budget", () => {
+    const budget = 2 * 15650;
+    const policy = { ...defaultPolicy(), conversionTarget: "fillToAcaTarget" as const, acaTarget: 200 as const };
+    // Spending plus taxes exceed the budget: the pretax draws alone pass it, so nothing is converted and MAGI is just the draws.
+    const big = run(retiree, 2026, policy).rows.find((x) => x.year === 2027)!;
+    expect(big.withdrawals["k401"]).toBeGreaterThan(budget);
+    expect(big.m2!.conversion).toBeCloseTo(0, 0);
+    expect(big.m2!.magiAca).toBeCloseTo(big.withdrawals["k401"]!, 0);
+    // A smaller spender: the draws leave room, and draws plus conversion land on the budget together.
+    const small = household({ birth: "1976-03", income: "none", spending: 12_000, accounts: [pretax(400_000)] });
+    const r = run(small, 2026, policy).rows.find((x) => x.year === 2027)!;
+    expect(r.m2!.conversion).toBeGreaterThan(1000);
+    // The two settle together across passes, landing within a few dollars of the budget.
+    expect(Math.abs(r.withdrawals["k401"]! + r.m2!.conversion - budget)).toBeLessThan(25);
+    expect(Math.abs(r.m2!.magiAca - budget)).toBeLessThan(25);
   });
 });
