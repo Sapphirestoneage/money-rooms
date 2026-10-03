@@ -152,6 +152,9 @@ Shown under the drop zone after a template is read and before anything changes. 
 ### Collapsible section
 The entry screen's five sections (About you, Income, Spending, Accounts, Debts) each have a header that opens and closes them. The header is a real button inside the heading, with a caret that points right when closed and down when open, and `aria-expanded`. Under the title it always shows one summary line: the item count, the dollar total, how many are rough or missing, and a checkmark when the section is complete ("Debts: 7 items, $35,829, 2 rough" and a check). Complete means every required field is answered; roughly counts as answered, look-it-up does not. When the screen opens, only the first section that needs attention is open: the first with a required answer missing; if none, the first with a rough value; if none, all are closed. Closing a section hides it. Nothing is ever removed. The numbers in the summary come from the engine.
 
+### Group header
+Inside Accounts and Debts, rows are grouped under a small heading with the group's count and subtotal on the right ("Credit cards: 4 items, $15,829"). Accounts group as Cash (checking, savings), Investing (brokerage), and Retirement (401(k)s, IRAs, HSA). Debts group as Credit cards (personal and business), Student loans, then Other debts. Empty groups are not shown. The groups live in `data/entry-groups.json` and the subtotals come from the engine. Income and spending are not grouped.
+
 ### Unconfirmed income line
 On the result screen, when any income is marked not confirmed, a gentle flag sits above the other flags: "Includes income not yet confirmed: Town contract." with one action, "Change my numbers". On the entry screen each income has "Is this income confirmed?" with two choices.
 

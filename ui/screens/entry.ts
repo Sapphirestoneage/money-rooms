@@ -58,6 +58,7 @@ import {
 import { collapsibleSection } from "../components/collapsible-section";
 import { confirmPanel } from "../components/confirm-panel";
 import { gentleFlag } from "../components/gentle-flag";
+import { groupHeader } from "../components/group-header";
 import { kindBadge, type EditableKind } from "../components/kind-badge";
 import { moneyInput, type MoneyInputOptions } from "../components/money-input";
 import { presetPicker } from "../components/preset-picker";
@@ -835,7 +836,16 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const body = el("div", { class: "stack" });
     if (answer.kind === "none") body.append(el("p", { class: "empty-state" }, `No ${noun}. That counts as answered.`));
     else if (mine.length === 0) body.append(el("p", { class: "empty-state" }, side === "asset" ? "No accounts yet. Add your first one." : "No debts listed."));
-    else for (const a of mine) body.append(accountEditor(a));
+    else {
+      // Grouped by type, each group with its count and subtotal from the engine.
+      for (const g of accountGroups(h())[side === "asset" ? "assets" : "debts"]) {
+        body.append(groupHeader(g.label, g.count, dollars(g.subtotal)));
+        for (const id of g.accountIds) {
+          const a = mine.find((x) => x.id === id);
+          if (a) body.append(accountEditor(a));
+        }
+      }
+    }
 
     const open = pickerOpen === side;
     const actions = el(

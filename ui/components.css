@@ -876,3 +876,24 @@
 .section-body {
   margin-top: var(--space-3);
 }
+
+/* ---- Group header ---- */
+
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-ink-muted);
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.group-header__total {
+  font-weight: var(--weight-regular);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
