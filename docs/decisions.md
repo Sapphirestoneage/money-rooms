@@ -226,3 +226,14 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | K4 | The DRAFTT scorecard measures five letters against take-home pay and taxes against gross pay; therapy and taxes are optional letters off and on by toggle. The ranges are common guidance written as plain words, never verdicts. | Proposed | Two-way | 2026-10-04 | Decision M1 says the letters are optional. |
 | K5 | The Advice Translator's ten lines and their rules live in `data/advice.json`; each verdict (applies, partly, unlearn) is one sentence from the person's numbers. New lines are added to the data file, never to code. | Proposed | Two-way | 2026-10-04 | M4 spec 2.4. |
 | K6 | M4 stores nothing; which lens is open and the DRAFTT letters are display state. A test scans every M4 sentence for instructing phrases. | Proposed | Two-way | 2026-10-04 | Style guide: never a verdict. |
+
+## M6 risk decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| Q1 | The return series is `data/returns-history.json`: annual real returns on US stocks, 10-year Treasuries, and bills from 1928, made real with CPI. It was typed from memory of the Damodaran series because the sources were unreachable from the build session, and is marked unverified; every M6 result carries a flag until it is checked. | Proposed | Two-way | 2026-10-04 | Rule 9 of the build: keep a value, mark it, give the URL. The mechanics are built and tested; the numbers are not trusted. |
+| Q2 | A backtest replays the whole plan (working years too) from each start year with that year's returns; starts need at least 30 years of history, and missing tail years use the likely band's return and are counted. | Proposed | Two-way | 2026-10-04 | More starts, honestly labeled, beat a handful of full-length ones. |
+| Q3 | The sturdy FI date is the earliest retirement year whose success rate reaches the threshold (default 90%), searching up from the deterministic date. | Proposed | Two-way | 2026-10-04 | M6 spec 2.2. |
+| Q4 | Guardrails: cut 10% above 1.2 times the initial withdrawal rate, raise 10% under 0.8 times, never below 60% of plan. The initial rate is measured in the first retired year. | Proposed | Two-way | 2026-10-04 | Guyton-Klinger simplified to its two guardrails. |
+| Q5 | Flex FI trims spending by the Level 3 trim (10%) in every retired year whose stock return was negative, and its date is the sturdy FI date with the trim. It replaces "coming soon" on the spectrum; callers that need speed can skip it. | Proposed | Two-way | 2026-10-04 | M6 spec 2.4 and Level 3 decision G4. |
+| Q6 | The engine gained two hooks: real returns by calendar year, and a spending adjuster for retired years. Under the tie-out neither is set, so m1 is unchanged. | Proposed | Two-way | 2026-10-04 | The tripwire held: Maya ties out after the change. |

@@ -60,6 +60,8 @@ Level content spec: [`levels/level-5-legacy.md`](levels/level-5-legacy.md). Esta
 
 ## M6. Risk
 
+**Spec written and built 2026-10-04 (Proposed) on `m6-risk`: `m6-spec.md`. The return series is unverified (decision Q1).**
+
 Sequence-of-returns risk and historical backtesting (Big ERN's territory), the remaining phenomena behind feature switches.
 
 ## M7. Porting v1

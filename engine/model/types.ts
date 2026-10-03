@@ -466,6 +466,8 @@ export interface Household {
   legacy?: LegacyInputs;
   /** M5 (dictionary 9.5, Proposed): scenario blocks, layered proposed changes never applied to the real rows. */
   blocks?: ScenarioBlock[];
+  /** M6 (m6-spec.md section 3, Proposed). */
+  risk?: { successThresholdPercent?: Value<number>; guardrailsOn?: Value<boolean> };
 }
 
 /** Dictionary 9.5. One proposed change inside a block. */

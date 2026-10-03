@@ -11,10 +11,11 @@ import { levelsScreen } from "./screens/levels";
 import { meaningScreen } from "./screens/meaning";
 import { nextScreen } from "./screens/next";
 import { resultScreen } from "./screens/result";
+import { riskScreen } from "./screens/risk";
 import { whatIfsScreen } from "./screens/whatifs";
 import { browserStore } from "./store";
 
-type Route = "entry" | "result" | "next" | "levels" | "whatifs" | "meaning";
+type Route = "entry" | "result" | "next" | "levels" | "whatifs" | "meaning" | "risk";
 
 function currentRoute(): Route {
   if (window.location.hash === "#/result") return "result";
@@ -22,6 +23,7 @@ function currentRoute(): Route {
   if (window.location.hash === "#/levels") return "levels";
   if (window.location.hash === "#/whatifs") return "whatifs";
   if (window.location.hash === "#/meaning") return "meaning";
+  if (window.location.hash === "#/risk") return "risk";
   return "entry";
 }
 
@@ -41,7 +43,7 @@ function boot(): void {
 
   const drawer = sharedDrawer();
 
-  const nav = el("nav", { class: "topbar__nav", "aria-label": "Screens" }, el("a", { href: "#/entry" }, "Your numbers"), el("a", { href: "#/next" }, "What's next"), el("a", { href: "#/levels" }, "Levels"), el("a", { href: "#/whatifs" }, "What-ifs"), el("a", { href: "#/meaning" }, "Meaning"), el("a", { href: "#/result" }, "Your FI date"));
+  const nav = el("nav", { class: "topbar__nav", "aria-label": "Screens" }, el("a", { href: "#/entry" }, "Your numbers"), el("a", { href: "#/next" }, "What's next"), el("a", { href: "#/levels" }, "Levels"), el("a", { href: "#/whatifs" }, "What-ifs"), el("a", { href: "#/meaning" }, "Meaning"), el("a", { href: "#/risk" }, "Risk"), el("a", { href: "#/result" }, "Your FI date"));
   const topbar = el("header", { class: "topbar" }, el("a", { class: "topbar__brand", href: "#/entry" }, "Money Rooms"), nav);
   document.body.prepend(topbar);
 
@@ -58,6 +60,8 @@ function boot(): void {
     clear(main);
     if (route === "result") {
       main.append(resultScreen({ household, store, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
+    } else if (route === "risk") {
+      main.append(riskScreen({ household, store, save, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
     } else if (route === "meaning") {
       main.append(meaningScreen({ household, store, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
     } else if (route === "whatifs") {

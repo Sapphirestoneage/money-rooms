@@ -56,7 +56,7 @@ export function planMarkers(h: Household, deps: Deps = defaultDeps()): { age: nu
     const paid = r.timeline.rows.find((row, i) => i > 0 && (row.balances[d.id] ?? 0) <= 0 && (r.timeline.rows[i - 1]!.balances[d.id] ?? 0) > 0);
     if (paid) out.push({ age: paid.age, label: `${d.label} paid off` });
   }
-  for (const m of milestones(h, deps)) if (m.age !== null && !m.comingSoon && (m.id === "coast" || m.id === "lean" || m.id === "fi")) out.push({ age: m.age, label: m.label });
+  for (const m of milestones(h, deps, undefined, { skipFlex: true })) if (m.age !== null && !m.comingSoon && (m.id === "coast" || m.id === "lean" || m.id === "fi")) out.push({ age: m.age, label: m.label });
   if (h.self.income.kind === "rows") {
     const birthYear = Number((h.self.birthDate?.value ?? "2000-01").slice(0, 4));
     for (const s of h.self.income.rows) {
@@ -91,8 +91,8 @@ export function priceCard(h: Household, goal: GoalBucket, deps: Deps = defaultDe
   const cheapest = dated.length ? dated.reduce((a, b) => (b.costYears! < a.costYears! ? b : a)) : null;
   const toAge = blocksFile.dreams.trueAmountAge;
   const cost = goal.cadence === "oneOff" ? goal.cost.value : goal.cost.value * Math.max(1, goal.endAge - goal.startAge + 1);
-  const baseMilestones = milestones(withGoals(h, others), deps);
-  const withMilestones = milestones(withGoals(h, [...others, goal]), deps);
+  const baseMilestones = milestones(withGoals(h, others), deps, undefined, { skipFlex: true });
+  const withMilestones = milestones(withGoals(h, [...others, goal]), deps, undefined, { skipFlex: true });
   const moved = baseMilestones
     .filter((m) => !m.comingSoon && (m.id === "coast" || m.id === "fi" || m.id === "walkAway" || m.id === "lean"))
     .map((m) => ({ label: m.label, from: m.age, to: withMilestones.find((x) => x.id === m.id)?.age ?? null }));

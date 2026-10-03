@@ -231,6 +231,9 @@ One per ratio: the name, a Computed badge (or a quiet level pill when locked), t
 ### Lens buttons and verdict pills
 Lenses are toggle buttons in a row; the open lens shows its idea and its parts beneath. A verdict pill (Applies, Partly, Unlearn) sits right of each advice line: Applies filled brand 700, Unlearn filled attention ink, Partly outlined.
 
+### Risk cards
+The return series card (source, years, verified date, and a gentle flag while unverified); the backtest card with the success rate in its title, the worst starts as sentences ("Retiring in 2041 with 1966's markets ahead: the plan ran short at 81"), and the sturdy FI date; the guardrails card; the Flex FI card with the date beside the plan's own. Every headline figure carries a Computed badge.
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 

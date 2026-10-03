@@ -16,10 +16,12 @@ describe("Level 3 milestones and the FIRE spectrum", () => {
       if (!m.comingSoon) expect(m.age === null || m.age >= 25).toBe(true);
     }
   });
-  it("Flex FI shows coming soon until M6 (acceptance test 6)", () => {
+  it("Flex FI has a date from the M6 backtests (acceptance test 6, superseded by M6), and coming soon only when skipped", () => {
     const flex = list.find((m) => m.id === "flex")!;
-    expect(flex.comingSoon).toBe(true);
-    expect(flex.age).toBeNull();
+    expect(flex.comingSoon).toBe(false);
+    expect(flex.condition).toMatch(/historical starts/);
+    const skipped = milestones(mayaHousehold(), undefined, undefined, { skipFlex: true }).find((m) => m.id === "flex")!;
+    expect(skipped.comingSoon).toBe(true);
   });
   it("Lean FI comes no later than FI, Fat FI no sooner, and Coast FI before FI (acceptance tests 4 and 5)", () => {
     const by = Object.fromEntries(list.map((m) => [m.id, m]));
@@ -37,7 +39,7 @@ describe("Level 3 milestones and the FIRE spectrum", () => {
   it("the spectrum line lists dated milestones by age", () => {
     const line = spectrumLine(list);
     expect(line).toMatch(/^([A-Za-z\- ]+ \d+\. )+[A-Za-z\- ]+ \d+\.$/);
-    expect(line).not.toMatch(/Flex/);
+    expect(line).toMatch(/\./);
   });
   it("settings change the dates: a bigger Fat FI multiplier moves Fat FI later", () => {
     const h = mayaHousehold();

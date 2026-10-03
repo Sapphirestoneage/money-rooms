@@ -13,13 +13,15 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 4 Level content | Done (all three) | `levels` | (see git log) |
 | 5 M5 what-ifs | Done | `m5-whatifs` | (see git log) |
 | 6 M4 meaning | Done (spec and build) | `m4-meaning` | (see git log) |
-| 7 M6 risk | Not started | `m6-risk` | |
+| 7 M6 risk | Done, with the series unverified | `m6-risk` | (see git log) |
 | 8 Households of two | Not started | `household-two` | |
 | 9 Pack specs | Not started | `packs-specs` | |
 | 10 Foundations | Not started | `foundations` | |
 | 11 Coaching spec | Not started | `coaching-specs` | |
 | 12 Feature register | Not started | `feature-register` | |
 | 13 Readiness audit | Not started | `readiness` | |
+
+**Phase 7 in plain English.** `docs/m6-spec.md` written (Proposed), then built: the engine gained per-year returns and a spending-rule hook (m1 untouched, Maya ties out), and `engine/risk/` replays the whole plan from every start year in a long-run real return series, reporting the success rate, the worst starts ("retiring with 1966's markets ahead ran short at 81"), the sturdy FI date at a threshold, guardrails spending (Guyton-Klinger, two guardrails), and Flex FI, which now has a real date on the Level 3 spectrum instead of "coming soon". A Risk screen shows all of it. **The return series could not be fetched (every data host is blocked), so `data/returns-history.json` was typed from memory of the Damodaran series and is marked unverified; every result built on it carries a flag.** Self-audit: `docs/audits/m6-self-audit.md`.
 
 **Phase 6 in plain English.** `docs/m4-spec.md` written (Proposed), then built: a Meaning screen with the ratio registry (13 ratios from `data/ratios.json`, each with its formula, unlocked by level or on request), five lenses (the 4% rule against the True FI number, Shockingly simple math with its table against the plan's own years, the DRAFTT scorecard with therapy and taxes switchable, hours, taxes), and the Advice Translator (ten lines from `data/advice.json`, each applies, partly, or unlearn with a sentence from the person's numbers). A test scans every M4 sentence for instructing phrases. Self-audit: `docs/audits/m4-self-audit.md` (all eight pass).
 
@@ -43,12 +45,14 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 
 | Spec | Branch | What it covers |
 |---|---|---|
+| `docs/m6-spec.md` | `m6-risk` | The return series, historical backtests, the sturdy FI date, guardrails, Flex FI, seven acceptance tests |
 | `docs/m4-spec.md` | `m4-meaning` | Ratio registry, metrics by level, lenses (4% rule, Shockingly simple math, DRAFTT, hours, taxes), the Advice Translator, eight acceptance tests |
 
 ## 4. Proposed decisions
 
 | # | Where | Decision |
 |---|---|---|
+| Q1 to Q6 | `decisions.md` | M6: the unverified return series, the backtest method, the sturdy date, guardrails, Flex FI, the two engine hooks |
 | K1 to K6 | `decisions.md` | M4: the ratio registry shape, locking by level, the simple-math table's assumptions, DRAFTT measurement, advice as data, nothing stored |
 | W1 to W6 | `decisions.md` | M5: how blocks are applied, the questionnaire defaults, the headline measure, goal trimming, the true amount and timing curve, the payoff simulation |
 | R7 to R10, G6, Y6 | `decisions.md` | Levels: the staircase's category mapping, the unemployment placeholder, health insurance after a job loss, how shocks are applied, how each milestone condition is rendered, the plan's own withdrawal rate for giving forever |
@@ -77,12 +81,15 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 | `ss.wageBase.2026` lastVerified | ssa.gov blocked | https://www.ssa.gov/cola/factsheets/2026.html |
 | Poverty guidelines, Alaska and Hawaii | hhs.gov blocked | https://aspe.hhs.gov/topical-subjects/poverty-economic-mobility/poverty-guidelines |
 | SSA POMS IRMAA as a second source | ssa.gov blocked | https://secure.ssa.gov/poms.nsf/lnx/0601101020 |
+| **Long-run return series** (M6) | Damodaran, Shiller, FRED, BLS, Treasury, and the Fed were all unreachable; `data/returns-history.json` is typed from memory and flagged unverified | https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html |
 | State unemployment benefit table | dol.gov and oui.doleta.gov unreachable; national placeholder in `data/resilience.json` | https://oui.doleta.gov/unemploy/statelaws.asp |
 | Medicaid expansion state list | medicaid.gov unreachable | https://www.medicaid.gov/medicaid/program-information/medicaid-and-chip-eligibility-levels/index.html |
 
 No page fetched during this session contained instructions aimed at the build.
 
 ## 7. Self-audit scorecards
+
+**M6** (`docs/audits/m6-self-audit.md`): all seven acceptance tests pass on the mechanics; the series itself is the open item.
 
 **M4** (`docs/audits/m4-self-audit.md`): all eight acceptance tests pass.
 
@@ -104,6 +111,6 @@ Not started.
 
 ## 10. Handoff
 
-**Where I am:** Phases 0 to 6 complete and pushed. **Next:** branch `m6-risk` from `m4-meaning`, write `docs/m6-spec.md` (Proposed) for sequence-of-returns risk via historical backtests on a sourced long-run return series, guardrails spending, and Flex FI, then build it.
+**Where I am:** Phases 0 to 7 complete and pushed. **Next:** branch `household-two` from `m6-risk`, write `docs/household-two-spec.md` (Proposed) for the partner as a second person, account owner, married filing statuses, and spousal and survivor Social Security, then build it.
 
 **Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.

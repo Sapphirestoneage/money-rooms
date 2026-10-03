@@ -117,6 +117,10 @@ export interface TimelineOptions {
   disabledRules?: readonly string[];
   /** Spending scaled by this factor every year (1 = as entered). The "most spending" objective searches it. */
   spendingScale?: number;
+  /** M6: real returns by calendar year (percent) that replace the band's returns where given. */
+  returnsByYear?: Readonly<Record<number, { stocks: number; bonds: number; cash: number }>>;
+  /** M6: a spending rule for retired years. Returns the factor to apply to that year's spending (1 = as planned). May keep state across years. */
+  spendingAdjuster?: (ctx: { year: number; age: number; assetsAtStart: number; assetsAtRetirement: number | null; plannedSpending: number; stocksReturn: number }) => number;
 }
 
 /**
@@ -252,6 +256,8 @@ interface AssetState {
   /** Percent per year. Decides which Roth account is drawn first. */
   fees: number;
   implicit: boolean;
+  /** The mix, kept so a year's return can be rebuilt from historical returns (M6). */
+  allocation: { stocks: number; bonds: number; cash: number };
   /** M2: taxable accounts, the cost basis. */
   basis: number;
   /** M2: Roth accounts, the ordering layers. */
@@ -301,6 +307,7 @@ function assetState(a: AssetAccount, band: BandNumbers, year0: number, plans: re
     rate: blendedRealReturn(a.allocation.value, band.returns, a.fees.value),
     fees: a.fees.value,
     implicit: false,
+    allocation: a.allocation.value,
     basis,
     roth,
     receipts: bucket === "hsa" ? (a.savedReceipts?.value ?? 0) : 0,
@@ -320,6 +327,7 @@ function implicitAsset(id: string, presetKey: "trad401k" | "roth401k" | "rothIRA
     rate: blendedRealReturn(p.allocation, band.returns, p.fees),
     fees: p.fees,
     implicit: true,
+    allocation: p.allocation,
     basis: 0,
     roth: p.taxBucket === "roth" ? { basis: 0, conversions: [], firstYear: Infinity } : null,
     receipts: 0,
@@ -347,6 +355,9 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   const householdSize = hh.drawdown.acaHouseholdSize?.value ?? 1;
   const medicaidExpansion = hh.drawdown.medicaidExpansionState?.value ?? null;
   const reserveMonths = (m2 && policy.limits.cashBufferMonths !== null ? policy.limits.cashBufferMonths : DEFAULTS.reserveMonths);
+  /** This year's returns: the band's, or the historical year's when the backtest supplies one (M6). */
+  const returnsFor = (year: number) => opts.returnsByYear?.[year] ?? band.returns;
+  const rateFor = (a: AssetState, year: number) => (opts.returnsByYear ? blendedRealReturn(a.allocation, returnsFor(year), a.fees) : a.rate);
 
   // ---- Accounts -----------------------------------------------------------
   const states: AccountState[] = [];
@@ -537,6 +548,11 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 
     // Spending, Social Security, scheduled debt payments (annualized).
     const spend = spendingForYear(hh.spending, ctx, retired, band.phases);
+    if (retired && opts.spendingAdjuster) {
+      const assetsAtStart = assets().reduce((sum, a) => sum + a.balance, 0);
+      const factor = opts.spendingAdjuster({ year: y, age, assetsAtStart, assetsAtRetirement, plannedSpending: spend.total, stocksReturn: returnsFor(y).stocks });
+      spend.total *= factor;
+    }
     const healthcareSetting = opts.testSettings?.retirementHealthcare;
     const ss = y >= ssStartYear ? ssAnnualUsed : 0;
     const debtPreview = debts().map((d) => ({
@@ -1110,7 +1126,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           }
           if (s.taxBucket === "hsa") s.receipts = Math.max(0, s.receipts - (receiptsUsed.get(s.id) ?? 0) * f);
         }
-        s.balance = Math.max(0, growBalance(s.balance, flow, s.rate, f));
+        s.balance = Math.max(0, growBalance(s.balance, flow, rateFor(s, y), f));
         balances[s.id] = s.balance;
         assetTotal += s.balance;
       } else {

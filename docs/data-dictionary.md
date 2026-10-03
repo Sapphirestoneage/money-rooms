@@ -550,3 +550,7 @@ Stored under `legacy`.
 | `freeHoursPerWeek` | Assumption | Hours | 45 |
 
 A goal bucket (5.1) gains an optional `legacy` tag; a tagged dream appears among the projects while keeping its price card. The heir tax rate lives with the drawdown inputs (M2 spec section 7). Annual giving is read from the giving spending category, never stored twice.
+
+### 9.11 Risk settings (M6)
+
+Stored under `risk`: `successThresholdPercent` (Goal, default 90) and `guardrailsOn` (Decision, default off). The Flex FI trim lives with the milestone settings (9.9).

@@ -12,6 +12,8 @@ import { resolveBand, type BandNumbers } from "../projection/bands";
 import { defaultDeps, findFiDate, runFor, type Deps } from "../projection/fi";
 import { defaultPolicy, type DrawdownPolicy } from "../projection/policy";
 import { requireComplete, type CompleteHousehold } from "../projection/timeline";
+import { SERIES_SOURCE, sturdyFiYear } from "../risk/backtest";
+import { flexAdjuster } from "../risk/rules";
 import { runway, staircase } from "./resilience";
 
 export const MILESTONE_DEFAULTS = milestonesFile.level3;
@@ -55,7 +57,7 @@ function firstYearAssetsReach(target: number, working: ReturnType<typeof runFor>
 }
 
 /** Every milestone with its date (spec section 5), using the likely band. */
-export function milestones(h: Household, deps: Deps = defaultDeps(), policy: DrawdownPolicy = defaultPolicy()): Milestone[] {
+export function milestones(h: Household, deps: Deps = defaultDeps(), policy: DrawdownPolicy = defaultPolicy(), options: { skipFlex?: boolean } = {}): Milestone[] {
   const hh: CompleteHousehold = requireComplete(h);
   const band: BandNumbers = resolveBand(resolveAssumptions(h.assumptions), "likely");
   const s = settings(h);
@@ -112,7 +114,16 @@ export function milestones(h: Household, deps: Deps = defaultDeps(), policy: Dra
   const barista = findFiDate(hh, band, { ...d, policy: { ...policy, locks } }, fi.retirementYear ?? undefined);
   out.push({ id: "barista", label: "Barista FI", condition: `Investments plus ${money(s.baristaIncomeAnnual)} a year of part-time work (to 65) cover spending for life`, age: barista.fiAge, year: barista.retirementYear, comingSoon: false, movedBy: "the part-time income and health insurance after full-time work" });
 
-  out.push({ id: "flex", label: "Flex FI", condition: `FI if spending is trimmed ${s.flexFiTrimPercent}% in years the market is down`, age: null, year: null, comingSoon: true, movedBy: "variable returns (arrives with M6)" });
+  // Flex FI (M6): the earliest year the trimmed plan holds at the success threshold in the historical backtests.
+  const threshold = h.risk?.successThresholdPercent?.value ?? 90;
+  let flexYear: number | null = null;
+  let flexNote = "";
+  if (fi.retirementYear !== null && !options.skipFlex) {
+    const fs = sturdyFiYear(h, fi.retirementYear, threshold, { minHistoryYears: 30, spendingAdjuster: flexAdjuster(s.flexFiTrimPercent), deps });
+    flexYear = fs.year;
+    flexNote = fs.year === null ? ` No year reaches ${threshold}% of starts.` : ` Holds in ${Math.round((fs.successRate ?? 0) * 100)}% of historical starts.${SERIES_SOURCE.unverified ? " The return series is not yet verified." : ""}`;
+  }
+  out.push({ id: "flex", label: "Flex FI", condition: `FI if spending is trimmed ${s.flexFiTrimPercent}% in years the market is down, holding in ${threshold}% of historical starts`, age: toAge(flexYear), year: flexYear, comingSoon: options.skipFlex === true, movedBy: "the trim, the threshold, and the return series", detail: flexNote.trim() });
 
   // Slow FI: the most extra spending now that still reaches FI by the target age (FI plus five years).
   const targetAge = s.slowFiTargetAge ?? (fi.fiAge !== null ? fi.fiAge + milestonesFile.level3.slowFiYearsAfterFi : null);

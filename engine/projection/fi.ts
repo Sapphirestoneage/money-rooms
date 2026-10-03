@@ -43,6 +43,10 @@ export interface Deps {
   disabledRules?: readonly string[];
   /** Spending scaled every year (1 = as entered). */
   spendingScale?: number;
+  /** M6: real returns by calendar year. */
+  returnsByYear?: Readonly<Record<number, { stocks: number; bonds: number; cash: number }>>;
+  /** M6: a factory for the spending rule, called once per timeline run so the rule can keep state. */
+  spendingAdjuster?: () => NonNullable<import("./timeline").TimelineOptions["spendingAdjuster"]>;
 }
 
 /** What the app uses: M2 depth with the default policy. */
@@ -72,6 +76,8 @@ export function runFor(hh: CompleteHousehold, band: BandNumbers, deps: Deps, ret
     ...(deps.policy ? { policy: deps.policy } : {}),
     ...(deps.disabledRules ? { disabledRules: deps.disabledRules } : {}),
     ...(deps.spendingScale !== undefined ? { spendingScale: deps.spendingScale } : {}),
+    ...(deps.returnsByYear ? { returnsByYear: deps.returnsByYear } : {}),
+    ...(deps.spendingAdjuster ? { spendingAdjuster: deps.spendingAdjuster() } : {}),
   });
 }
 
