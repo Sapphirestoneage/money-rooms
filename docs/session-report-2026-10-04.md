@@ -41,7 +41,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 
 ## 2. Maya tie-out (M1 conventions mode)
 
-After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after the review changes on `review-oct4`. Full suite: 51 files, 527 tests, all passing.
+After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after the data verification round on `review-oct4`. Full suite: 51 files, 530 tests, all passing.
 
 ## 3. Proposed specs written (review first)
 
@@ -95,21 +95,19 @@ Answered at review on 2026-10-04 and applied on `review-oct4` unless marked **wa
 11. Married with no partner stays a flag; the survivor start is a known simplification: **answered**; noted in the spec (H10, H3 amended).
 12. Spousal and survivor rule: **answered**; restructured into separate spousal and survivor schedules (H9), engine updated, still unverified and flagged until you confirm the schedules at the SSA URLs (**waits on you**).
 
-**Still waiting on you:** 3 (Alaska and Hawaii), 4 (wage base), 12 (the two schedules), the return series, the SSA POMS IRMAA second source, the state unemployment table, and the Medicaid expansion list (all in section 6).
+**Data round of 2026-10-04:** 3 (Alaska and Hawaii), 4 (wage base), 12 (spousal schedule), and the return series are now verified; X2 is locked. **Still waiting on you:** the survivor schedule confirmation at ssa.gov, the health care cost sources, the state unemployment table, and the Medicaid expansion list (section 6).
 
 ## 6. Skipped or unverified
 
-| Item | Why | URL for you |
-|---|---|---|
-| `ss.wageBase.2026` lastVerified | ssa.gov blocked | https://www.ssa.gov/cola/factsheets/2026.html |
-| Poverty guidelines, Alaska and Hawaii | hhs.gov blocked | https://aspe.hhs.gov/topical-subjects/poverty-economic-mobility/poverty-guidelines |
-| SSA POMS IRMAA as a second source | ssa.gov blocked | https://secure.ssa.gov/poms.nsf/lnx/0601101020 |
-| **Long-run return series** (M6) | Damodaran, Shiller, FRED, BLS, Treasury, and the Fed were all unreachable; `data/returns-history.json` is typed from memory and flagged unverified | https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html |
-| `ss.spousalAndSurvivor` (households of two) | ssa.gov blocked; typed from memory, read through the unverified-rule door, every plan it changes is flagged | https://www.ssa.gov/benefits/retirement/planner/applying7.html and https://www.ssa.gov/benefits/survivors/ |
-| State unemployment benefit table | dol.gov and oui.doleta.gov unreachable; national placeholder in `data/resilience.json` | https://oui.doleta.gov/unemploy/statelaws.asp |
-| Medicaid expansion state list | medicaid.gov unreachable | https://www.medicaid.gov/medicaid/program-information/medicaid-and-chip-eligibility-levels/index.html |
+**Verified at the data round of 2026-10-04** (registry entries carry the sources): the wage base $184,500 (SSA 2026 COLA fact sheet); the 2025 poverty guidelines for coverage year 2026, all three tables including Alaska and Hawaii (Federal Register 2025-01377), now read by state; the spousal schedule (SSA Office of the Chief Actuary); the long-run return series 1928 to 2025 (Damodaran histretSP, January 5, 2026, with BLS CPI-U inflation), which replaced the from-memory series and dropped its flag; the senior deduction phase-out and the RMD ages (statutes, review of 2026-10-04).
 
-Every row above still waits on you; none changed at the review.
+| Still open | Why | URL for you |
+|---|---|---|
+| Survivor schedule in `ss.spousalAndSurvivor` | Verified from secondary sources consistent with SSA; plans the survivor rule changes stay flagged until you confirm | https://www.ssa.gov/benefits/survivors/ |
+| Health care cost placeholders (`data/healthcare.json`: benchmark silver premium, Part D, supplement and out of pocket) | Marked lookUp; open question O3 | https://www.healthcare.gov/ and https://www.cms.gov/ |
+| SSA POMS IRMAA as a second source | ssa.gov blocked the build session | https://secure.ssa.gov/poms.nsf/lnx/0601101020 |
+| State unemployment benefit table | DOL pages unreachable; national placeholder in `data/resilience.json` | https://oui.doleta.gov/unemploy/statelaws.asp |
+| Medicaid expansion state list | medicaid.gov unreachable | https://www.medicaid.gov/medicaid/program-information/medicaid-and-chip-eligibility-levels/index.html |
 
 No page fetched during this session contained instructions aimed at the build.
 
@@ -184,6 +182,8 @@ From `docs/readiness.md`, in order:
 ## 10. Handoff
 
 **Review of 2026-10-04:** your answers are applied on `review-oct4`, branched from `readiness`: registry entries for the senior deduction, RMD ages, and poverty guidelines; the spousal and survivor rule restructured and the engine with it (H9); stale-rule flags (F7); the headline label (H10); the bundle-size warning in CI; X1, X5, N15, F1, and H3 locked; `docs/features/shortlist.md` (the top quartile, 61 features, by destination). Merge `review-oct4` instead of `readiness`.
+
+**Data round of 2026-10-04 (also on `review-oct4`):** the return series replaced and verified, the wage base and the 2025 poverty guidelines (with Alaska and Hawaii, read by state) verified, the spousal and survivor schedules implemented as specified and tested (32.5% at 62, 37.5% at 64, 71.5% at 60), X2 locked. Maya's M6 results on the verified series: the sturdy FI date stays 2046 (age 45) and the worst historical start stays 1958 (short at 50); the success rate moved from 72.1% to 72.5% with the 2025 row adding one more start. The from-memory series was close to the real one in the years that decide Maya's worst starts (the 1966 to 1982 stretch), so the headline risk numbers did not move.
 
 **Where I stopped:** every phase, 0 to 13, is complete and pushed; the last branch is `review-oct4`, which carries the final report. Nothing was merged to `main`. The branch chain, each from the one before: `prep-oct4`, `m2-engine`, `m2-optimizer`, `m3-flow`, `levels`, `m5-whatifs`, `m4-meaning`, `m6-risk`, `household-two`, `packs-specs`, `foundations`, `coaching-specs`, `feature-register`, `readiness`. Merging `readiness` into `main` brings everything; reviewing the Proposed specs in section 3 and the decisions in section 4 first is the order the build assumed.
 
