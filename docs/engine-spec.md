@@ -54,14 +54,26 @@ For each year, the engine runs these steps in this order. The order matters, the
 
 These are proposed defaults, logged in `decisions.md`. Both are editable per person in later milestones.
 
-**Savings order (surplus).** Inspired by the Money Guy Show's Financial Order of Operations.
+**Savings waterfall (surplus).** Surplus fills each account up to its legal limit, then flows to the next. Limits and eligibility come only from data/rules-registry.json.
 
+Steps that apply to everyone, in every strategy:
 1. Contributions that earn an employer match, up to the match
 2. Debts above the high-interest threshold (default 8%)
-3. HSA, if eligible
-4. Roth IRA, up to the limit and income eligibility
-5. Remaining workplace plan space
-6. Taxable brokerage
+
+Then the order depends on the savings strategy:
+
+| Step | Max tax savings now | Max tax-free growth |
+|---|---|---|
+| 3 | HSA, if eligible | HSA, if eligible |
+| 4 | Traditional 401(k)/403(b) to the limit | Roth IRA to the limit (backdoor if over the income limit) |
+| 5 | Governmental 457(b) to its separate limit, if available | Roth 401(k) to the limit |
+| 6 | Traditional IRA, if deductible; otherwise Roth IRA (backdoor if over the income limit) | Governmental 457(b) (Roth if offered) |
+| 7 | Mega backdoor Roth, if the plan allows (up to the total additions limit) | Mega backdoor Roth, if the plan allows |
+| 8 | Taxable brokerage | Taxable brokerage |
+
+"Entered only" uses the person's entered contributions, then Roth IRA, then taxable.
+
+**The loop.** Pretax contributions lower taxes, which raises the surplus. For each year: guess the extra pretax amount, compute the tax saved, add it back to the surplus, and repeat until the change is under $1 or the legal limit is reached. Finish with one exact step: at the current marginal rate m, contribution = (surplus + tax saved at the last guess - m x last guess) / (1 - m), capped at the limit. Any remainder flows to the next step. Catch-up limits apply automatically by age.
 
 **Withdrawal order (shortfall), M1.**
 

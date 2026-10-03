@@ -25,8 +25,13 @@
     ]
   },
   "expected": {
-    "fiAge": { "best": null, "likely": null, "worst": null },
-    "estateAtPlanTo": { "likely": null },
-    "status": "Awaiting hand calculation"
+    "byStrategy": {
+      "maxTaxSavingsNow":  { "fiAgeLikely": 42, "assetsAtRetirement": 899888, "lifetimeTaxes": 540184, "oneYearEarlierFailsAt": 80 },
+      "maxTaxFreeGrowth":  { "fiAgeLikely": 42, "assetsAtRetirement": 777415, "lifetimeTaxes": 366701, "oneYearEarlierFailsAt": 86 },
+      "enteredOnly":       { "fiAgeLikely": 42, "assetsAtRetirement": 777415, "lifetimeTaxes": 416466, "oneYearEarlierFailsAt": 85 }
+    },
+    "takeHomeYear1": 53780,
+    "year1ExtraTraditional401k": 16532,
+    "status": "Likely band hand-checked 2026-10-02 (maya-tie-out.xlsx). Tolerance: FI age exact; dollars within 1%."
   }
 }

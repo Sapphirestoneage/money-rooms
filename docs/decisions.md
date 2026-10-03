@@ -56,11 +56,13 @@ Every settled decision, with its date and reason, so nothing gets relitigated by
 | E2 | Real dollars inside. Nominal is a display toggle with a plain definition. | Locked | One-way | 2026-10-02 | Prevents counting inflation twice. |
 | E3 | Full tax depth is the v1 target. M1 ships the simpler tax set; M2 completes it. | Locked (split) | Two-way | 2026-10-02 | Keeps the skeleton small without changing the destination. |
 | E4 | Annual time step, mid-year timing convention. | Locked | Two-way | 2026-10-02 | Standard for planning engines; monthly adds cost without much accuracy. |
-| E5 | Savings order based on the Money Guy Financial Order of Operations. | Locked | Two-way | 2026-10-02 | Advisor platforms set each contribution by hand. A self-serve tool needs a default. Editable later. |
+| E5 | Savings order based on the Money Guy Financial Order of Operations. | Superseded by E10 and E11 | Two-way | 2026-10-02 | Advisor platforms set each contribution by hand. A self-serve tool needs a default. Editable later. |
 | E6 | FI date = earliest fully funded retirement year, per band. Never a fake date. | Locked | One-way | 2026-10-02 | |
 | E7 | Stack: TypeScript, Vite, Vitest; static site on GitHub Pages. No UI framework in M1. | Locked | One-way | 2026-10-02 | Industry standard; types catch data-model mistakes; stays a simple static site like v1. |
 | E8 | Year 0 is a stub period from the plan's as-of month through December. Every flow, tax, limit, and growth rate is prorated by months remaining over 12. Full calendar years follow. | Locked | Two-way | 2026-10-02 | Matches advisor platforms (eMoney, RightCapital, MoneyGuidePro). Balances are dated today, so the projection starts today, not last January. |
 | E9 | M1 state tax uses each state's 2026 brackets and standard deduction, not a flat effective rate. Exemptions, credits, local taxes, and special provisions wait for M2. The 48 non-household states come from the Tax Foundation compilation, marked look-it-up until verified officially in M2. | Locked | Two-way | 2026-10-02 | A single rate is wrong at both ends: it overstates tax in low-income retirement years, where the FI date is decided. Same bracket code as federal, so no extra engine work. |
+| E10 | Savings waterfall: surplus fills each account up to its legal limit, in the order set by the chosen savings strategy. Tax saved by pretax contributions is looped back in until the surplus settles (it converges because each dollar saves less than a dollar of tax), with one exact final step. | Locked | One-way | 2026-10-02 | Eli: optimize to the legal limits, then waterfall to the next account. |
+| E11 | Savings strategy is selectable: Max tax savings now, Max tax-free growth, Entered only. M2 adds "Optimizer decides" (picks whatever produces the best result for the chosen objective). | Locked | Two-way | 2026-10-02 | What you optimize for changes the right waterfall. |
 
 ## Meaning and presentation
 

@@ -142,6 +142,10 @@
       "source": "IRC §1411",
       "url": null, "lastVerified": null, "status": "current", "watch": null,
       "affects": ["B8"]
-    }
+    },
+    { "id": "limits.totalAdditions.2026", "name": "Total annual additions limit (employee + employer + after-tax)", "value": null, "effective": [2026], "sunset": null, "source": "IRS Notice 2025-67; IRC 415(c)", "url": null, "lastVerified": null, "status": "current", "watch": "Needed for mega backdoor Roth", "affects": ["E3"] },
+    { "id": "limits.iraDeductionPhaseout.2026", "name": "Traditional IRA deduction phase-out (covered by a workplace plan)", "value": null, "effective": [2026], "sunset": null, "source": "IRS Notice 2025-67", "url": null, "lastVerified": null, "status": "current", "watch": null, "affects": ["E1"] },
+    { "id": "limits.rothIraIncome.2026", "name": "Roth IRA contribution income phase-out", "value": null, "effective": [2026], "sunset": null, "source": "IRS Notice 2025-67", "url": null, "lastVerified": null, "status": "current", "watch": "Above it, use the backdoor Roth", "affects": ["E2"] },
+    { "id": "limits.457b.2026", "name": "Governmental 457(b) limit (separate from 401(k))", "value": null, "effective": [2026], "sunset": null, "source": "IRS Notice 2025-67", "url": null, "lastVerified": null, "status": "current", "watch": null, "affects": ["A7"] }
   ]
 }
