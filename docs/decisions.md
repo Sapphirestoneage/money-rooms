@@ -23,7 +23,7 @@ Every settled decision, with its date and reason, so nothing gets relitigated by
 | P2 | One continuous projection from today through death and estate. Accumulation and decumulation are never split. | Locked | One-way | 2026-10-02 | Splitting them loses money: the target should be shaped by how the money is actually drawn down. |
 | P3 | What someone leaves with: a plan with next steps. | Locked | One-way | 2026-09 | |
 | P4 | The tool is free; cost sits at the advisor level. Single modules are lead magnets. | Locked | Two-way | 2026-09 | |
-| P5 | Version 2 is a new repo. Version 1 stays online as a reference. | Locked | One-way | 2026-10-02 | v1's structure (rooms doing their own math) is what's being replaced. |
+| P5 | Version 2 lives in its own repository, money-rooms, deployed to GitHub Pages. Version 1 stays online as a reference. | Locked | One-way | 2026-10-03 | Its own repo, rules, and deploy path. |
 
 ## Data model
 
