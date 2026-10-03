@@ -7,13 +7,16 @@ import type { Household } from "../engine";
 import { sharedDrawer } from "./components/trace-drawer";
 import { clear, el } from "./dom";
 import { entryScreen } from "./screens/entry";
+import { nextScreen } from "./screens/next";
 import { resultScreen } from "./screens/result";
 import { browserStore } from "./store";
 
-type Route = "entry" | "result";
+type Route = "entry" | "result" | "next";
 
 function currentRoute(): Route {
-  return window.location.hash === "#/result" ? "result" : "entry";
+  if (window.location.hash === "#/result") return "result";
+  if (window.location.hash.startsWith("#/next")) return "next";
+  return "entry";
 }
 
 function boot(): void {
@@ -32,7 +35,7 @@ function boot(): void {
 
   const drawer = sharedDrawer();
 
-  const nav = el("nav", { class: "topbar__nav", "aria-label": "Screens" }, el("a", { href: "#/entry" }, "Your numbers"), el("a", { href: "#/result" }, "Your FI date"));
+  const nav = el("nav", { class: "topbar__nav", "aria-label": "Screens" }, el("a", { href: "#/entry" }, "Your numbers"), el("a", { href: "#/next" }, "What's next"), el("a", { href: "#/result" }, "Your FI date"));
   const topbar = el("header", { class: "topbar" }, el("a", { class: "topbar__brand", href: "#/entry" }, "Money Rooms"), nav);
   document.body.prepend(topbar);
 
@@ -49,6 +52,8 @@ function boot(): void {
     clear(main);
     if (route === "result") {
       main.append(resultScreen({ household, store, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
+    } else if (route === "next") {
+      main.append(nextScreen({ household, store, save, goToEntry: () => { window.location.hash = "#/entry"; }, goToResult: () => { window.location.hash = "#/result"; }, drawer }));
     } else {
       main.append(entryScreen({
         household,

@@ -9,7 +9,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 0 Prep | Done | `prep-oct4` | cd5e061 |
 | 1 M2 engine | Done | `m2-engine` | (see git log) |
 | 2 M2 optimizer and results | Done | `m2-optimizer` | (see git log) |
-| 3 M3 flow | Not started | `m3-flow` | |
+| 3 M3 flow | Done (see weak spots) | `m3-flow` | (see git log) |
 | 4 Level content | Not started | `levels` | |
 | 5 M5 what-ifs | Not started | `m5-whatifs` | |
 | 6 M4 meaning | Not started | `m4-meaning` | |
@@ -20,6 +20,8 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 11 Coaching spec | Not started | `coaching-specs` | |
 | 12 Feature register | Not started | `feature-register` | |
 | 13 Readiness audit | Not started | `readiness` | |
+
+**Phase 3 in plain English.** A new screen, What's next, with three tabs. Next: level progress ("You've covered 71% of what matters"), the next card (one big, two small) ranked by value per minute above the trivial and worth-it lines, the Refresh card for aged numbers (confirm restarts the clock, "since last time" after), the Rough numbers card sorted by materiality with a running bar, the small-wins promotion card, and a materiality setting (label above 5%). Small wins: one card at a time (Done, Not for me, Later) with the running total in dollars and months, personalized from the person's spending. The Sky: circles you zoom into by tap or keyboard with a breadcrumb trail, and an outline alternative. The entry screen gained a mode switch: one section at a time, all on one form, or paste everything. Engine: the materiality engine (plausible ranges by kind, sensitivity per input as a smooth dollar measure, the three lines, coverage), staleness clocks, items with computed values, small wins totals, and the Sky model, all in `engine/flow/` with 14 tests. Self-audit: `docs/audits/m3-self-audit.md` (two acceptance tests partial: the result screen does not yet carry the rough-results label, and widened staleness ranges are not yet fed into the ranking).
 
 **Phase 2 in plain English.** The optimizer searches the policy knobs (conversion target, gain harvesting, ACA target, withdrawal order, 72(t), rule of 55, claiming age, contribution type) for one of four objectives, with the optional limits, in about a hundred projections. It returns the best plan, the baseline, and the plan in words ("Ages 40 to 44: Live on taxable savings. Convert about $16,100 a year..."). Year locks are honored and planned around. Strategy toggles report what turning each one off costs in years and dollars; the stress test reruns the plan with the sunsets gone, Social Security at its floor, and the worst band; tripwire flags name the rules the plan leans on. The result screen now has nine sections in a default order that can be rearranged (stored as a display preference), the True FI card (locked until the drawdown inputs are in, then revealed with a count-up unless motion is reduced, with a replay and a share card that hides dollars by default), the plan, the strategies, and the rules behind the plan with links and verified dates. The entry screen gained a Plan details card for the Level 4 inputs. Self-audit: `docs/audits/m2-self-audit.md`.
 
@@ -39,6 +41,7 @@ None yet (Phase 0 wrote dictionary additions, not a spec).
 
 | # | Where | Decision |
 |---|---|---|
+| L12 to L17 | `decisions.md` | M3: the FI number as the materiality measure and the two-projection sensitivity method, impact-weighted coverage and what passes a level, placeholder values for required and later items, small wins stored on the household (dictionary 9.7), entry mode and materiality as display preferences, the Sky's drawing rule |
 | N18 to N23 | `decisions.md` | Optimizer: coordinate search with a pair sweep, fixed retirement year for the other objectives, toggle effects measured at a fixed year, the knob set, the result screen's default order, and the True FI definition |
 | N10 to N17 | `decisions.md` | M2 engine: the m1/m2 switch, level-two defaults (70% basis, 50% Roth basis, first Roth year five years back), no HSA draws before 65 beyond receipts, 72(t) annuitization approximated, conversions sized after sales, health care placeholders, Barista income under m2, RMD surplus to taxable |
 | X1 to X6 | `decisions.md` | Workplace plan entity, business entity, account owner, scenario blocks as layered changes, contribution-to-plan links, Roth conversion records (dictionary section 9) |
@@ -69,6 +72,8 @@ No page fetched during this session contained instructions aimed at the build.
 
 ## 7. Self-audit scorecards
 
+**M3** (`docs/audits/m3-self-audit.md`): tests 5, 6, 7, 8 pass; 1, 2, 3, 4 partial (not timed with a person; only Maya asserted for the ranking rule; the result screen lacks the rough-results label; staleness widening not yet wired into the ranking); 9 passes by construction.
+
 **M2** (`docs/audits/m2-self-audit.md`): acceptance tests 2 to 6 pass; test 1 is partial because the hand-checked Gross and Net FI values for the three households do not exist yet (only you can produce them). Weak spots named: health care placeholders, state tax on retirement income, the 72(t) annuitization approximation, the coordinate search, and no M2 workpaper yet. A suggested second Maya workpaper at M2 depth is described.
 
 ## 8. Feature register
@@ -81,6 +86,6 @@ Not started.
 
 ## 10. Handoff
 
-**Where I am:** Phases 0, 1, and 2 complete and pushed. **Next:** branch `m3-flow` from `m2-optimizer` and build the materiality engine (plausible ranges by kind, FI-number sensitivity per input, the three lines), then the next card, the Refresh card, the Rough numbers card, levels and tiers with `data/items.json`, entry modes, Small wins with `data/small-wins.json`, and the Sky with its outline alternative.
+**Where I am:** Phases 0 to 3 complete and pushed. **Next:** branch `levels` from `m3-flow` and build Level 2 Resilience (Rule of 5, the staircase, the runway stack, unemployment estimates, shock tests, the sturdiness view), then Level 3 milestones and the FIRE spectrum (Flex FI stays "coming soon"), then Level 5 Legacy (estate after heirs' taxes, basics checklist, giving, legacy projects, Legacy FI, the freedom budget).
 
 **Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.

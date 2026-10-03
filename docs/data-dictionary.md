@@ -508,3 +508,11 @@ A scenario block is a set of proposed changes laid over the real rows. The real 
 | `clockStart` | Computed | January 1 of the conversion year; the five-year clock ends December 31 four years later (`access.rothOrdering`) | Never stored |
 
 Past conversions are facts the person enters. Future conversions are decisions the optimizer proposes, stored as year-by-year locks (M2 spec section 5) and never as conversion records until they happen. **Feeds:** Roth ordering (A1, A2), MAGI for ACA and IRMAA in the conversion year, the conversion ladder.
+
+### 9.7 Small wins answers
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `smallWins` | Decision | A map from win id (`data/small-wins.json`) to `done`, `notForMe`, or `later`. A win not in the map is open | Empty |
+
+**Feeds:** the Small wins running total and its promotion to the main path (M3 spec section 10). The dollar values are never stored; they are recomputed from the win definitions and the household's spending each time.

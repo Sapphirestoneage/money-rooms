@@ -68,6 +68,7 @@ import { denseRow, denseRowEditor } from "../components/dense-row";
 import { gentleFlag } from "../components/gentle-flag";
 import { groupHeader } from "../components/group-header";
 import { kindBadge, type EditableKind } from "../components/kind-badge";
+import { toggleButton } from "../components/toggle-button";
 import { moneyInput, type MoneyInputOptions } from "../components/money-input";
 import { presetPicker } from "../components/preset-picker";
 import { clear, el, rowId, uid } from "../dom";
@@ -243,6 +244,31 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       },
     });
 
+  /** The entry mode (M3 spec section 12): express (the whole form), guided (one section at a time), or dump (paste everything). Remembered. */
+  type EntryMode = "express" | "guided" | "dump";
+  const modeOf = (x: string | undefined): EntryMode => (x === "guided" || x === "dump" ? x : "express");
+  let entryMode: EntryMode = modeOf(ctx.store.loadPrefs().entryMode);
+  let guidedIndex = 0;
+  const setMode = (m: EntryMode) => {
+    entryMode = m;
+    ctx.store.savePrefs({ ...ctx.store.loadPrefs(), entryMode: m });
+    if (m === "guided") {
+      const first = firstSectionNeedingAttention(h());
+      guidedIndex = first ? ENTRY_SECTION_ORDER.indexOf(first) : 0;
+      openSections.clear();
+      openSections.add(ENTRY_SECTION_ORDER[guidedIndex]!);
+    }
+    schedule();
+  };
+  const ENTRY_SECTION_ORDER: EntrySectionId[] = ["about", "income", "spending", "accounts", "debts"];
+  const modeSwitch = (): HTMLElement =>
+    el(
+      "div",
+      { class: "mode-switch", role: "group", "aria-label": "How to enter your numbers" },
+      el("span", { class: "muted" }, "Enter your numbers:"),
+      ...(["guided", "express", "dump"] as EntryMode[]).map((m) => toggleButton(m === "guided" ? "One at a time" : m === "express" ? "All on one form" : "Paste everything", entryMode === m, () => setMode(m))),
+    );
+
   /** Which sections are open. On arrival, only the first one that needs attention. */
   const openSections = new Set<EntrySectionId>();
   {
@@ -288,21 +314,43 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       });
 
     clear(root);
+    const allSections: [EntrySectionId, string, () => (HTMLElement | null)[]][] = [
+      ["about", "About you", aboutYou],
+      ["income", "Income", income],
+      ["spending", "Spending", spending],
+      ["accounts", "Accounts", () => accounts("asset")],
+      ["debts", "Debts", () => accounts("debt")],
+    ];
+    let sectionNodes: (HTMLElement | null)[];
+    if (entryMode === "guided") {
+      const [id, title, body] = allSections[Math.min(guidedIndex, allSections.length - 1)]!;
+      openSections.add(id);
+      sectionNodes = [
+        el("p", { class: "muted" }, `Step ${guidedIndex + 1} of ${allSections.length}`),
+        section(id, title, body()),
+        el(
+          "div",
+          { class: "row-actions" },
+          el("button", { type: "button", class: "button button--quiet", disabled: guidedIndex === 0, onClick: () => { guidedIndex = Math.max(0, guidedIndex - 1); schedule(); } }, "Back"),
+          el("button", { type: "button", class: "button", disabled: guidedIndex >= allSections.length - 1, onClick: () => { guidedIndex = Math.min(allSections.length - 1, guidedIndex + 1); openSections.add(allSections[guidedIndex]![0]); schedule(); } }, "Next"),
+        ),
+      ];
+    } else {
+      sectionNodes = allSections.map(([id, title, body]) => section(id, title, body()));
+    }
     const parts: (HTMLElement | null)[] = [
       el("h1", { class: "screen-title" }, "Your numbers"),
       el("p", { class: "lede" }, "Five answers give you a first FI date. Everything else sharpens it. Every question has an \"I don't\" answer."),
+      modeSwitch(),
       ctx.store.isPersistent()
         ? null
         : gentleFlag("This browser is not keeping what you enter (a private window does this). Your numbers will be gone when you close it. Export a file below to keep them."),
-      section("about", "About you", aboutYou()),
-      section("income", "Income", income()),
-      section("spending", "Spending", spending()),
-      section("accounts", "Accounts", accounts("asset")),
-      section("debts", "Debts", accounts("debt")),
+      ...(entryMode === "dump" ? [templateCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace })] : []),
+      ...sectionNodes,
       sharpeners(),
       planDetails(),
       examples(),
-      templateCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
+      ...(entryMode === "dump" ? [] : [templateCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace })]),
       transferCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
       footer(),
     ];

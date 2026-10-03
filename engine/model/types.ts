@@ -454,6 +454,8 @@ export interface Household {
   businesses?: Business[];
   /** M2, spec section 7: the drawdown details that unlock the True FI number. */
   drawdown?: DrawdownInputs;
+  /** M3, dictionary 9.7 (Proposed): what the person did with each small win, by win id. */
+  smallWins?: Record<string, "done" | "notForMe" | "later">;
 }
 
 /** M2 spec section 7, the level-two inputs that are not on an account. */

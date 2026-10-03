@@ -192,6 +192,27 @@ When "Rearrange" is on (a toggle button in the screen head), every result sectio
 ### Plan details card
 A collapsed details card on the entry screen holding the Level 4 drawdown inputs: cost basis per taxable account, contributions so far per Roth account, saved receipts per HSA, the first Roth year, the workplace plan's rule of 55, 457(b), and mega backdoor answers, the separation age, the heir tax rate, the number of people on the health plan, and the Medicaid expansion answer. Its title counts what is left to unlock the True FI number. Every money field carries a kind badge; every question has a "Not sure yet" answer.
 
+### Tabs
+A row of tab buttons under the screen title (Next, Small wins, The Sky), each a 44px target with `role="tab"` and `aria-selected`; the active tab carries a brand underline.
+
+### Next card
+The big card: a quiet kicker ("Next"), the item's sentence as the title in screen-title size ("Your 401(k) balance is marked roughly and could move your FI number by $41,000 (about 14 months)"), one muted line with what it is worth, how long it takes, why we are asking, and where to find it, and one primary button. Two small cards follow with the same parts at body size and a quiet button. No card appears without value, effort, and why.
+
+### Level progress
+A card naming the current level, one sentence ("You've covered 92% of what matters"), a progress bar (`role="progressbar"`) filled to the impact-weighted coverage, and a muted line listing levels passed. Above 5% materiality the screen carries a gentle flag: "Calculated at 15% materiality. Results are rougher than usual."
+
+### Refresh card and Rough numbers card
+The same card pattern: a title with the count ("4 numbers have aged", "6 numbers are rough"), one sentence naming them and the minutes, and a quiet button that opens the list in place. Each aged line shows the value, its age, and its next check, with "Still right" and "Update it"; "Confirm all that haven't changed" sits under the list. Each rough line shows its kind badge, what it could move, and a small running bar of uncertainty cleared.
+
+### Small wins card
+The running total at the top in headline size ("12 small wins: $1,340 a year, about 4 months sooner"), then one win at a time as a big card with its category as the kicker, the range and minutes in muted text, and three buttons: Done (primary), Not for me, Later. Answered wins collapse under "Already answered" with a Reopen button.
+
+### The Sky
+An SVG of circles around a center circle (you and your FI date), one per area, then one per row when zoomed in. Fill height shows coverage, the ring color shows the kind (dashed attention for missing), and size shows materiality. Each circle is a focusable button with an accessible label; Enter or Space zooms. A breadcrumb trail ("Everything › Accounts › Roth IRA") and a Zoom out button go back. Motion is a transition that reduced motion turns off. "Show as an outline" swaps in the same hierarchy as an indented list with kind badges and coverage, fully usable by keyboard and screen reader.
+
+### Entry mode switch
+Three toggle buttons at the top of Your numbers: One at a time (guided: one section per step with Back and Next), All on one form (express), Paste everything (dump: the template paste box moves to the top). The choice is remembered and can change at any time without losing anything.
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 

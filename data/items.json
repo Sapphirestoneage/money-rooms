@@ -1,0 +1,29 @@
+{
+  "_meta": {
+    "description": "Every question and move the next card can rank (docs/m3-spec.md section 5). Values are computed per person by the engine, never stored here. Level 1 is complete; later levels hold the items their specs name, so the ranking works across levels.",
+    "version": 1,
+    "updated": "2026-10-04",
+    "status": "Proposed, not reviewed by Eli."
+  },
+  "items": [
+    { "id": "q.birthDate", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 1, "why": "Every age in your plan starts here.", "whereToFind": null, "fields": ["self.birthDate"] },
+    { "id": "q.state", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 1, "why": "Your state sets your income tax.", "whereToFind": null, "fields": ["self.state"] },
+    { "id": "q.filingStatus", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 1, "why": "Filing status sets your brackets and deduction.", "whereToFind": "The first page of last year's tax return", "fields": ["self.filingStatus"] },
+    { "id": "q.income", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 3, "why": "Income is where saving comes from.", "whereToFind": "A pay stub or your offer letter", "fields": ["self.income"] },
+    { "id": "q.spending", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 3, "why": "Spending sets both your savings and what retirement costs.", "whereToFind": "Last month's bank and card statements", "fields": ["spending"] },
+    { "id": "q.accounts", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 3, "why": "Balances are your starting line.", "whereToFind": "Each account's app or statement, top of the page", "fields": ["accounts"] },
+    { "id": "q.income.sharpen", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 2, "why": "A rough income moves everything that follows.", "whereToFind": "Your most recent pay stub (gross, top right)", "fields": ["self.income.*.grossAnnual"], "sharpens": "income" },
+    { "id": "q.spending.sharpen", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 5, "why": "Most people underestimate spending by 15% or more.", "whereToFind": "Three months of statements, averaged", "fields": ["spending.*.annual"], "sharpens": "spending" },
+    { "id": "q.accounts.sharpen", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 2, "why": "A balance marked roughly widens your date.", "whereToFind": "The account's statement, top right", "fields": ["accounts.*.balance"], "sharpens": "accounts" },
+    { "id": "q.debts.sharpen", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 2, "why": "A debt's rate decides whether it comes before saving.", "whereToFind": "The statement's interest section", "fields": ["accounts.*.rate", "accounts.*.minimumPaymentAnnual"], "sharpens": "debts" },
+    { "id": "q.hsaEligible", "level": 1, "tier": "easy", "type": "question", "effortMinutes": 1, "why": "An HSA is the most tax-favored account there is.", "whereToFind": "Your health plan's summary (look for \"high deductible\")", "fields": ["self.hsaEligible"] },
+    { "id": "q.ssRecord", "level": 4, "tier": "intermediate", "type": "question", "effortMinutes": 10, "why": "Your real earnings record sharpens the Social Security estimate.", "whereToFind": "ssa.gov, my Social Security, earnings record", "fields": ["self.socialSecurity.earningsRecord"] },
+    { "id": "m.savingsStrategy", "level": 4, "tier": "easy", "type": "move", "effortMinutes": 2, "why": "Which accounts fill first changes your taxes for life.", "whereToFind": null, "fields": ["savingsStrategy"] },
+    { "id": "m.claimingAge", "level": 4, "tier": "easy", "type": "move", "effortMinutes": 2, "why": "Each year of delay raises the benefit.", "whereToFind": null, "fields": ["self.socialSecurity.claimingAge"] },
+    { "id": "q.drawdown", "level": 4, "tier": "intermediate", "type": "question", "effortMinutes": 6, "why": "How the money comes out unlocks the True FI number.", "whereToFind": "Brokerage statement (cost basis), Roth statement (contributions), your plan summary (rule of 55)", "fields": ["accounts.*.costBasis", "accounts.*.rothBasis", "drawdown"] },
+    { "id": "m.optimizer", "level": 4, "tier": "intermediate", "type": "move", "effortMinutes": 5, "why": "The optimizer finds the drawdown plan that fits your objective.", "whereToFind": null, "fields": ["results.objective"] },
+    { "id": "q.resilience", "level": 2, "tier": "easy", "type": "question", "effortMinutes": 3, "why": "Income stability sets your emergency target.", "whereToFind": null, "fields": ["resilience.incomeStability", "resilience.unemploymentEligible"] },
+    { "id": "q.dreams", "level": 3, "tier": "easy", "type": "question", "effortMinutes": 3, "why": "Dreams get a price in time once they are written down.", "whereToFind": null, "fields": ["goals"] },
+    { "id": "q.legacy", "level": 5, "tier": "easy", "type": "question", "effortMinutes": 2, "why": "Beneficiaries and a will are the basics of leaving money well.", "whereToFind": "Each account's beneficiary page", "fields": ["legacy.basics"] }
+  ]
+}

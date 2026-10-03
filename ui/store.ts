@@ -39,6 +39,12 @@ export interface DisplayPrefs {
   trueFiRevealed?: boolean;
   /** The optimizer objective last chosen. */
   objective?: string;
+  /** The entry mode last chosen: guided, dump, or express (M3 spec section 12). */
+  entryMode?: string;
+  /** The material line as a share of the FI number (M3 spec section 4). Blank means the default. */
+  materialShare?: number;
+  /** The FI date (year and months into the year) when the Refresh card was last cleared, for "since last time". */
+  lastRefreshFiYear?: number;
 }
 
 export interface Store {
@@ -122,6 +128,9 @@ export function browserStore(storage: Storage | null, today: () => IsoDate = tod
       if (Array.isArray(p.resultOrder) && p.resultOrder.every((x) => typeof x === "string")) out.resultOrder = [...p.resultOrder];
       if (typeof p.trueFiRevealed === "boolean") out.trueFiRevealed = p.trueFiRevealed;
       if (typeof p.objective === "string") out.objective = p.objective;
+      if (typeof p.entryMode === "string") out.entryMode = p.entryMode;
+      if (typeof p.materialShare === "number") out.materialShare = p.materialShare;
+      if (typeof p.lastRefreshFiYear === "number") out.lastRefreshFiYear = p.lastRefreshFiYear;
       return out;
     },
     savePrefs: (p) => void write(PREFS_KEY, p),

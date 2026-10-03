@@ -1,0 +1,35 @@
+{
+  "_meta": {
+    "description": "Everything under the clearly-trivial line, played as cards (docs/m3-spec.md section 10). Every value is a range and an estimate; the engine personalizes where it can. Only legitimate, within-terms-of-service ideas.",
+    "version": 1,
+    "updated": "2026-10-04",
+    "status": "Proposed, not reviewed by Eli. Dollar ranges are placeholders to be checked."
+  },
+  "categories": [
+    { "id": "subscriptions", "label": "Subscriptions" },
+    { "id": "phoneInternet", "label": "Phone and internet" },
+    { "id": "bankingFees", "label": "Banking fees" },
+    { "id": "insurance", "label": "Insurance shopping" },
+    { "id": "rewards", "label": "Cash back and rewards" },
+    { "id": "household", "label": "Household plans" },
+    { "id": "free", "label": "Free alternatives" }
+  ],
+  "wins": [
+    { "id": "sub.audit", "category": "subscriptions", "title": "Cancel one subscription you forgot about", "estimate": [60, 240], "minutes": 10, "personalize": { "spendingCategory": "subscriptions", "share": [0.1, 0.3] } },
+    { "id": "sub.annual", "category": "subscriptions", "title": "Switch a monthly subscription to its annual price", "estimate": [20, 60], "minutes": 5 },
+    { "id": "sub.share", "category": "subscriptions", "title": "Move to a household plan a service offers for families", "estimate": [40, 120], "minutes": 10, "note": "Only where the service's own terms allow a shared household plan." },
+    { "id": "phone.plan", "category": "phoneInternet", "title": "Switch to a lower-cost carrier on the same network", "estimate": [120, 480], "minutes": 30, "personalize": { "spendingCategory": "phone", "share": [0.2, 0.5] } },
+    { "id": "phone.internet", "category": "phoneInternet", "title": "Ask your internet provider for the current new-customer price", "estimate": [60, 240], "minutes": 15 },
+    { "id": "bank.fees", "category": "bankingFees", "title": "Move to an account with no monthly fee", "estimate": [60, 180], "minutes": 20 },
+    { "id": "bank.hysa", "category": "bankingFees", "title": "Keep savings in a high-yield account", "estimate": [50, 400], "minutes": 15, "personalize": { "cashBalance": true, "ratePointsGained": 0.03 } },
+    { "id": "bank.overdraft", "category": "bankingFees", "title": "Turn off overdraft coverage so a fee never happens", "estimate": [0, 100], "minutes": 5 },
+    { "id": "ins.auto", "category": "insurance", "title": "Get two quotes for auto insurance", "estimate": [100, 400], "minutes": 30, "personalize": { "spendingCategory": "insurance", "share": [0.05, 0.2] } },
+    { "id": "ins.renters", "category": "insurance", "title": "Get a renters insurance quote (or check you are not overpaying)", "estimate": [0, 100], "minutes": 15 },
+    { "id": "rewards.card", "category": "rewards", "title": "Use a no-fee cash-back card for the spending you already do", "estimate": [100, 400], "minutes": 20, "note": "Only if the balance is paid in full every month.", "personalize": { "spendingShare": 0.015 } },
+    { "id": "rewards.grocery", "category": "rewards", "title": "Join the grocery store's loyalty program", "estimate": [50, 200], "minutes": 5, "personalize": { "spendingCategory": "food", "share": [0.02, 0.04] } },
+    { "id": "home.energy", "category": "household", "title": "Ask your utility about a budget or off-peak plan", "estimate": [30, 150], "minutes": 15, "personalize": { "spendingCategory": "utilities", "share": [0.03, 0.1] } },
+    { "id": "home.bulk", "category": "household", "title": "Buy the five things you use most in bulk", "estimate": [50, 200], "minutes": 20 },
+    { "id": "free.library", "category": "free", "title": "Use the library for books, audiobooks, and streaming", "estimate": [50, 200], "minutes": 10 },
+    { "id": "free.gym", "category": "free", "title": "Check whether your health plan or employer covers a gym", "estimate": [0, 300], "minutes": 10 }
+  ]
+}

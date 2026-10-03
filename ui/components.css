@@ -1183,3 +1183,192 @@
   align-items: center;
   min-height: var(--tap-target);
 }
+
+/* ---- What's next (M3 spec): tabs, next cards, progress, aged lists, small wins, the Sky ---- */
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.tab {
+  min-height: var(--tap-target);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--color-ink-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.tab--active {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-brand-700);
+  font-weight: var(--weight-medium);
+}
+
+.next-card__kicker {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  margin-bottom: var(--space-1);
+}
+
+.next-card--big h2 {
+  font-size: var(--text-xl);
+}
+
+.next-card__title {
+  font-size: var(--text-md);
+  margin-bottom: var(--space-1);
+}
+
+.progress {
+  height: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-100);
+  overflow: hidden;
+  margin: var(--space-2) 0;
+}
+
+.progress--small {
+  height: var(--space-1);
+}
+
+.progress__fill {
+  height: 100%;
+  background: var(--color-brand-700);
+  border-radius: var(--radius-pill);
+  transition: width var(--duration-normal) var(--easing);
+}
+
+.aged-list {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aged-list li {
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.aged-list li:last-child {
+  border-bottom: 0;
+}
+
+.wins-total__number {
+  font-family: var(--font-numbers);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  margin-bottom: var(--space-2);
+}
+
+.sky-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sky {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.sky--animated .sky-circle {
+  transition: transform var(--duration-normal) var(--easing);
+}
+
+.sky-circle {
+  cursor: pointer;
+}
+
+.sky-circle:focus {
+  outline: none;
+}
+
+.sky-circle:focus .sky-circle__ring,
+.sky-circle:hover .sky-circle__ring {
+  stroke-width: 5;
+}
+
+.sky-circle__center {
+  fill: var(--color-brand-100);
+  stroke: var(--color-brand-700);
+  stroke-width: 2;
+}
+
+.sky-circle__ring {
+  fill: var(--color-surface);
+  stroke-width: 3;
+}
+
+.sky-circle__ring--known { stroke: var(--color-known); }
+.sky-circle__ring--lookUp { stroke: var(--color-lookup); }
+.sky-circle__ring--roughly { stroke: var(--color-roughly); }
+.sky-circle__ring--computed { stroke: var(--color-computed); }
+.sky-circle__ring--notForMe { stroke: var(--color-notforme); }
+.sky-circle__ring--missing { stroke: var(--color-attention); stroke-dasharray: 4 4; }
+.sky-circle__ring--aged { stroke: var(--color-attention); }
+
+.sky-circle__fill {
+  fill: var(--color-brand-300);
+}
+
+.sky-circle__label {
+  fill: var(--color-ink);
+  font-size: var(--text-xs);
+  font-family: var(--font-sans);
+}
+
+.sky-circle__label--center {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.sky-details,
+.sky-outline {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-5);
+}
+
+.sky-outline {
+  list-style: none;
+  padding-left: 0;
+}
+
+.sky-outline__item {
+  min-height: var(--tap-target);
+  padding: var(--space-1) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.sky-outline__item--1 { padding-left: var(--space-5); }
+.sky-outline__item--2 { padding-left: var(--space-7); }
+
+.sky-outline__label {
+  font-weight: var(--weight-medium);
+}
+
+.mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
