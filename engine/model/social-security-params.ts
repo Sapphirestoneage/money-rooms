@@ -88,11 +88,11 @@ export function loadSocialSecurityParams(year = 2026): SocialSecurityParams {
       ratePerMonthFirst: raw.claiming.earlyReduction.ratePerMonthFirst,
       ratePerMonthBeyond: raw.claiming.earlyReduction.ratePerMonthBeyond,
     },
-    normalRetirementAge: (birthYear) => {
+    normalRetirementAge: (birthYear: number) => {
       const r = nra(birthYear);
       return { years: r.years, months: r.months };
     },
-    delayedCreditPercentPerYear: (birthYear) => drc(birthYear).percentPerYear,
+    delayedCreditPercentPerYear: (birthYear: number) => drc(birthYear).percentPerYear,
   });
   return cache;
 }
