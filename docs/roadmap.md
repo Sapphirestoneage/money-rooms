@@ -36,6 +36,8 @@ Full spec: [`m2-spec.md`](m2-spec.md). Full tax depth, every early-access strate
 
 Levels and rounds (the planets), the next card (one big, two small), the list of every roughly and unknown number, the gross and take-home reconciliation, proof of cash.
 
+Level content specs: [`levels/level-2-resilience.md`](levels/level-2-resilience.md).
+
 ## M4. Meaning
 
 Ratio registry, metrics unlocked, lenses ("more ways to look at this"), the 4% rule as a comparison lens, the Advice Translator.

@@ -106,3 +106,14 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | L9 | Rough numbers get the same card pattern, sorted by materiality with a running bar of uncertainty cleared. | Locked | Two-way | 2026-10-02 | Most people can clear the majority with the first few. |
 | L10 | The Sky zooms like a globe: everything, then an area, then a row, with an outline view as the accessible alternative. | Locked | One-way | 2026-10-02 | See the whole picture and zoom in where you want, when you want. |
 | L11 | Every preference, including entry mode, can be changed at any time without losing anything. Accessibility is a default, not a feature. | Locked | One-way | 2026-10-02 | |
+
+## Level 2 decisions (added 2026-10-02)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| R1 | Emergency target uses the Rule of 5: age / 5 months of full spending, adjusted by an income stability multiplier, with an exact monthly savings number. | Locked | Two-way | 2026-10-02 | "Three to six months" is tired; this grows with you and tells you what to save. |
+| R2 | Graceful degradation staircase: full, DRAFTT, FAT, food and housing, couch mode, with must-pays shown on every step. | Locked | One-way | 2026-10-02 | Shows how much longer you last at each step down. |
+| R3 | Runway stack: cash, ability to cut, unemployment, severance, reachable investments. Retirement accounts only as an opt-in break-glass line. | Locked | One-way | 2026-10-02 | Backups of the backups. |
+| R4 | Disability insurance in the core level; term life only with dependents; other insurance as a side quest. | Locked | Two-way | 2026-10-02 | Most insurance isn't material for most people in their 20s. |
+| R5 | Zombie readiness theme with original humor; peer comparisons only from a sourced dataset. | Locked | Two-way | 2026-10-02 | You don't have to outrun the zombies, just your friends. |
+| R6 | Stability multipliers 0.8 / 1.0 / 1.5; graceful path steps down every 2 months. | Proposed | Two-way | 2026-10-02 | Placeholder defaults. |
