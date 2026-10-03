@@ -87,6 +87,19 @@ export interface TimelineOptions {
   retirementYear: number;
   tables: TaxTables;
   ssParams: SocialSecurityParams;
+  /** Test-only settings for hand tie-outs. The app never sets these. */
+  testSettings?: TieOutSettings;
+}
+
+/**
+ * Settings a tie-out can impose so the engine runs under a workpaper's stated
+ * conventions. They replace inputs only. No engine rule changes.
+ */
+export interface TieOutSettings {
+  /** A fixed annual benefit from an age, instead of the computed estimate. Not scaled by the policy band. */
+  socialSecurityOverride?: { annual: number; fromAge: number };
+  /** A healthcare line added to retirement spending: one amount before 65, one from 65. */
+  retirementHealthcare?: { before65: number; from65: number };
 }
 
 // ---------------------------------------------------------------------------
@@ -300,7 +313,9 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   const claimingAge = hh.socialSecurity.claimingAge?.value ?? ssParams.normalRetirementAge(birth.year);
   const factor = claimingFactor(birth.year, claimingAge, ssParams);
   const ssAnnual = hh.socialSecurity.claimZero?.value ? 0 : annualBenefit(pia, factor, band.socialSecurityPolicy);
-  const ssStartYear = birth.year + claimingAge.years;
+  const ssOverride = opts.testSettings?.socialSecurityOverride;
+  const ssAnnualUsed = ssOverride ? ssOverride.annual : ssAnnual;
+  const ssStartYear = ssOverride ? birth.year + ssOverride.fromAge : birth.year + claimingAge.years;
   if (!hh.socialSecurity.earningsRecord) flags.add("Social Security is estimated from your income. Enter your ssa.gov record to sharpen it.");
 
   // ---- Pass 2: the annual loop --------------------------------------------
@@ -348,7 +363,10 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 
     // Spending, Social Security, scheduled debt payments (annualized).
     const spend = spendingForYear(hh.spending, ctx, retired, band.phases);
-    const ss = retired || true ? (y >= ssStartYear ? ssAnnual : 0) : 0;
+    const healthcareSetting = opts.testSettings?.retirementHealthcare;
+    const healthcareLine = retired && healthcareSetting ? (age < 65 ? healthcareSetting.before65 : healthcareSetting.from65) : 0;
+    const spendTotal = spend.total + healthcareLine;
+    const ss = y >= ssStartYear ? ssAnnualUsed : 0;
     const debtPreview = debts().map((d) => ({
       d,
       r: debtYear({
@@ -394,7 +412,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     let pretaxWithdrawal = 0;
     let shortfall = 0;
 
-    const gap0 = cashIn(0, 0, 0) - spend.total - scheduledDebt;
+    const gap0 = cashIn(0, 0, 0) - spendTotal - scheduledDebt;
     const steps: WaterfallStep[] = [];
 
     if (gap0 >= 0 && !retired) {
@@ -484,10 +502,10 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         ...assets().filter((a) => a.taxBucket === "roth"),
         ...assets().filter((a) => a.taxBucket === "hsa"),
       ];
-      const reserve = (DEFAULTS.reserveMonths / 12) * spend.total;
+      const reserve = (DEFAULTS.reserveMonths / 12) * spendTotal;
       for (let i = 0; i < 100; i++) {
         withdrawals.clear();
-        let need = -(cashIn(0, 0, pretaxWithdrawal) - spend.total - scheduledDebt);
+        let need = -(cashIn(0, 0, pretaxWithdrawal) - spendTotal - scheduledDebt);
         let pretaxTaken = 0;
         let cashReserveLeft = reserve;
         for (const a of order) {
@@ -518,7 +536,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     // Final taxes and take-home for the year (annualized).
     const tx = taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal);
     const takeHome = inc.netTotal - enteredWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - tx.total;
-    const gap = takeHome + ss - spend.total - scheduledDebt;
+    const gap = takeHome + ss - spendTotal - scheduledDebt;
 
     // Employer match on total employee workplace contributions (pretax plus Roth), attributed to the first matcher.
     let match = 0;
@@ -605,7 +623,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         total: tx.total * f,
       },
       takeHome: takeHome * f,
-      spending: spend.total * f,
+      spending: spendTotal * f,
       socialSecurity: ss * f,
       debt: { scheduled: debtScheduledPaid, extra: debtExtraPaid, interest: debtInterest, principal: debtPrincipal },
       gap: gap * f,

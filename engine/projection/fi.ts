@@ -7,7 +7,7 @@
 import type { BandName, Household, SocialSecurityParams, TaxTables } from "../model";
 import { loadSocialSecurityParams, loadTaxTables, parseYearMonth, resolveAssumptions } from "../model";
 import { BAND_NAMES, resolveBand, type BandNumbers } from "./bands";
-import { requireComplete, runTimeline, type CompleteHousehold, type TimelineResult } from "./timeline";
+import { requireComplete, runTimeline, type CompleteHousehold, type TieOutSettings, type TimelineResult } from "./timeline";
 
 export interface BandResult {
   band: BandName;
@@ -32,6 +32,8 @@ export interface ProjectionResult {
 export interface Deps {
   tables: TaxTables;
   ssParams: SocialSecurityParams;
+  /** Test-only settings for hand tie-outs. The app never sets these. */
+  testSettings?: TieOutSettings;
 }
 
 export function defaultDeps(): Deps {
@@ -47,7 +49,8 @@ export function findFiDate(hh: CompleteHousehold, band: BandNumbers, deps: Deps)
   const year0 = parseYearMonth(hh.asOf.slice(0, 7)).year;
   const birthYear = parseYearMonth(hh.birthDate).year;
   const lastYear = birthYear + band.planToAge;
-  const run = (retirementYear: number) => runTimeline(hh, { band, retirementYear, tables: deps.tables, ssParams: deps.ssParams });
+  const run = (retirementYear: number) =>
+    runTimeline(hh, { band, retirementYear, tables: deps.tables, ssParams: deps.ssParams, ...(deps.testSettings ? { testSettings: deps.testSettings } : {}) });
 
   let previous: TimelineResult | null = null;
   for (let y = year0; y <= lastYear; y++) {
