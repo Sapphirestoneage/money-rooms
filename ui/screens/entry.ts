@@ -10,6 +10,8 @@ import jordan from "../../tests/households/jordan.json";
 import maya from "../../tests/households/maya.json";
 import {
   STATE_CODES,
+  addMonths,
+  weeksThroughEndOf,
   amountFromPercentOfPay,
   assetFromPreset,
   debtFromPreset,
@@ -71,6 +73,7 @@ const INCOME_TYPES: { type: IncomeType; label: string }[] = [
   { type: "hourly", label: "Hourly" },
   { type: "selfEmployed", label: "Self-employed" },
   { type: "sideGig", label: "Side gig" },
+  { type: "unemployment", label: "Unemployment benefits" },
   { type: "allowance", label: "Allowance or support" },
   { type: "other", label: "Other" },
 ];
@@ -288,12 +291,13 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       const stream: IncomeStream = {
         id: uid("income"),
         type,
-        grossAnnual: userValue(0, asOf(), type === "salary" ? "known" : "roughly"),
-        end: { kind: "retirement" },
+        grossAnnual: userValue(0, asOf(), type === "salary" || type === "unemployment" ? "known" : "roughly"),
+        // Unemployment benefits start with an end six months out (most states pay up to 26 weeks).
+        end: type === "unemployment" ? { kind: "date", date: addMonths(asOf().slice(0, 7), 5) } : { kind: "retirement" },
       };
       if (type === "salary" || type === "hourly") stream.payFrequency = { ...userValue("biweekly" as const, asOf()), confidence: "roughly" };
       h().self.income = { kind: "rows", rows: [...rows, stream] };
-      pendingFocusKey = `${stream.id}|Gross pay`;
+      pendingFocusKey = `${stream.id}|${type === "unemployment" ? "Benefit amount" : "Gross pay"}`;
       ctx.save();
       schedule();
     }, "Add income");
@@ -315,15 +319,16 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const typeLabel = INCOME_TYPES.find((t) => t.type === s.type)?.label ?? s.type;
     const isWage = s.type === "salary" || s.type === "hourly";
     const isSe = s.type === "selfEmployed" || s.type === "sideGig";
-    const cadences = s.type === "hourly" ? (["hour", "paycheck", "month", "year"] as const) : isWage ? (["paycheck", "month", "year"] as const) : (["month", "year"] as const);
+    const cadences = s.type === "hourly" ? (["hour", "paycheck", "month", "year"] as const) : isWage ? (["paycheck", "month", "year"] as const) : s.type === "unemployment" ? (["week", "month", "year"] as const) : (["month", "year"] as const);
+    const isUnemployment = s.type === "unemployment";
 
     const grossBadge = badgeSlot(() => (s.grossAnnual.value > 0 ? s.grossAnnual : undefined), (v) => { s.grossAnnual = v; });
     const fields: HTMLElement[] = [
       money({
-        label: "Gross pay",
+        label: isUnemployment ? "Benefit amount" : "Gross pay",
         annual: s.grossAnnual.value || null,
         cadences,
-        initialCadence: "year",
+        initialCadence: isUnemployment ? "week" : "year",
         payFrequency: () => s.payFrequency?.value ?? "biweekly",
         hoursPerWeek: () => s.hoursPerWeek?.value ?? null,
         badge: grossBadge.node,
@@ -449,20 +454,46 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       );
     }
 
-    const endSelect = select(
-      [{ value: "retirement", label: "Until I retire" }, { value: "age", label: "Until an age" }],
-      s.end.kind === "age" ? "age" : "retirement",
-      (v) => {
-        s.end = v === "age" ? { kind: "age", age: 30 } : { kind: "retirement" };
-        ctx.save();
-        schedule();
-      },
-    );
-    fields.push(field("This income lasts", endSelect));
+    // How long the income lasts: until retirement, until an age, or through a month.
+    const planYear = parseYearMonth(asOf().slice(0, 7)).year;
+    const endKind = s.end.kind === "age" ? "age" : s.end.kind === "date" ? "date" : "retirement";
+    if (!isUnemployment) {
+      const endSelect = select(
+        [{ value: "retirement", label: "Until I retire" }, { value: "age", label: "Until an age" }, { value: "date", label: "Through a month" }],
+        endKind,
+        (v) => {
+          s.end = v === "age" ? { kind: "age", age: 30 } : v === "date" ? { kind: "date", date: addMonths(asOf().slice(0, 7), 11) } : { kind: "retirement" };
+          ctx.save();
+          schedule();
+        },
+      );
+      fields.push(field("This income lasts", endSelect));
+    }
     if (s.end.kind === "age") {
       const endAge = el("input", { class: "input", type: "number", min: 16, max: 100, step: 1, value: s.end.age });
       endAge.addEventListener("input", () => { const v = Number(endAge.value); if (v >= 16 && v <= 100) { s.end = { kind: "age", age: v }; ctx.save(); } });
       fields.push(field("Ends at age", endAge, kindBadge("known")));
+    }
+    if (s.end.kind === "date") {
+      const through = parseYearMonth(s.end.date);
+      const weeksHelp = el("div", { class: "money-input__normalized", "aria-live": "polite" });
+      const showWeeks = () => {
+        if (s.end.kind !== "date") return;
+        const weeks = weeksThroughEndOf(asOf(), s.end.date);
+        weeksHelp.textContent = weeks > 0 ? `About ${weeks} more ${weeks === 1 ? "week" : "weeks"} from today` : "That month has already passed";
+      };
+      const yearOptions: { value: string; label: string }[] = [];
+      for (let y = planYear; y <= planYear + 50; y++) yearOptions.push({ value: String(y), label: String(y) });
+      const setThrough = () => {
+        s.end = { kind: "date", date: `${endYear.value}-${endMonth.value}` };
+        ctx.save();
+        showWeeks();
+      };
+      const endMonth = select(MONTH_NAMES.map((name, i) => ({ value: String(i + 1).padStart(2, "0"), label: name })), String(through.month).padStart(2, "0"), setThrough);
+      const endYear = select(yearOptions, String(through.year), setThrough);
+      showWeeks();
+      fields.push(field(isUnemployment ? "Benefits paid through" : "Paid through", endMonth, kindBadge("known"), weeksHelp));
+      fields.push(field(isUnemployment ? "Benefits end year" : "End year", endYear));
     }
 
     const remove = el("button", { type: "button", class: "button button--quiet", onClick: () => {

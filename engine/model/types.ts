@@ -103,12 +103,13 @@ export type IncomeType =
   | "hourly"
   | "selfEmployed"
   | "sideGig"
+  | "unemployment"
   | "allowance"
   | "rental" // Later
   | "other";
 
 /** The income types that have a growth default in an assumption set. */
-export type IncomeGrowthType = Exclude<IncomeType, "rental">;
+export type IncomeGrowthType = Exclude<IncomeType, "rental" | "unemployment">;
 
 export type PayFrequency = "weekly" | "biweekly" | "semimonthly" | "monthly";
 

@@ -5,7 +5,7 @@
 
 import type { PayFrequency } from "./types";
 
-export type Cadence = "hour" | "paycheck" | "month" | "year";
+export type Cadence = "hour" | "week" | "paycheck" | "month" | "year";
 
 export const PAY_PERIODS_PER_YEAR: Readonly<Record<PayFrequency, number>> = {
   weekly: 52,
@@ -31,6 +31,8 @@ export function annualFrom(amount: number, cadence: Cadence, context: CadenceCon
       return amount;
     case "month":
       return amount * MONTHS_PER_YEAR;
+    case "week":
+      return amount * WEEKS_PER_YEAR;
     case "paycheck": {
       if (!context.payFrequency) throw new Error("Pay frequency is needed to annualize a paycheck amount");
       return amount * PAY_PERIODS_PER_YEAR[context.payFrequency];

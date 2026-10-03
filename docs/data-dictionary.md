@@ -107,7 +107,7 @@ One row per source of income. Total income is computed.
 | Column | Value |
 |---|---|
 | Kind | Fact |
-| Row type | Pick list: `salary`, `hourly`, `selfEmployed`, `sideGig`, `allowance`, `rental` (Later), `other` |
+| Row type | Pick list: `salary`, `hourly`, `selfEmployed`, `sideGig`, `unemployment`, `allowance`, `rental` (Later), `other` |
 | Unit | Dollars. `hourly` also stores hours per week |
 | Entered as | Gross, take-home, or both; per hour, per paycheck, per month, or per year |
 | Stored as | Annual gross dollars, plus `enteredTakeHome` if given |
@@ -136,7 +136,12 @@ One row per source of income. Total income is computed.
 | `hourly` | Hours per week; pay frequency; employer match if any |
 | `selfEmployed` | Business expenses (annual); entity type (Later) |
 | `sideGig` | Business expenses (annual) |
+| `unemployment` | Benefit amount (usually per week); the last month it is paid |
 | `allowance` | End date |
+
+**Unemployment benefits.** Entered as the benefit amount (per week, month, or year) and the last month it will be paid. Stored like every stream: an annual amount and an `end` date. Most states pay up to 26 weeks, so a new row starts with an end six months out, and the person sets the real month. The benefit is taxed as ordinary income by the federal government and by the state's brackets, with no Social Security or Medicare tax, and it does not count toward the Social Security earnings record. Confidence defaults to `known`: the amount is on the determination letter.
+
+**A stream that ends on a date is paid through that month.** In the year it ends, the engine counts only the months it is paid, so a benefit that runs through March counts three months of that year.
 
 **Supporting fields:**
 

@@ -53,3 +53,21 @@ export function stubFraction(asOf: IsoDate): number {
   const { month } = parseYearMonth(yearMonthOf(asOf));
   return (12 - month + 1) / 12;
 }
+
+/** The month n months after a given month. */
+export function addMonths(ym: YearMonth, n: number): YearMonth {
+  const { year, month } = parseYearMonth(ym);
+  const index = year * 12 + (month - 1) + n;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+}
+
+/** Whole weeks from a date through the end of a month. Zero if that month has already ended. For display. */
+export function weeksThroughEndOf(from: IsoDate, through: YearMonth): number {
+  if (!isIsoDate(from)) throw new Error(`Not a YYYY-MM-DD value: ${from}`);
+  const end = parseYearMonth(through);
+  const start = Date.UTC(Number(from.slice(0, 4)), Number(from.slice(5, 7)) - 1, Number(from.slice(8, 10)));
+  // Day 0 of the next month is the last day of this one.
+  const last = Date.UTC(end.year, end.month, 0);
+  const days = (last - start) / 86_400_000 + 1;
+  return Math.max(0, Math.round(days / 7));
+}

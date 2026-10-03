@@ -297,7 +297,15 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   if (rothWorkplaceDeductions || (hh.savingsStrategy === "maxTaxFreeGrowth" && hasWages)) workplaceRoth();
 
   // ---- Pass 1: income by year, for the Social Security earnings record ----
-  const ctxFor = (year: number): YearContext => ({ year, t: year - year0, age: year - birth.year, retirementYear });
+  const planMonth = parseYearMonth(hh.asOf.slice(0, 7)).month;
+  const ctxFor = (year: number): YearContext => ({
+    year,
+    t: year - year0,
+    age: year - birth.year,
+    retirementYear,
+    fraction: year === year0 ? stubFraction(hh.asOf) : 1,
+    startMonth: year === year0 ? planMonth : 1,
+  });
   const incomeByYear = new Map<number, YearIncome>();
   const covered: Record<number, number> = {};
   for (let y = year0; y <= lastYear; y++) {

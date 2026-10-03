@@ -41,7 +41,7 @@ export interface MoneyInputOptions {
   placeholder?: string;
 }
 
-const CADENCE_LABEL: Record<Cadence, string> = { hour: "per hour", paycheck: "per paycheck", month: "per month", year: "per year" };
+const CADENCE_LABEL: Record<Cadence, string> = { hour: "per hour", week: "per week", paycheck: "per paycheck", month: "per month", year: "per year" };
 
 export function moneyInput(o: MoneyInputOptions): HTMLElement {
   const cadences = o.cadences ?? ["month", "year"];

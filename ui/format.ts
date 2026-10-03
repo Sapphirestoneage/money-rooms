@@ -34,7 +34,7 @@ export function age(n: number): string {
   return `Age ${Math.floor(n)}`;
 }
 
-export type CadenceLabel = "hour" | "paycheck" | "month" | "year";
+export type CadenceLabel = "hour" | "week" | "paycheck" | "month" | "year";
 
 export function withCadence(formatted: string, cadence: CadenceLabel): string {
   return `${formatted} / ${cadence}`;

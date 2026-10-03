@@ -30,7 +30,10 @@ describe("streamActive", () => {
     const s: IncomeStream = { ...salary, start: "2028-01", end: { kind: "date", date: "2030-06" } };
     expect(streamActive(s, ctx(2027, 26))).toBe(false);
     expect(streamActive(s, ctx(2028, 27))).toBe(true);
-    expect(streamActive(s, ctx(2030, 29))).toBe(false);
+    // Paid through June 2030: its last year is active, for six months of twelve.
+    expect(streamActive(s, ctx(2030, 29))).toBe(true);
+    expect(incomeForYear([s], ctx(2030, 29), likely).wages).toBeCloseTo((72000 * 1.015 ** 4 * 6) / 12, 6);
+    expect(streamActive(s, ctx(2031, 30))).toBe(false);
   });
 });
 

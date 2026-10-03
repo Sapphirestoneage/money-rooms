@@ -18,6 +18,11 @@ describe("annual normalization (2.4)", () => {
     expect(annualFrom(1000, "paycheck", { payFrequency: "monthly" })).toBe(12000);
   });
 
+  it("multiplies weekly by 52", () => {
+    expect(annualFrom(504, "week")).toBe(26208);
+    expect(fromAnnual(26208, "week")).toBe(504);
+  });
+
   it("uses hours per week for hourly", () => {
     expect(annualFrom(20, "hour", { hoursPerWeek: 40 })).toBe(41600);
   });

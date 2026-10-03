@@ -36,7 +36,7 @@ Every room in Money Rooms reads from this one engine. No room runs its own math.
 For each year, the engine runs these steps in this order. The order matters, the same way the order of closing entries matters.
 
 1. **Ages and status.** Compute age from birth date. Determine whether the person is working or retired this year, and which life phase applies.
-2. **Income.** Sum every income stream active this year, each grown by its own real rate. Streams ending at `retirement` stop in the retirement year.
+2. **Income.** Sum every income stream active this year, each grown by its own real rate. Streams ending at `retirement` stop in the retirement year. A stream ending on a date is paid through that month, so its last year counts only the months it is paid. Unemployment benefits are ordinary taxable income with no payroll tax.
 3. **Pre-tax deductions.** 401(k), 403(b), HSA, and health premiums come out before tax. Contribution limits come from `data/`.
 4. **Taxes.** Compute tax on the year's taxable income, including withdrawals from pretax accounts (see section 5 for M1 vs M2 depth).
 5. **Spending.** Working years: current categories. Retirement years: baseline, adjusted by life phase, plus the healthcare line, plus active goal buckets (Later).
