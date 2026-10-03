@@ -15,11 +15,13 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 6 M4 meaning | Done (spec and build) | `m4-meaning` | (see git log) |
 | 7 M6 risk | Done, with the series unverified | `m6-risk` | (see git log) |
 | 8 Households of two | Done, with the spousal rule unverified | `household-two` | (see git log) |
-| 9 Pack specs | Not started | `packs-specs` | |
+| 9 Pack specs | Done (docs only) | `packs-specs` | (see git log) |
 | 10 Foundations | Not started | `foundations` | |
 | 11 Coaching spec | Not started | `coaching-specs` | |
 | 12 Feature register | Not started | `feature-register` | |
 | 13 Readiness audit | Not started | `readiness` | |
+
+**Phase 9 in plain English.** Ten expansion pack specs in `docs/packs/` with an index: Earn more, Self-employed, Home, Partner, Family, Move, Health, Taxes, Debt freedom, Coach. Each says who it is for, when it unlocks (always a condition read from the household, never a purchase), the questions it adds mapped to the dictionary, the engine pieces it reuses by name, what is new, acceptance tests, and what waits. The index table flags which packs need new engine capability: Earn more and Debt freedom need none; Self-employed (QBI, solo 401(k) room, S-corp salary), Home (a property bucket and a sale event), Family (credits and a 529 bucket), and Coach (a shared view, which waits on the audience decision) need the most. Decisions P1 to P3. Nothing built.
 
 **Phase 8 in plain English.** `docs/household-two-spec.md` written (Proposed), then built. The partner is now a second person in the engine: their income runs in the same year loop with their own age, their own contribution limits and catch-ups, their own FICA cap, and their own Social Security record, benefit, and claiming age. Married filing jointly is one return on both incomes; married filing separately is two returns summed. Every account has an owner (mine, my partner's, or joint), and the owner's age decides the 10% tax, required distributions, HSA rules, and Roth ordering; a joint account reads the older for penalties and the younger for distributions. Health care in retirement is priced per adult. Spousal top-ups (half the other's PIA once both have claimed) and the survivor rule (the larger benefit after the first plan-to age) are built but read an unverified SSA rule through a new ledger door, so every plan they change carries a flag. The horizon runs to the younger person's plan-to age. On the entry screen: "Add a partner" on About you, "Whose income" on each stream, "Add partner's income", and "Whose account" on each account; removing a partner asks first. Nine tests cover the spec's eight acceptance tests; the 503 earlier tests and Maya are unchanged. Self-audit: `docs/audits/household-two-self-audit.md`.
 
@@ -47,6 +49,7 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 
 | Spec | Branch | What it covers |
 |---|---|---|
+| `docs/packs/README.md` and ten pack specs | `packs-specs` | Who, unlock condition, questions, reused pieces, what is new, and the new-engine-capability flag for each pack |
 | `docs/household-two-spec.md` | `household-two` | The partner as a second person, ages and limits per person, taxes together or apart, Social Security for two, one retirement date, entry, eight acceptance tests |
 | `docs/m6-spec.md` | `m6-risk` | The return series, historical backtests, the sturdy FI date, guardrails, Flex FI, seven acceptance tests |
 | `docs/m4-spec.md` | `m4-meaning` | Ratio registry, metrics by level, lenses (4% rule, Shockingly simple math, DRAFTT, hours, taxes), the Advice Translator, eight acceptance tests |
@@ -55,6 +58,7 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 
 | # | Where | Decision |
 |---|---|---|
+| P1 to P3 | `decisions.md` | Packs: unlock by condition, dictionary and registry first, which packs need new engine capability |
 | H1 to H8 | `decisions.md` | Households of two: one retirement date, how filing separately splits the returns, the unverified spousal and survivor rule and its flag, the optimizer moves the self's claiming age only, the waterfall fills the partner's workplace plan only, removing a partner, joint accounts read the older or younger owner, health care per adult |
 | (engine) | `engine/model/rules.ts` | A ledger door for unverified rules, `getUnverified`, which records the rule with its blank verified date; the only rule read through it is `ss.spousalAndSurvivor`. Two-way |
 | Q1 to Q6 | `decisions.md` | M6: the unverified return series, the backtest method, the sturdy date, guardrails, Flex FI, the two engine hooks |
@@ -121,6 +125,6 @@ Not started.
 
 ## 10. Handoff
 
-**Where I am:** Phases 0 to 8 complete and pushed. **Next:** branch `packs-specs` from `household-two` and write the ten expansion pack specs in `docs/packs/` (docs only), then `foundations`, `coaching-specs`, `feature-register`, `readiness`.
+**Where I am:** Phases 0 to 9 complete and pushed. **Next:** branch `foundations` from `packs-specs`: CI gate on the Pages workflow, the backup nudge card, `docs/history-spec.md` then progress history, the About and Privacy pages, and the three specs (statement upload, rules update routine, performance budget). Then `coaching-specs`, `feature-register`, `readiness`.
 
 **Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.

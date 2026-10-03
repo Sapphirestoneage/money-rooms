@@ -250,3 +250,11 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | H6 | Removing a partner asks first, then removes their income rows and marks their accounts as the self's. Rows are not kept in the export after removal. | Proposed | Two-way | 2026-10-04 | A removed partner's rows with no owner would be a dangling fact; the confirm panel says what goes. |
 | H7 | A joint account reads the older owner's age for penalties and the younger's for required distributions. Debts can be joint. | Proposed | Two-way | 2026-10-04 | The conservative reading of each rule. |
 | H8 | Health care in retirement is priced per adult: one marketplace line for the adults under 65 (benchmark per adult), one Medicare line per adult 65 and over, on the household's MAGI. | Proposed | Two-way | 2026-10-04 | A couple pays two premiums; IRMAA is per person. |
+
+## Expansion pack decisions (added 2026-10-04, overnight build, specs only)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| P1 | A pack unlocks on a condition the engine reads from the household (a stream type, a debt, a partner, a level), never on a purchase or a flag the person cannot see. | Proposed | Two-way | 2026-10-04 | Packs add breadth for some; the condition is the honest gate. |
+| P2 | Every pack field goes in the data dictionary before code, every pack rule in the registry with a source, and a pack's result is a view on the one engine. | Proposed | One-way | 2026-10-04 | The architecture rules do not bend for packs. |
+| P3 | Six packs need new engine capability (Self-employed, Home, Family, Coach, and partly Partner, Move, Health, Taxes); two need none (Earn more, Debt freedom). The index table in `docs/packs/README.md` says which. | Proposed | Two-way | 2026-10-04 | So the order of building can follow value against engine cost. |

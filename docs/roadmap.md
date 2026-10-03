@@ -70,6 +70,10 @@ Bring rooms from version 1 over as views on the new foundation, one at a time. M
 
 ---
 
+## Expansion packs (specs only, Proposed)
+
+Ten pack specs in `docs/packs/` (drafted 2026-10-04, not reviewed): Earn more, Self-employed, Home, Partner, Family, Move, Health, Taxes, Debt freedom, Coach. Each names who it is for, when it unlocks, the questions it adds, the engine pieces it reuses, what is new, and whether it needs new engine capability. None is scheduled.
+
 ## Parking lot
 
 Good ideas that wait. Each one lands in the milestone where its foundation exists.
