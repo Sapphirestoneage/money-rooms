@@ -100,7 +100,7 @@ M2 replaces this with an optimized drawdown: Roth conversion ladders, filling lo
 | Milestone | Covers |
 |---|---|
 | **M1** | Federal ordinary income brackets and standard deduction; FICA and self-employment tax; state brackets and standard deduction per state (decision E9; no exemptions, credits, or local taxes); the 10% early withdrawal penalty |
-| **M2** | Full depth: long-term capital gains brackets and basis, ACA premium subsidies, Roth conversions, full state brackets, required distributions |
+| **M2** | Full depth: long-term capital gains brackets and basis, ACA premium subsidies, Roth conversions, full state brackets, required distributions. **Built 2026-10-04 (Proposed, not yet reviewed):** the engine runs under one of two conventions, `m1` (the tied-out skeleton, unchanged) or `m2` (this row). The app uses `m2`; the Maya tie-out and the M1 unit tests use `m1`. See section 10 |
 
 Tax tables live in `data/tax/<year>.json`, sourced from the IRS and state revenue departments, with the source and date recorded in each file. Engine code never contains a tax rate.
 
@@ -155,7 +155,9 @@ The engine contains no rates, limits, or rule parameters. It reads them from the
 | `data/tax/2026.json` | Federal brackets, standard deduction, FICA, self-employment tax, the penalty, contribution limits, and every state's brackets |
 | `data/social-security/2026.json` | Bend points, the benefit formula, full retirement ages, early and delayed claiming factors |
 | `data/engine-defaults.json` | Rule parameters: the high-interest threshold (O2), the emergency reserve months (E13), the assumed work start age for the Social Security estimate, the penalty-free age, and the estimated minimum payment for a debt that has none entered |
-| `data/rules-registry.json` | M2's rules with sources and tripwires. Not read by the M1 engine: its entries are unverified until M2 |
+| `data/rules-registry.json` | Every M2 rule with source, link, status, and last-verified date. Read only under `m2` conventions, through a ledger that records which rules a run used. An entry with no `lastVerified` date throws if a feature tries to use it |
+| `data/life-expectancy-tables.json` | The IRS Uniform Lifetime and Single Life tables (Notice 2022-6, Publication 590-B), for required minimum distributions and 72(t) payments |
+| `data/healthcare.json` | Health care cost placeholders for retirement years: the marketplace benchmark premium before 65, Part D and a supplement from 65. Marked lookUp until sourced (open question O3) |
 
 M1 takes contribution limits from `data/tax/2026.json`, where they are sourced and dated. Section 4 names the rules registry as their home; that move happens in M2, when the registry's entries are verified.
 
@@ -163,6 +165,27 @@ M1 takes contribution limits from `data/tax/2026.json`, where they are sourced a
 
 ---
 
-## 9. Not in M1
+## 10. M2 conventions (built 2026-10-04, Proposed)
+
+Everything below applies only under `m2` conventions. Under `m1` the engine is the walking skeleton exactly as tied out.
+
+| Topic | How the M2 engine does it |
+|---|---|
+| Rules | Every rate and threshold comes from `data/rules-registry.json` through the run's ledger. The result lists every rule used with its source and last-verified date, and names the ones that are sunsetting or under watch (tripwires) |
+| Federal tax | Ordinary brackets on ordinary income after the standard deduction (plus the extra deduction at 65 and the senior deduction while it exists, 2025 to 2028). Long-term gains stack on top through the 0%, 15%, and 20% brackets. The taxable part of Social Security follows IRC 86. NIIT applies to gains above the threshold. Roth conversions are ordinary income with no penalty. State tax is unchanged from E9 (every state's brackets on federal AGI less the state deduction); state treatment of retirement income is not modeled |
+| Cost basis | Taxable accounts carry a basis (default 70% of the balance, roughly). A sale realizes gains in proportion to the unrealized share; contributions and 0% harvests raise basis |
+| Roth ordering | Roth accounts carry regular-contribution basis (default 50%, roughly), a list of conversions with their years, and the first-contribution year (default five years before the plan date). Draws come out in the IRS order: basis free, then conversions oldest first (the taxable part owes the 10% additional tax inside its five-year clock under 59 and a half), then earnings (ordinary income, penalized unless qualified) |
+| Pretax before 59 and a half | The 10% additional tax applies unless the account is a governmental 457(b) after separation, the plan allows the rule of 55 and the person left in or after the year of their 55th birthday (policy toggle), or the draw is a 72(t) payment |
+| 72(t) | Sized once at the start from the largest pretax account by the chosen method at a rate no higher than the greater of 5% and 120% of the federal mid-term rate (an input until a monthly source exists). Runs the longer of five years or to 59 and a half. The annuitization method is approximated with the Single Life table |
+| Required distributions | From the start age for the birth year (73, or 75 from the 1960 cohort), each pretax account's prior-year balance over the Uniform Lifetime divisor is withdrawn. Money not needed that year lands in taxable |
+| Conversions and harvesting | Sized inside the shortfall loop once the year's sales gains are known. Conversion targets: none, fill the deductions, fill the 10%, 12%, or 22% bracket, fill to the ACA target, fill to the IRMAA tier. Harvesting realizes gains up to the 0% room left after sales. Both are capped by the MAGI budget (an ACA target, the cliff limit, or an IRMAA cap) |
+| Health care | Before 65: the benchmark premium less the premium tax credit from MAGI as a share of the poverty line, with the 2026 cliff and Medicaid flags. From 65: Part B with the IRMAA tier from MAGI two years earlier (the plan date's MAGI stands in for earlier years), Part D, and a placeholder supplement. The tie-out's fixed health care setting still wins when present |
+| HSA | Saved receipts come out free at any age. Before 65 nothing else is drawn from an HSA (the 20% additional tax is never chosen). From 65, other draws are ordinary income |
+| Withdrawal order | Conventional (cash above the reserve, taxable, pretax, Roth, HSA, then the reserve), proportional (taxable, pretax, and Roth in proportion to balances, then the conventional order), or bracket-based (pretax up to the top of the 12% bracket first). A year lock can put one bucket first |
+| Income after retirement | Streams that end at retirement stop; streams with an age or date end keep paying (Barista FI). A year lock can add part-time income. Cash left over after spending goes to taxable |
+| Working years | The waterfall adds the governmental 457(b) at its own limit, the traditional IRA when deductible under the phase-out (else Roth, flagged backdoor above the Roth limit), and the mega backdoor up to the total additions limit when the plan allows. The contribution-type knob can test traditional, Roth, or split for entered workplace contributions without changing what is stored |
+| Policy | All of the above is driven by a drawdown policy (`engine/projection/policy.ts`) with per-year locks. The default policy is the conventional order with no strategies, which is the M1 drawdown at M2 tax depth |
+
+## 11. Not in M1
 
 Sequence-of-returns risk and historical backtesting (M6). Scenario blocks (M5). Goal buckets in the projection (M5). Partner and household of two (shape exists, logic later). Payoff method comparisons (M5). Monthly cash timing (Money Calendar view).

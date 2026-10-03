@@ -158,3 +158,16 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | X4 | Every account and plan has an owner: self, partner, or joint. Retirement accounts and plans are never joint. | Proposed | One-way | 2026-10-04 | Households of two need to know whose age and whose record apply. |
 | X5 | Scenario blocks are layered proposed changes applied in memory. Real rows are never edited by a block. | Proposed | One-way | 2026-10-04 | A what-if that edits real numbers is a lost number. |
 | X6 | Roth conversions are records with amount, month, and a computed five-year clock. Future conversions live as year locks until they happen. | Proposed | Two-way | 2026-10-04 | The ordering rules (A1, A2) and MAGI effects (C1, C3) need each conversion's date. |
+
+## M2 engine decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| N10 | The engine has two conventions, m1 and m2, chosen per run. m1 is the tied-out skeleton and never changes; the app runs m2. | Proposed | Two-way | 2026-10-04 | The tripwire: Maya must tie out under m1 after every engine change, and nothing in m2 can touch that path. |
+| N11 | Level-two defaults: taxable basis 70% of balance, Roth contribution basis 50%, first Roth year five years before the plan date, ACA household size 1, Medicaid expansion unknown. All roughly. | Proposed | Two-way | 2026-10-04 | M2 spec section 7 sets the first two; the rest keep the engine running until asked. |
+| N12 | Before 65 the engine never draws from an HSA beyond saved receipts, so the 20% additional tax is never modeled as a choice. From 65, HSA draws are ordinary income. | Proposed | Two-way | 2026-10-04 | Nobody should be shown a plan that pays 20% on purpose. |
+| N13 | The 72(t) annuitization method is approximated with the Single Life table until the IRS mortality table is loaded. The federal mid-term rate is a policy input with the 5% floor applied. | Proposed | Two-way | 2026-10-04 | The notice's mortality table is not in data/ yet; the result is within a few percent of amortization and flagged. |
+| N14 | Conversions and harvests are sized inside the shortfall loop after the year's sales, so bracket targets and the ACA budget see the whole year. | Proposed | Two-way | 2026-10-04 | Sizing them first double-filled the 0% bracket and blew through the ACA target. |
+| N15 | Health care before 65 uses one benchmark premium at every age and one Medicaid expansion answer (unknown by default). From 65, IRMAA uses the plan date's MAGI for lookback years before the plan. | Proposed | Two-way | 2026-10-04 | Placeholders until O3 is sourced; the mechanics are in and tested. |
+| N16 | Under m2, income streams with an age or date end keep paying after retirement (Barista FI). Only streams ending at retirement stop. | Proposed | Two-way | 2026-10-04 | Replaces M1 convention C27, which the M2 spec (E6) planned to replace. |
+| N17 | Required distributions not needed for spending go to the taxable account the same year. | Proposed | Two-way | 2026-10-04 | The money has to land somewhere; taxable is where a surplus already goes. |

@@ -50,7 +50,9 @@ describe("no income", () => {
     expect(likely.funded).toBe(true);
     expect(likely.fiAge).toBe(26);
     expect(likely.timeline.rows[0]!.income.gross).toBe(0);
-    expect(likely.timeline.rows[0]!.taxes.total).toBe(0);
+    // Selling from the brokerage realizes gains: inside the federal 0% bracket, but New York taxes them.
+    expect(likely.timeline.rows[0]!.taxes.federalIncome).toBe(0);
+    expect(likely.timeline.rows[0]!.taxes.total).toBeLessThan(100);
   });
 
   it("with no savings: never funded, and the shortfall starts in the first year", () => {

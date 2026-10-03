@@ -54,6 +54,13 @@ describe("computeFederalTaxM2", () => {
     expect(r.capitalGainsTax).toBe(0);
     expect(r.total).toBe(0);
     expect(r.zeroPercentGainRoom).toBeCloseTo(49450 - 29900, 6);
+    expect(r.ordinaryRoom).toBe(100);
+  });
+
+  it("ordinary room is what the deductions leave after ordinary income, whatever the gains", () => {
+    const r = computeFederalTaxM2({ ...base, otherOrdinaryIncome: 10000, longTermGains: 30000 }, t, new RuleLedger());
+    expect(r.ordinaryRoom).toBe(6100);
+    expect(r.ordinaryTaxableIncome).toBe(0);
   });
 
   it("counts the taxable part of Social Security, the aged extra deduction, and the senior deduction at 70 in 2027", () => {

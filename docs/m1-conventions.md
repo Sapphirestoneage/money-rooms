@@ -4,6 +4,8 @@ The engine spec leaves small choices open. Each one below is how the M1 engine d
 
 Numbers that are rule parameters live in `data/engine-defaults.json`, not in code.
 
+**Since 2026-10-04 these are the `m1` conventions.** The engine also runs under `m2` conventions (engine spec section 10), which the app uses. The tie-out and the M1 unit tests run `m1`, so every item below stays exactly as tied out.
+
 | # | Topic | How the M1 engine does it | Status |
 |---|---|---|---|
 | C1 | Stub period | Year 0 runs from the plan's as-of month through December. Every flow, tax, limit, and growth exponent is multiplied by months remaining over 12. | Locked (E8) |

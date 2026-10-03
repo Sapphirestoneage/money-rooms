@@ -7,7 +7,8 @@
 import type { BandName, Household, SocialSecurityParams, TaxTables } from "../model";
 import { loadSocialSecurityParams, loadTaxTables, parseYearMonth, resolveAssumptions } from "../model";
 import { BAND_NAMES, resolveBand, type BandNumbers } from "./bands";
-import { requireComplete, runTimeline, type CompleteHousehold, type TieOutSettings, type TimelineResult } from "./timeline";
+import type { DrawdownPolicy } from "./policy";
+import { requireComplete, runTimeline, type CompleteHousehold, type EngineConventions, type TieOutSettings, type TimelineResult } from "./timeline";
 
 export interface BandResult {
   band: BandName;
@@ -34,10 +35,20 @@ export interface Deps {
   ssParams: SocialSecurityParams;
   /** Test-only settings for hand tie-outs. The app never sets these. */
   testSettings?: TieOutSettings;
+  /** m1 (the tied-out skeleton) or m2 (full depth). Blank means m1. */
+  conventions?: EngineConventions;
+  /** M2: the drawdown policy. Blank means the conventional order with no strategies. */
+  policy?: DrawdownPolicy;
 }
 
+/** What the app uses: M2 depth with the default policy. */
 export function defaultDeps(): Deps {
-  return { tables: loadTaxTables(2026), ssParams: loadSocialSecurityParams(2026) };
+  return { tables: loadTaxTables(2026), ssParams: loadSocialSecurityParams(2026), conventions: "m2" };
+}
+
+/** The walking skeleton's method, for M1 tests and the Maya tie-out. */
+export function m1Deps(): Deps {
+  return { tables: loadTaxTables(2026), ssParams: loadSocialSecurityParams(2026), conventions: "m1" };
 }
 
 export function isFunded(t: TimelineResult): boolean {
@@ -50,7 +61,15 @@ export function findFiDate(hh: CompleteHousehold, band: BandNumbers, deps: Deps)
   const birthYear = parseYearMonth(hh.birthDate).year;
   const lastYear = birthYear + band.planToAge;
   const run = (retirementYear: number) =>
-    runTimeline(hh, { band, retirementYear, tables: deps.tables, ssParams: deps.ssParams, ...(deps.testSettings ? { testSettings: deps.testSettings } : {}) });
+    runTimeline(hh, {
+      band,
+      retirementYear,
+      tables: deps.tables,
+      ssParams: deps.ssParams,
+      ...(deps.testSettings ? { testSettings: deps.testSettings } : {}),
+      ...(deps.conventions ? { conventions: deps.conventions } : {}),
+      ...(deps.policy ? { policy: deps.policy } : {}),
+    });
 
   let previous: TimelineResult | null = null;
   for (let y = year0; y <= lastYear; y++) {

@@ -19,3 +19,6 @@ export * from "./projection/timeline";
 export * from "./projection/fi";
 export * from "./projection/trace";
 export * from "./projection/display";
+export * from "./projection/drawdown";
+export * from "./projection/healthcare";
+export * from "./projection/policy";

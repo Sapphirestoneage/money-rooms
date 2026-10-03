@@ -55,8 +55,8 @@ export interface FederalTaxM2Result {
   total: number;
   /** Percent on the next dollar of ordinary income (federal only). */
   marginalRate: number;
-  /** Dollars of ordinary income that would still be taxed at 0% (room under the standard deduction). */
-  roomUnderStandardDeduction: number;
+  /** Dollars of ordinary income that could still be added before any of it is taxed: the deductions not yet used up by ordinary income (gains stack on top and lose 0% room instead). */
+  ordinaryRoom: number;
   /** Dollars of long-term gains that would still fall in the 0% bracket. */
   zeroPercentGainRoom: number;
 }
@@ -172,7 +172,7 @@ export function computeFederalTaxM2(input: FederalTaxM2Input, t: FederalTables, 
     penalty,
     total,
     marginalRate: ordinaryTaxableIncome > 0 ? marginalRateFromBrackets(ordinaryTaxableIncome, ordinarySchedule) : 0,
-    roomUnderStandardDeduction: Math.max(0, deductions - agi),
+    ordinaryRoom: Math.max(0, deductions - (agi - input.longTermGains)),
     zeroPercentGainRoom: Math.max(0, zeroTop - taxableIncome),
   };
 }
