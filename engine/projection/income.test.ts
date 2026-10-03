@@ -65,3 +65,29 @@ describe("incomeForYear", () => {
     expect(incomeForYear([s], ctx(2027, 26), best).wages).toBeCloseTo(72000 * 1.1, 6);
   });
 });
+
+describe("income that starts later", () => {
+  const contract: IncomeStream = { id: "contract", type: "selfEmployed", grossAnnual: userValue(50000, asOf), start: "2027-01", end: { kind: "retirement" } };
+  const growth = 1 + likely.incomeGrowth.selfEmployed / 100;
+
+  it("a $50,000 self-employed stream starting 2027-01 adds nothing in 2026", () => {
+    // The plan's first, partial year (October to December 2026) and a full 2026 both see none of it.
+    const stub = incomeForYear([contract], { year: 2026, t: 0, age: 25, retirementYear: 2060, fraction: 0.25, startMonth: 10 }, likely);
+    expect(stub.grossTotal).toBe(0);
+    expect(stub.selfEmploymentNet).toBe(0);
+    expect(stub.streams).toEqual([]);
+    expect(incomeForYear([contract], ctx(2026, 25), likely).grossTotal).toBe(0);
+  });
+
+  it("and the full income from 2027", () => {
+    const y2027 = incomeForYear([contract], ctx(2027, 26), likely);
+    expect(y2027.grossTotal).toBeCloseTo(50000 * growth, 6);
+    expect(y2027.selfEmploymentNet).toBeCloseTo(50000 * growth, 6);
+    expect(incomeForYear([contract], ctx(2028, 27), likely).grossTotal).toBeCloseTo(50000 * growth ** 2, 6);
+  });
+
+  it("a stream starting mid-year counts only the months it is paid", () => {
+    const july: IncomeStream = { ...contract, start: "2027-07" };
+    expect(incomeForYear([july], ctx(2027, 26), likely).grossTotal).toBeCloseTo((50000 * growth * 6) / 12, 6);
+  });
+});

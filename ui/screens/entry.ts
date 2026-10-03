@@ -470,7 +470,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const comingYears: { value: string; label: string }[] = [];
     for (let y = planYear; y <= planYear + 50; y++) comingYears.push({ value: String(y), label: String(y) });
     const monthOptions = MONTH_NAMES.map((name, i) => ({ value: String(i + 1).padStart(2, "0"), label: name }));
-    if (!isUnemployment) {
+    {
       const startSelect = select(
         [{ value: "now", label: "Already started" }, { value: "later", label: "Starts in a coming month" }],
         s.start ? "later" : "now",
@@ -481,7 +481,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
           schedule();
         },
       );
-      fields.push(field("This income starts", startSelect));
+      fields.push(field(isUnemployment ? "These benefits start" : "This income starts", startSelect));
       if (s.start) {
         const from = parseYearMonth(s.start);
         const setStart = () => {
