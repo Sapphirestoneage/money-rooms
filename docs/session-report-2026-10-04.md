@@ -17,9 +17,11 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 8 Households of two | Done, with the spousal rule unverified | `household-two` | (see git log) |
 | 9 Pack specs | Done (docs only) | `packs-specs` | (see git log) |
 | 10 Foundations | Done (CI gate left for review) | `foundations` | (see git log) |
-| 11 Coaching spec | Not started | `coaching-specs` | |
+| 11 Coaching spec | Done (docs only) | `coaching-specs` | (see git log) |
 | 12 Feature register | Not started | `feature-register` | |
 | 13 Readiness audit | Not started | `readiness` | |
+
+**Phase 11 in plain English.** `docs/coaching-spec.md`: the weekly loop in twelve parts, each with its engine sources, its dictionary additions (records only, never a second copy of a number), and acceptance tests: weekly rings (Check in, Move, Learn), an openable readiness score (runway 35, rough numbers 25, debt pressure 25, staleness 15), four guided programs (Couch to Roth, Debt-free sprint, First $10K, Before the promo ends), adaptive re-planning at the material line, personal records, four money phases read from the engine, the Sunday recap, rest days (the spending headroom that leaves the FI year unchanged), insights from tags with counts and the word pattern, coach mode through exports only with its privacy and consent requirements and the attorney question left open, two-minute lessons, and streaks with automatic freezes. A "what we will not copy" section: no streak guilt, no public comparison, no red or shame, no engagement for its own sake, no urgency, no dark patterns around coach mode. Decisions C1 to C12. Also: the rules update routine gained the monthly check with a report that the phase list asked for.
 
 **Phase 10 in plain English.** Five pieces. (a) The Pages workflow is now test, then build, then deploy, each needing the one before, and a new `ci.yml` runs types, tests, the Maya tie-out, and the build on every other branch and pull request; both are on `foundations` for your review, main is untouched. (b) A backup nudge card (design system entry first) appears above any screen when the numbers have not been exported in 30 days, or ever, with Export and Not now. (c) `docs/history-spec.md` written, then built: one snapshot a day (date, FI year by band, net worth, savings rate, FI number) saved with the household so it is in the export, a "Your progress" section on the result screen with a trend sentence ("Since July 2026, your likely FI date moved 2 years earlier, your net worth rose $12,400, and your savings rate went from 22% to 25%") and a table of the last eight; eight engine tests. (d) About and Privacy pages with a footer on every screen; About says "Educational, not individualized financial, tax, or legal advice"; Privacy says the data stays in the browser, nothing is sent, and offers export and a delete-everything button behind the confirm panel. (e) Three specs, not built: `docs/statement-upload-spec.md`, `docs/rules-update-routine.md`, `docs/performance-budget.md`. Decisions F1 to F6.
 
@@ -51,6 +53,7 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 
 | Spec | Branch | What it covers |
 |---|---|---|
+| `docs/coaching-spec.md` | `coaching-specs` | The weekly loop: twelve parts with dictionary additions and acceptance tests, what will not be copied, a build order |
 | `docs/history-spec.md` | `foundations` | Progress snapshots: what is stored and why, when taken, the trend sentence, where it shows, five acceptance tests (built) |
 | `docs/statement-upload-spec.md` | `foundations` | Browser-only reading of PDF and CSV statements by a pattern table, the preview, six acceptance tests (not built) |
 | `docs/rules-update-routine.md` | `foundations` | The November and January verification calendar, the steps, the yearly table roll, two questions (a routine, not code) |
@@ -64,6 +67,7 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 
 | # | Where | Decision |
 |---|---|---|
+| C1 to C12 | `decisions.md` | Coaching: the weekly loop's twelve product decisions (spec section 16) |
 | F1 to F6 | `decisions.md` | Foundations: the CI gate shape, the nudge reads preferences only, snapshots as the one stored derived value, the trend baseline, the trust pages and the delete button, the three specs |
 | P1 to P3 | `decisions.md` | Packs: unlock by condition, dictionary and registry first, which packs need new engine capability |
 | H1 to H8 | `decisions.md` | Households of two: one retirement date, how filing separately splits the returns, the unverified spousal and survivor rule and its flag, the optimizer moves the self's claiming age only, the waterfall fills the partner's workplace plan only, removing a partner, joint accounts read the older or younger owner, health care per adult |
@@ -134,6 +138,6 @@ Not started.
 
 ## 10. Handoff
 
-**Where I am:** Phases 0 to 10 complete and pushed. **Next:** branch `coaching-specs` from `foundations` and write `docs/coaching-spec.md` (the twelve parts and "what we will not copy"), then `feature-register`, then `readiness`, then finish report sections 8 to 10.
+**Where I am:** Phases 0 to 11 complete and pushed. **Next:** branch `feature-register` from `coaching-specs`: inventory v1 (`Sapphirestoneage/Personalfinance` is listed as reachable) plus the given list and this repo's unbuilt specs, score by the rubric, write `data/feature-register.json` and the three docs in `docs/features/`, correct the SPARKS claims; then `readiness`; then report sections 8 to 10.
 
 **Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.

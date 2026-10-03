@@ -15,6 +15,7 @@ Every tax and benefit number the engine uses lives in `data/rules-registry.json`
 | **Late October to mid November, every year** | The IRS inflation adjustments (the revenue procedure with brackets, standard deduction, capital gains thresholds, the senior deduction phase-out) and the retirement plan limits notice. Social Security's COLA fact sheet (wage base, bend points, earnings test). Medicare Part B and D premiums and the IRMAA tiers (CMS). | Eli, or a session with network access to irs.gov, ssa.gov, cms.gov |
 | **January** | The poverty guidelines (HHS), which the ACA table for the next coverage year reads. The ACA applicable percentage table for the year (IRS). | Same |
 | **When a law passes** | Anything the bill touches. Add the rule's `effective` years and `sunset`, set `status` to `sunsetting` or `watch` as the text says, re-verify the URL. | Same |
+| **Monthly** | A check of the whole registry against its sources, with a report: open every URL, confirm the value, note any page that moved or could not be reached. The report is `docs/rules-verification-<year>-<month>.md`; a month with no changes still gets a one-line report saying so. | A scheduled session, reviewed by Eli |
 | **Quarterly** | The 72(t) rate inputs (federal mid-term rate), the `watch` list (rules with a `status` of watch), and the state tables for states that changed their brackets. | Same |
 | **Each session that touches a rule** | Re-open the source, confirm, update `lastVerified`. Never bump the date without opening the page. | Whoever touches it |
 

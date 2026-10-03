@@ -269,3 +269,9 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | F4 | The trend sentence compares the latest snapshot with the earliest at least 28 days older, or the earliest of all, and describes the likely FI date, net worth, and the savings rate in that order. | Proposed | Two-way | 2026-10-04 | Day-to-day noise would otherwise dominate the sentence. |
 | F5 | Two trust pages, About and Privacy, reachable from a footer on every screen; the only destructive action in the app (delete everything in this browser) lives on Privacy behind the confirm panel. | Proposed | Two-way | 2026-10-04 | The build's trust requirement. |
 | F6 | Three specs written without code: statement upload (browser-only parsing by pattern table, no AI call), the rules update routine (the November and January calendar), and the performance budget (150 KB gzipped target, 200 KB hard limit, long work in a worker). | Proposed | Two-way | 2026-10-04 | Each needs Eli's decision before it costs engineering. |
+
+## Coaching decisions (added 2026-10-04, overnight build, spec only)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| C1 to C12 | The weekly loop as specified in `docs/coaching-spec.md` section 16: weekly not daily, three rings, an openable readiness score with fixed weights, programs as content with progress as records, re-planning at the material line, records as dated bests, four engine-read phases, a four-line recap, rest-day headroom from the FI search, insights only from eight tagged weeks, coach mode through exports only, streaks with automatic freezes. | Proposed | Two-way | 2026-10-04 | Each is listed in the spec with its reason; none is built. |
