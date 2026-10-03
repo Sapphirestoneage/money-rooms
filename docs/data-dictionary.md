@@ -418,3 +418,93 @@ The minimum set for M1. Everything else has a default.
 | 14 | Savings strategy | No | Entered only |
 
 Five answers produce a first FI date. Everything else sharpens it.
+
+---
+
+## 9. Proposed additions (October 2026, not yet reviewed by Eli)
+
+**Status: Proposed.** Written during the 2026-10-04 overnight build (Phase 0b) to close six gaps found in the entity map. Nothing here is built until Eli confirms it. Each addition follows the rules in section 2: metadata on every value, parts not totals, ids that never repeat. Decisions are logged as X1 to X6 in `decisions.md`.
+
+### 9.1 Income stream linked to its workplace plan
+
+Today a workplace contribution (3.4) is a percent of pay on the income stream, and the engine finds the matching account by preset. That breaks when a person has two 401(k)s, or a 403(b) and a 457(b). The link makes it explicit.
+
+| Field | On | Stored as | Default |
+|---|---|---|---|
+| `planId` | Each `WorkplaceContribution` | The id of a workplace plan (9.2) | The one plan whose employer matches the stream; if none, the engine adds an implicit plan and flags it |
+| `destinationAccountId` | Each `WorkplaceContribution` | The id of the account the money lands in (traditional or Roth side of the plan) | The plan's account for the chosen `accountType` |
+
+**Feeds:** which account grows; which plan's match applies; the rule of 55 (only the plan of the employer separated from); the 457(b) separate limit.
+
+### 9.2 Workplace plan (new entity)
+
+A plan is the employer's arrangement. Accounts hold money; the plan holds the rules. One plan can have two accounts (traditional and Roth).
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `id` | | Stable id | |
+| `employerIncomeId` | Fact | The income stream of the employer | Required |
+| `planType` | Fact | `401k`, `403b`, `457bGovernmental`, `457bNonGovernmental`, `tsp`, `simpleIra`, `sepIra`, `solo401k` | Required |
+| `match` | Fact | `{ matchPercent, capPercentOfPay }` (moves here from the income stream, 3.4; the stream keeps a read-through for the migration) | None |
+| `ruleOf55Allowed` | Fact | `yes`, `no`, `unknown` | `unknown`, shown as "check with your plan" |
+| `megaBackdoorAllowed` | Fact | `yes`, `no`, `unknown` (after-tax contributions plus in-plan conversion or in-service withdrawal) | `unknown` |
+| `rothOffered` | Fact | Boolean | `yes` |
+| `accountIds` | | The accounts (3.6) that belong to this plan | |
+| `separationAge` | Decision | Age in years, or `retirement` | `retirement` (M2 spec section 7, "planned separation age") |
+
+**Validation.** `457bGovernmental` is the only plan type whose withdrawals skip the 10% additional tax and whose limit is separate from the 401(k)/403(b) limit (`limits.457b.2026`). A `solo401k` requires a self-employed income stream. **Feeds:** the savings waterfall steps 1, 4, 5, 7; rule of 55; 457(b) early access; the mega backdoor room (total additions limit minus employee and employer amounts).
+
+### 9.3 Business (new entity)
+
+Self-employed and side-gig income (3.4), business expenses, and business debts (3.6, `purpose: business`) today sit on separate rows with nothing tying them together. A business groups them so the engine can compute net profit, self-employment tax, the QBI deduction (M2+), and solo 401(k) room from one place.
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `id` | | Stable id | |
+| `name` | Fact | Text | "My business" |
+| `entityType` | Fact | `soleProprietor`, `singleMemberLlc`, `partnership`, `sCorp`, `cCorp` | `soleProprietor`, `roughly` |
+| `incomeIds` | | Income streams of type `selfEmployed` or `sideGig` | |
+| `expenseAnnual` | Fact | Annual dollars (moves here from `businessExpensesAnnual` on the stream; the stream keeps a read-through) | 0 |
+| `debtIds` | | Accounts with `purpose: business` | |
+| `ownerSalary` | Fact | Annual dollars, S corporations only (strategy F3) | None |
+| `stateOfFormation` | Fact | State code | The person's state |
+
+**Rule to carry into the engine (from the SPARKS catalog correction):** forming an entity in another state does not change where income is taxed; residence and where the work is done decide. The field is for record-keeping, not for a tax effect. **Feeds:** self-employment tax; QBI (M2+); solo 401(k) and SEP room; the Self-employed pack.
+
+### 9.4 Account owner
+
+| Field | On | Stored as | Default |
+|---|---|---|---|
+| `owner` | Every account (3.6) and every workplace plan (9.2) | `self`, `partner`, `joint` | `self` |
+
+**Validation.** Retirement accounts (pretax, Roth, HSA) and workplace plans cannot be `joint`. `partner` requires a partner record (2.7). **Feeds:** whose age decides penalties, RMDs, and catch-ups; whose Social Security record; the household-of-two tax split; the Partner pack.
+
+### 9.5 Scenario blocks (layered proposed changes)
+
+A scenario block is a set of proposed changes laid over the real rows. The real rows are never edited by a block; the engine applies the block's changes in memory when a scenario is run (Level 3, section 2).
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `id` | | Stable id | |
+| `type` | Goal | `home`, `car`, `kid`, `jobChange`, `sabbatical`, `geoArbitrage`, `sideHustle`, `inheritance`, `marriage`, `custom` | Required |
+| `name` | Goal | Text | From type |
+| `startDates` | Goal | One or more `YYYY-MM`, so one block can compare timings | Required |
+| `changes` | Goal | A list of `{ target, op, value, start, end }` where `target` is a row id or a new-row spec, `op` is `add`, `replace`, `remove`, or `scale`, and dates follow 2.6 | Required |
+| `confidence` | | Per change, from the questionnaire's national or state default, or a quote | `roughly` |
+| `relation` | Goal | `inAdditionTo` or `replacing` another block's id | None |
+| `enabled` | Goal | Boolean | `true` |
+
+**Rules.** Blocks stack in list order. Adding a block asks the person to reconfirm related blocks; nothing changes automatically. The headline for every block is the change in monthly cash flow and the FI date moved. **Feeds:** M5 what-ifs, the price card, best timing, milestones.
+
+### 9.6 Roth conversion record
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `id` | | Stable id | |
+| `fromAccountId` | Fact | A pretax account | Required |
+| `toAccountId` | Fact | A Roth account | Required |
+| `amount` | Fact | Dollars (the taxable part; a nondeductible basis part is stored separately as `basisPart`) | Required |
+| `month` | Fact | `YYYY-MM` | Required |
+| `clockStart` | Computed | January 1 of the conversion year; the five-year clock ends December 31 four years later (`access.rothOrdering`) | Never stored |
+
+Past conversions are facts the person enters. Future conversions are decisions the optimizer proposes, stored as year-by-year locks (M2 spec section 5) and never as conversion records until they happen. **Feeds:** Roth ordering (A1, A2), MAGI for ACA and IRMAA in the conversion year, the conversion ladder.

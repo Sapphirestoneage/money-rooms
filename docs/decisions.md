@@ -147,3 +147,14 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | Y3 | A freedom budget shows hours freed after FI, with legacy projects placed in it. | Locked | Two-way | 2026-10-02 | Legacy costs time as well as money. |
 | Y4 | Hamilton references use only Hamilton's public-domain writings, never the musical's lyrics; theming is optional and off by default. | Locked | Two-way | 2026-10-02 | Keeps the brand clean. |
 | Y5 | Defaults: breathing room 10% of the FI number, heir tax rate 22%. | Proposed | Two-way | 2026-10-02 | Placeholders, editable. |
+
+## Entity map decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| X1 | A workplace contribution names its plan and destination account instead of being matched by preset. | Proposed | Two-way | 2026-10-04 | Two 401(k)s, or a 403(b) beside a 457(b), cannot be told apart by preset. |
+| X2 | Workplace plan is its own entity: type, match, rule of 55, governmental 457(b), mega backdoor, separation age. Accounts hold money; plans hold rules. | Proposed | One-way | 2026-10-04 | The M2 strategies A4, A7, E3, and F1 need plan rules that no account field can carry. |
+| X3 | Business is its own entity grouping self-employed income, expenses, and business debts; state of formation is a record, never a tax effect. | Proposed | One-way | 2026-10-04 | Net profit, self-employment tax, QBI, and solo 401(k) room all read from one place. |
+| X4 | Every account and plan has an owner: self, partner, or joint. Retirement accounts and plans are never joint. | Proposed | One-way | 2026-10-04 | Households of two need to know whose age and whose record apply. |
+| X5 | Scenario blocks are layered proposed changes applied in memory. Real rows are never edited by a block. | Proposed | One-way | 2026-10-04 | A what-if that edits real numbers is a lost number. |
+| X6 | Roth conversions are records with amount, month, and a computed five-year clock. Future conversions live as year locks until they happen. | Proposed | Two-way | 2026-10-04 | The ordering rules (A1, A2) and MAGI effects (C1, C3) need each conversion's date. |
