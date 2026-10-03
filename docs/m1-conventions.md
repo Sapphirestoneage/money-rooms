@@ -1,0 +1,30 @@
+# M1 engine conventions
+
+The engine spec leaves small choices open. Each one below is how the M1 engine does it today, so a spreadsheet tie-out can match method for method. Every item is **Proposed** unless marked otherwise: confirm it, change it, or move it into `decisions.md`.
+
+Numbers that are rule parameters live in `data/engine-defaults.json`, not in code.
+
+| # | Topic | How the M1 engine does it | Status |
+|---|---|---|---|
+| C1 | Stub period | Year 0 runs from the plan's as-of month through December. Every flow, tax, limit, and growth exponent is multiplied by months remaining over 12. | Locked (E8) |
+| C2 | Annualize, then prorate | Each year is computed on an annual basis (income, taxes, contributions, withdrawals), then every flow is multiplied by the year's fraction. Taxes are computed on annualized income and prorated, so a stub year is taxed at full-year brackets. | Proposed |
+| C3 | Age | Age in a year is the age at December 31 (year minus birth year). The 10% penalty applies when that age is below 59.5, so the year a person turns 59 is penalized and the year they turn 60 is not. | Proposed |
+| C4 | Income growth | Year 0 is the entered amount. Each later year compounds the stream's real growth rate on years since year 0. Entered pre-tax deductions do not grow with pay; the match step tops them up to the match cap as pay grows. | Proposed |
+| C5 | Pre-tax payroll deductions | 401(k), 403(b), HSA, and health premiums reduce federal and state taxable income but not FICA wages. (In practice HSA and premiums through a cafeteria plan also escape FICA; M1 ignores that.) | Proposed |
+| C6 | Taxes | Federal: ordinary brackets on income minus the standard deduction; FICA; self-employment tax with half deductible; the penalty. State: brackets on federal AGI minus the state standard deduction (E9). No credits, no local taxes, filing status fixed for life. | Locked (E3, E9) |
+| C7 | Social Security estimate | Covered earnings per projection year are wages plus self-employment net, capped at the wage base. Years from age 22 (data default) through the year before the plan date are back-filled at the plan-year amount. The 35 highest years are averaged; today's bend points are applied to real dollars (no separate wage-growth assumption). Claiming age defaults to full retirement age. The benefit starts in the calendar year the claiming age is reached and pays for the full year. The policy band scales it. | Proposed |
+| C8 | Retirement spending | Baseline from the entered categories, discretionary ones scaled by life phase. The healthcare line has no sourced values yet (open question O3), so the healthcare category simply continues as entered. | Proposed |
+| C9 | Withdrawal order | Cash (no emergency reserve in M1), then taxable, then pretax, then Roth, then HSA. Pretax withdrawals are ordinary income plus the penalty under 59.5, and the engine iterates until the tax on the withdrawal is itself covered. Roth and HSA withdrawals are tax and penalty free in M1 (treated as basis; M2 adds basis fields). Taxable withdrawals owe no capital gains tax in M1 (basis is M2). | Proposed |
+| C10 | Debts in real dollars | Real rate = (1 + nominal) / (1 + inflation) - 1. A fixed nominal payment shrinks in real terms by the inflation factor each year. The payment lands mid-year. Payments are capped at the payoff amount. Extra principal comes only from the waterfall's high-interest step (rate above 8%, open question O2). | Proposed |
+| C11 | Account growth | Blended real return = allocation-weighted class returns minus fees. The opening balance grows for the full period; the year's net flow grows for half. Cash accounts earn the cash return. | Proposed |
+| C12 | Employer match | Match applies to total employee workplace contributions (traditional plus Roth) up to the cap, and is deposited in the traditional 401(k). Waterfall step 1 raises the employee contribution to the cap when the surplus allows. | Proposed |
+| C13 | Implicit accounts | When a strategy needs an account the person does not have (Roth IRA, Roth 401(k), brokerage, HSA, traditional 401(k)), the engine adds an empty one from the preset and flags it. | Proposed |
+| C14 | Surplus in retirement | If Social Security exceeds spending, the surplus goes to the taxable account. | Proposed |
+| C15 | Roth IRA income limit | The Roth IRA step contributes the full limit regardless of income and flags a backdoor Roth when AGI is above the phase-out start. | Proposed |
+| C16 | Savings strategy default | `enteredOnly`, which is what professional planning software does by default. | Proposed (data dictionary 4.6) |
+| C17 | Entered account contributions | An account's `annualContribution` field is added on top of the waterfall while working. The example households use none. | Proposed |
+| C18 | FI date | The first retirement year whose timeline has no shortfall above $1 in any year. Assets at retirement are total assets at the end of the last working year. "One year earlier fails at" is the age of the first shortfall when retiring one year before the FI date. | Locked (E6) |
+| C19 | Lifetime taxes | The sum over the horizon of federal income tax, FICA, self-employment tax, penalties, and state tax, all prorated. | Proposed |
+| C20 | Household of one | Partner fields are ignored in M1 (D18). | Locked |
+| C21 | Early-withdrawal penalty on Roth | None in M1 (see C9). The spec's withdrawal order mentions the penalty only for pretax. | Proposed |
+| C22 | Tax loop in the waterfall | Each pre-tax step guesses the extra contribution, measures the tax saved at that guess, adds it back, repeats until the change is under $1 or the limit is reached, then takes one exact step at the current marginal rate (E10). Federal and state marginal rates are added together for that step. | Locked (E10) |
