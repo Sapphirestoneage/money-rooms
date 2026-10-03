@@ -43,9 +43,9 @@ Every settled decision, with its date and reason, so nothing gets relitigated by
 | D12 | Assumption sources are FIRE-community voices, loaded as named sets. Default: historical (Trinity Study, Big ERN data). | Locked | Two-way | 2026-10-02 | Trust is part of the product. |
 | D13 | Returns are set per asset class, not one rate. | Locked | One-way | 2026-10-02 | |
 | D14 | Social Security is a small model: earnings, claiming age, policy. Likely = full scheduled benefit, adjustable to the current-law floor. Zero only by explicit override. | Locked | Two-way (value) | 2026-10-02 | It's policy, not a rule of finance. Dismissing it is hidden padding. |
-| D15 | Plan-to age defaults to 95. Labeled as a safety choice. | Proposed | Two-way | 2026-10-02 | Running out is worse than leaving some behind. |
+| D15 | Plan-to age defaults to 95. Labeled as a safety choice. | Locked | Two-way | 2026-10-02 | Running out is worse than leaving some behind. |
 | D16 | Retirement spending = baseline + life phases (by age) + healthcare line + goal buckets with priority. | Locked (shape) | One-way | 2026-10-02 | |
-| D17 | Phase defaults: go-go to 74 (100%), slow-go 75 to 84 (85%), no-go 85+ (70%) on discretionary categories. | Proposed | Two-way | 2026-10-02 | Placeholder until sourced. |
+| D17 | Phase defaults: go-go to 74 (100%), slow-go 75 to 84 (85%), no-go 85+ (70%) on discretionary categories. | Locked | Two-way | 2026-10-02 | Placeholder until sourced. |
 | D18 | Household of two in the shape from day one; M1 builds self only. | Locked | One-way | 2026-09 | |
 
 ## Engine
@@ -54,11 +54,11 @@ Every settled decision, with its date and reason, so nothing gets relitigated by
 |---|---|---|---|---|---|
 | E1 | One year-by-year projection engine. Every room reads from it. | Locked | One-way | 2026-09-30 | |
 | E2 | Real dollars inside. Nominal is a display toggle with a plain definition. | Locked | One-way | 2026-10-02 | Prevents counting inflation twice. |
-| E3 | Full tax depth is the v1 target. M1 ships the simpler tax set; M2 completes it. | Proposed (split) | Two-way | 2026-10-02 | Keeps the skeleton small without changing the destination. |
-| E4 | Annual time step, mid-year timing convention. | Proposed | Two-way | 2026-10-02 | Standard for planning engines; monthly adds cost without much accuracy. |
-| E5 | Savings order based on the Money Guy Financial Order of Operations. | Proposed | Two-way | 2026-10-02 | |
-| E6 | FI date = earliest fully funded retirement year, per band. Never a fake date. | Proposed | One-way | 2026-10-02 | |
-| E7 | Stack: TypeScript, Vite, Vitest; static site on GitHub Pages. No UI framework in M1. | Proposed | One-way | 2026-10-02 | Industry standard; types catch data-model mistakes; stays a simple static site like v1. |
+| E3 | Full tax depth is the v1 target. M1 ships the simpler tax set; M2 completes it. | Locked (split) | Two-way | 2026-10-02 | Keeps the skeleton small without changing the destination. |
+| E4 | Annual time step, mid-year timing convention. | Locked | Two-way | 2026-10-02 | Standard for planning engines; monthly adds cost without much accuracy. |
+| E5 | Savings order based on the Money Guy Financial Order of Operations. | Locked | Two-way | 2026-10-02 | Advisor platforms set each contribution by hand. A self-serve tool needs a default. Editable later. |
+| E6 | FI date = earliest fully funded retirement year, per band. Never a fake date. | Locked | One-way | 2026-10-02 | |
+| E7 | Stack: TypeScript, Vite, Vitest; static site on GitHub Pages. No UI framework in M1. | Locked | One-way | 2026-10-02 | Industry standard; types catch data-model mistakes; stays a simple static site like v1. |
 | E8 | Year 0 is a stub period from the plan's as-of month through December. Every flow, tax, limit, and growth rate is prorated by months remaining over 12. Full calendar years follow. | Locked | Two-way | 2026-10-02 | Matches advisor platforms (eMoney, RightCapital, MoneyGuidePro). Balances are dated today, so the projection starts today, not last January. |
 
 ## Meaning and presentation
@@ -67,7 +67,7 @@ Every settled decision, with its date and reason, so nothing gets relitigated by
 |---|---|---|---|---|---|
 | M1 | DRAFTT is an optional branded lens, built after the skeleton. Taxes and therapy are optional letters. | Locked | Two-way | 2026-10-02 | Nothing rests on it. |
 | M2 | Payoff methods: avalanche, snowball, and peace-first (minimizes stress-months), shown side by side with the price of peace. | Locked (concept) | Two-way | 2026-10-02 | |
-| M3 | Design tokens defined once in `ui/tokens.css`; no screen defines its own colors. | Proposed | One-way | 2026-10-02 | Consistency by construction. |
+| M3 | Design tokens defined once in `ui/tokens.css`; no screen defines its own colors. | Locked | One-way | 2026-10-02 | Consistency by construction. |
 | M4 | The person's own numbers are never shown in red. | Locked | Two-way | 2026-09 | "What the numbers say," never a verdict. |
 
 ## Open
