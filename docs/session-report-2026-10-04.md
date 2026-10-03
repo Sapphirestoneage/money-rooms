@@ -18,8 +18,10 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 9 Pack specs | Done (docs only) | `packs-specs` | (see git log) |
 | 10 Foundations | Done (CI gate left for review) | `foundations` | (see git log) |
 | 11 Coaching spec | Done (docs only) | `coaching-specs` | (see git log) |
-| 12 Feature register | In progress (base list scored; v1 inventory being added) | `feature-register` | (see git log) |
+| 12 Feature register | Done (docs only) | `feature-register` | (see git log) |
 | 13 Readiness audit | Not started | `readiness` | |
+
+**Phase 12 in plain English.** Every feature from v1 (cloned and inventoried: 37 live rooms, 60-odd engines, the D&D game, the coach console, the marketing board), the build's minimum list, the named frameworks, the coaching spec's parts, and this repo's unbuilt specs, one row each, scored on the six-part rubric with the points shown, ranked, top quartile marked, and sorted into a plan (above 25) or the icebox (25 or below). Section 8 has the totals and the top twenty. The luxury-strategies catalog turned out not to exist in v1; the four corrections are recorded, and seventeen other v1 claims that fail against the registry are listed with evidence. Decisions R1 to R3.
 
 **Phase 11 in plain English.** `docs/coaching-spec.md`: the weekly loop in twelve parts, each with its engine sources, its dictionary additions (records only, never a second copy of a number), and acceptance tests: weekly rings (Check in, Move, Learn), an openable readiness score (runway 35, rough numbers 25, debt pressure 25, staleness 15), four guided programs (Couch to Roth, Debt-free sprint, First $10K, Before the promo ends), adaptive re-planning at the material line, personal records, four money phases read from the engine, the Sunday recap, rest days (the spending headroom that leaves the FI year unchanged), insights from tags with counts and the word pattern, coach mode through exports only with its privacy and consent requirements and the attorney question left open, two-minute lessons, and streaks with automatic freezes. A "what we will not copy" section: no streak guilt, no public comparison, no red or shame, no engagement for its own sake, no urgency, no dark patterns around coach mode. Decisions C1 to C12. Also: the rules update routine gained the monthly check with a report that the phase list asked for.
 
@@ -67,6 +69,7 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 
 | # | Where | Decision |
 |---|---|---|
+| R1 to R3 | `decisions.md` | Feature register: the rubric and threshold as the sort, v1 ports as views only after their claims pass the registry, the games and the server-backed pieces iced |
 | C1 to C12 | `decisions.md` | Coaching: the weekly loop's twelve product decisions (spec section 16) |
 | F1 to F6 | `decisions.md` | Foundations: the CI gate shape, the nudge reads preferences only, snapshots as the one stored derived value, the trend baseline, the trust pages and the delete button, the three specs |
 | P1 to P3 | `decisions.md` | Packs: unlock by condition, dictionary and registry first, which packs need new engine capability |
@@ -130,7 +133,40 @@ No page fetched during this session contained instructions aimed at the build.
 
 ## 8. Feature register
 
-In progress on `feature-register`: the base register (the build's minimum list, the named frameworks, the coaching spec parts, and this repo's unbuilt specs) is scored and written to `data/feature-register.json` and `docs/features/`; the v1 repository inventory is being added next, with the SPARKS failed-claims list. Totals and the top twenty follow once the v1 rows are in.
+On `feature-register`, docs only: `data/feature-register.json`, `docs/features/feature-register.md` (the full table), `implementation-plan.md` (above 25, by destination, in build order), `icebox.md`. The v1 repository was cloned read-only (commit 5ff7fd9) and inventoried room by room, engine by engine, including `dnd/`, `coach/`, and `marketing/`.
+
+| | |
+|---|---|
+| Features | 123 |
+| Scored above 25 (planned) | 104 |
+| Icebox (25 or below) | 19 |
+
+**Top twenty by score**
+
+| Rank | Feature | Score | Destination |
+|---|---|---|---|
+| 1 | Decumulation (The Back Half) | 87 | M2 Level 4 (built) |
+| 2 | Return on Hassle | 84 | M3 next card (built as value per minute) |
+| 3 | Two-question opening with immediate runway | 84 | onboarding |
+| 4 | Five-input opening | 83 | onboarding (Level 1 is these five) |
+| 5 | Readiness score | 83 | coaching spec |
+| 6 | Advice Translator | 82 | M4 (built) |
+| 7 | Between Jobs | 81 | Level 2 (built) |
+| 8 | Quantum collapse onboarding module | 81 | Level 1 and the Sky (partly built: bands narrow with kinds) |
+| 9 | Rule of 5 | 81 | Level 2 (built) |
+| 10 | Worth the Hassle (Return on Hassle) | 81 | M3 next card (built as value per minute) |
+| 11 | DRAFTT | 80 | M4 lens (built) |
+| 12 | Earn more pack | 80 | pack |
+| 13 | Partner (Family) | 80 | Households of two (built) and the Partner pack |
+| 14 | Money phases | 78 | coaching spec |
+| 15 | Price the Dream | 78 | M5 price card (built) |
+| 16 | Rules update routine | 78 | Upkeep |
+| 17 | Sunday recap | 78 | coaching spec |
+| 18 | Guided programs (four drafted) | 77 | coaching spec |
+| 19 | Health pack (sourced placeholders, COBRA, long-term care, age curve) | 77 | pack |
+| 20 | Weekly money rings | 77 | coaching spec |
+
+**Luxury-strategy claims that failed verification.** The SPARKS luxury strategies catalog and tradeoff matrix are not in the v1 repository (the word "luxury" appears only as a travel tier), so the four corrections you named are recorded as rules to carry into any copy that turns up: conversions do count toward MAGI for the ACA and IRMAA; the solo 401(k) is capped by the $72,000 annual additions limit; 2024 limits are replaced by the verified 2026 values; an out-of-state LLC changes nothing about where income is taxed. In their place the v1 moves and calculators were checked, and seventeen other claims fail: 2025 Social Security figures in a 2026 file, a $70,000 additions limit with no super catch-up, a solo 401(k) deferral that ignores profit, a stale ACA table (8.66% top, 8.5% cap) where 2026 is 9.96% with the cliff back, KFF 2024 premiums, three definitions of the Rule of Five, a FOO ladder mislabeled as the Money Guy's, DRAFTT and Triple D each defined two ways, a hard-coded 7% in the $30k/$90k rule, three withdrawal rates, an incomplete safe-harbor rule (no 110% tier), "an HSA is never taxed", unsourced card-reward rates, a $15,000 poverty line in the student loan engine, unverified unemployment rules, and fixed insurance multiples. Each is in `docs/features/feature-register.md` with the registry evidence and whether it ports.
 
 ## 9. Readiness audit top ten
 
@@ -138,6 +174,6 @@ Not started.
 
 ## 10. Handoff
 
-**Where I am:** Phases 0 to 11 complete and pushed. **Next:** branch `feature-register` from `coaching-specs`: inventory v1 (`Sapphirestoneage/Personalfinance` is listed as reachable) plus the given list and this repo's unbuilt specs, score by the rubric, write `data/feature-register.json` and the three docs in `docs/features/`, correct the SPARKS claims; then `readiness`; then report sections 8 to 10.
+**Where I am:** Phases 0 to 12 complete and pushed. **Next:** branch `readiness` from `feature-register`, write `docs/readiness.md`, fill report section 9, final handoff.
 
 **Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.

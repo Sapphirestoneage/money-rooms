@@ -275,3 +275,11 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | # | Decision | Status | Door | Date | Why |
 |---|---|---|---|---|---|
 | C1 to C12 | The weekly loop as specified in `docs/coaching-spec.md` section 16: weekly not daily, three rings, an openable readiness score with fixed weights, programs as content with progress as records, re-planning at the material line, records as dated bests, four engine-read phases, a four-line recap, rest-day headroom from the FI search, insights only from eight tagged weeks, coach mode through exports only, streaks with automatic freezes. | Proposed | Two-way | 2026-10-04 | Each is listed in the spec with its reason; none is built. |
+
+## Feature register decisions (added 2026-10-04, overnight build, docs only)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| R1 | The register's rubric (user value 30, fit 20, differentiation 15, effort inverse 15, trust 10, coaching 10) and the 25-point line are the sort; the scores are one builder's judgment on one night and are the first thing to argue with. | Proposed | Two-way | 2026-10-04 | The build asked for a scored register; the numbers are explicit so they can be changed. |
+| R2 | A v1 feature ports only as a view on the v2 engine, and only after every financial claim in it passes `data/rules-registry.json`; the seventeen failed claims in the register are not ported as they stand. | Proposed | One-way | 2026-10-04 | CLAUDE.md: the UI never calculates; the registry is the one source of rule values. |
+| R3 | The games (ski mountain, tech tree, Dungeons & Dividends, Ledgerfell, the spheres, the Pokémon chart), the personality quizzes, the budget close, the URL-fragment share, the client portal, and the marketing board go to the icebox with revisit triggers. | Proposed | Two-way | 2026-10-04 | They need a server, a game layer, or a verdict, each against a v2 stance. |
