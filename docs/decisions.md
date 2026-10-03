@@ -94,3 +94,14 @@ Every settled decision, with its date and reason, so nothing gets relitigated by
 | N6 | The optimizer searches over a small set of policy knobs, running the full projection for each. | Proposed | Two-way | 2026-10-02 | How professional planning tools do it; a true solver over 60 years is slow and fragile. |
 | N8 | The True FI number is an unlockable reveal after the drawdown inputs are complete (answered, roughly, or not for me). It animates from the FI number, lands on the difference in years and dollars, and its share card never shows balances by default. | Locked | Two-way | 2026-10-02 | Drama earns attention, and the gate keeps a guess from looking like an answer. |
 | N9 | "Roughly" answers count toward the unlock. | Proposed | Two-way | 2026-10-02 | Keeps the bar low; the result shows its confidence. |
+
+## M3 decisions (added 2026-10-02)
+
+Rows L1 to L7 were not received by Claude Code when this table was created (the request referred to changing L6 from Proposed to Locked). Eli: paste them in above L8.
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| L8 | Aged numbers get a Refresh card: each shows its value, age, and next check date; confirming restarts its clock. The next card still pulls aged numbers only when material. | Locked | Two-way | 2026-10-02 | See what's aged, clear it, and the ticker restarts. |
+| L9 | Rough numbers get the same card pattern, sorted by materiality with a running bar of uncertainty cleared. | Locked | Two-way | 2026-10-02 | Most people can clear the majority with the first few. |
+| L10 | The Sky zooms like a globe: everything, then an area, then a row, with an outline view as the accessible alternative. | Locked | One-way | 2026-10-02 | See the whole picture and zoom in where you want, when you want. |
+| L11 | Every preference, including entry mode, can be changed at any time without losing anything. Accessibility is a default, not a feature. | Locked | One-way | 2026-10-02 | |
