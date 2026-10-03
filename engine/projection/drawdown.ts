@@ -67,13 +67,19 @@ export interface RothLayer {
 }
 
 export interface RothDraw {
-  /** Dollars that come out free of tax and penalty. */
+  /** Dollars that come out free of tax and penalty (contribution basis plus seasoned conversions). */
   free: number;
+  /** The part of `free` that was contribution basis. */
+  fromBasis: number;
+  /** The part of `free` that was conversions past their five-year clock (or drawn at 59 and a half or later). */
+  seasonedConversions: number;
   /** Conversion dollars inside their five-year clock, drawn under 59 and a half: the 10% additional tax applies, no income tax. */
   penalizedConversions: number;
-  /** Earnings drawn: ordinary income, and penalized when the distribution is not qualified. */
+  /** Earnings drawn. Taxable as ordinary income, and penalized, only when the distribution is not qualified (59 and a half and the five-year clock). */
   earnings: number;
   earningsPenalized: boolean;
+  /** True when the distribution is qualified: the earnings come out free of tax and penalty. */
+  earningsQualified: boolean;
   /** The layers after the draw. */
   after: RothLayer;
 }
@@ -93,6 +99,7 @@ export function drawRoth(amount: number, balance: number, layers: RothLayer, yea
   let need = Math.max(0, Math.min(amount, balance));
   let free = 0;
   let penalizedConversions = 0;
+  let seasonedConversions = 0;
 
   const fromBasis = Math.min(need, after.basis);
   after.basis -= fromBasis;
@@ -105,14 +112,16 @@ export function drawRoth(amount: number, balance: number, layers: RothLayer, yea
     c.amount -= take;
     need -= take;
     const clockDone = year - c.year >= 5;
-    if (clockDone || age >= penaltyFreeAge) free += take;
-    else penalizedConversions += take;
+    if (clockDone || age >= penaltyFreeAge) {
+      free += take;
+      seasonedConversions += take;
+    } else penalizedConversions += take;
   }
   after.conversions = after.conversions.filter((c) => c.amount > 0.005);
 
   const earnings = need;
   const qualified = age >= penaltyFreeAge && year - layers.firstYear >= 5;
-  return { free, penalizedConversions, earnings, earningsPenalized: !qualified && earnings > 0, after };
+  return { free, fromBasis, seasonedConversions, penalizedConversions, earnings, earningsPenalized: !qualified && earnings > 0, earningsQualified: qualified, after };
 }
 
 // ---------------------------------------------------------------------------

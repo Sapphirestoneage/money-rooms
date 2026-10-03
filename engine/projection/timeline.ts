@@ -43,7 +43,7 @@ import { computeFederalTax, type FederalTaxResult } from "../tax/federal";
 import { bracketTop, computeFederalTaxM2, type FederalTaxM2Result } from "../tax/federal-m2";
 import { computeStateTax, type StateTaxResult } from "../tax/state";
 import { drawRoth, governmental457bPenaltyFree, requiredMinimumDistribution, ruleOf55Applies, seppMaxRate, seppPayment, seppYearsRequired, type RothLayer } from "./drawdown";
-import { healthcareLine, lookbackYears, magiForPctFpl, type HealthcareLine } from "./healthcare";
+import { acaPremiumCredit, healthcareLine, lookbackYears, magiForPctFpl, type HealthcareLine } from "./healthcare";
 import { defaultPolicy, type DrawdownPolicy, type YearLock } from "./policy";
 import { blendedRealReturn, growBalance } from "./accounts";
 import type { BandNumbers } from "./bands";
@@ -157,6 +157,13 @@ export interface TieOutSettings {
   socialSecurityOverride?: { annual: number; fromAge: number };
   /** A healthcare line added to retirement spending: one amount before 65, one from 65. */
   retirementHealthcare?: { before65: number; from65: number };
+  /**
+   * The M2 tie-out conventions (tests/m2-tie-out-conventions.md), test-only: health care before 65 is the stated
+   * benchmark less the ACA credit on this year's MAGI (no out-of-pocket, no Medicaid), a flat amount from 65; the
+   * cash reserve counts the M1 placeholder; the Roth IRA step is used instead of the deductible IRA; premiums are
+   * settled with the year's taxes.
+   */
+  m2TieOut?: { acaBenchmarkBefore65: number; from65: number; reserveHealthcarePlaceholder: { before65: number; from65: number } };
 }
 
 // ---------------------------------------------------------------------------
@@ -230,6 +237,10 @@ export interface YearRowM2 {
   healthcare: { total: number; pieces: { label: string; amount: number }[]; acaPctFpl: number | null; irmaaTier: number | null };
   /** What the year's choices were, in words, for the year-by-year plan. */
   actions: string[];
+  /** Roth dollars drawn this year by layer (prorated): contribution basis, seasoned conversions, conversions still inside their clock, earnings. */
+  rothDraw: { basis: number; seasonedConversions: number; unseasonedConversions: number; earnings: number };
+  /** Cost basis left in taxable accounts at the end of the year. */
+  taxableBasisEnd: number;
 }
 
 export interface WaterfallStep {
@@ -758,7 +769,8 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     for (const x of debtPreview) if (x.r.paymentBelowInterest && x.d.balance > 0) rowFlags.push(`${x.d.label}: the payment does not cover the interest, so the balance grows.`);
 
     // ---- M2 year state: what the strategies did this year (annualized) -----
-    const m2s = { conversion: 0, harvest: 0, salesGains: 0, penalized: 0, iraDeduction: 0, rmd: 0, sepp: 0, pretaxOrdinary: 0, rothEarnings: 0, hsaOrdinary: 0 };
+    const m2s = { conversion: 0, harvest: 0, salesGains: 0, penalized: 0, iraDeduction: 0, rmd: 0, sepp: 0, pretaxOrdinary: 0, rothEarnings: 0, hsaOrdinary: 0, rothBasis: 0, rothSeasoned: 0, rothUnseasoned: 0, rothEarningsDrawn: 0 };
+    const m2TieOut = opts.testSettings?.m2TieOut;
     let healthcare: HealthcareLine = { total: 0, pieces: [], flags: [] };
     const magiTwoBack = m2 ? magiHistory.get(y - lookbackYears(ledger)) ?? magiHistory.get(year0) ?? 0 : 0;
     const healthcareFor = (magiAca: number): HealthcareLine => {
@@ -768,6 +780,12 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         return { total: amount, pieces: [{ label: "Health care (tie-out setting)", amount }], flags: [] };
       }
       if (!m2) return { total: 0, pieces: [], flags: [] };
+      if (m2TieOut) {
+        // Tie-out convention 7: benchmark less the ACA credit on this year's MAGI before 65 (no out-of-pocket, no Medicaid), flat from 65.
+        if (age >= 65) return { total: m2TieOut.from65, pieces: [{ label: "Health care from 65 (tie-out convention)", amount: m2TieOut.from65 }], flags: [] };
+        const aca = acaPremiumCredit(magiAca, householdSize, m2TieOut.acaBenchmarkBefore65, ledger, hh.state);
+        return { total: aca.netPremium, pieces: [{ label: "Marketplace premium after the credit (tie-out convention)", amount: aca.netPremium }], flags: [], aca };
+      }
       if (partner) {
         const persons = [...(selfAlive ? [{ age }] : []), ...(pAlive && pAge !== null ? [{ age: pAge }] : [])];
         if (persons.length === 0) return { total: 0, pieces: [], flags: [] };
@@ -838,6 +856,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           longTermGains: m2s.salesGains + m2s.harvest,
           penalized: m2s.penalized,
           iraDeduction: m2s.iraDeduction + iraExtra,
+          ...(m2TieOut ? { noAgedDeduction: true } : {}),
           ...partnerFields,
           ...(partner && !separateReturns && pAge !== null && pAlive ? { partnerAge: pAge } : {}),
         },
@@ -860,6 +879,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
             longTermGains: 0,
             penalized: 0,
             iraDeduction: 0,
+            ...(m2TieOut ? { noAgedDeduction: true } : {}),
           },
           fed,
           ledger,
@@ -991,7 +1011,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       };
       /** M2: a traditional IRA contribution is deductible below the phase-out (rule limits.iraDeductionPhaseout.2026). */
       const iraDeductibleShare = (): number => {
-        if (!m2) return 0;
+        if (!m2 || m2TieOut) return 0;
         const r = ledger.get<{ coveredByWorkplacePlan: Record<FilingStatus, [number, number]> }>("limits.iraDeductionPhaseout.2026");
         if (!coveredByPlan) return 1;
         const [lo, hi] = r.coveredByWorkplacePlan[hh.filingStatus];
@@ -1177,7 +1197,9 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       const sizeConversion = (): number => {
         if (!wantsConversion || !conversionSource) return 0;
         m2s.conversion = 0;
-        const before = m2Tax(taxesFor(0, 0, forcedPretax));
+        // "Other income" includes the pretax dollars the year's shortfall draws (last pass), so a conversion never claims
+        // MAGI room that the withdrawals already use (strategy C1). Fixed 2026-10-04 in the M2 tie-out.
+        const before = m2Tax(taxesFor(0, 0, Math.max(forcedPretax, pretaxWithdrawal)));
         let want = 0;
         if (lock.conversion !== undefined) want = lock.conversion;
         else {
@@ -1199,28 +1221,46 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       };
 
       // 5. The shortfall, drawn in the policy's order at full tax depth. Iterate until the taxes settle.
-      const reserve = (reserveMonths / 12) * spendTotal();
+      // Tie-out convention 10: the reserve counts the M1 health care placeholder, not the computed line.
+      const reserve = m2TieOut
+        ? (reserveMonths / 12) * (spend.total * spendingScale + (retired ? (age < 65 ? m2TieOut.reserveHealthcarePlaceholder.before65 : m2TieOut.reserveHealthcarePlaceholder.from65) : 0))
+        : (reserveMonths / 12) * spendTotal();
       const byBucket = (b: TaxBucket) => assets().filter((a) => a.taxBucket === b);
       const rothSorted = () => byBucket("roth").sort((a, b) => b.fees - a.fees);
-      const baseOrder = (): AssetState[] => {
-        const conventional = [...byBucket("cash"), ...byBucket("taxable"), ...byBucket("pretax"), ...rothSorted(), ...byBucket("hsa")];
-        if (policy.withdrawalOrder === "bracketBased") return [...byBucket("cash"), ...byBucket("pretax"), ...byBucket("taxable"), ...rothSorted(), ...byBucket("hsa")];
-        if (policy.withdrawalOrder === "proportional") return conventional;
+      /** An entry in the withdrawal order: an account, and for a Roth drawn in two stages the cap on the first stage. */
+      type OrderEntry = { a: AssetState; cap: ((a: AssetState) => number) | null };
+      const plain = (list: AssetState[]): OrderEntry[] => list.map((a) => ({ a, cap: null }));
+      /** The Roth ladder's access order: contributions and conversions come out before pretax, earnings after. */
+      const rothLayersCap = (a: AssetState): number => {
+        const layers = rothAfter.get(a.id) ?? a.roth;
+        return layers ? layers.basis + layers.conversions.reduce((sum, c) => sum + c.amount, 0) : 0;
+      };
+      const baseOrder = (): OrderEntry[] => {
+        const conventional = plain([...byBucket("cash"), ...byBucket("taxable"), ...byBucket("pretax"), ...rothSorted(), ...byBucket("hsa")]);
+        if (policy.withdrawalOrder === "bracketBased") return plain([...byBucket("cash"), ...byBucket("pretax"), ...byBucket("taxable"), ...rothSorted(), ...byBucket("hsa")]);
+        if (policy.withdrawalOrder === "rothLayersFirst") {
+          return [...plain([...byBucket("cash"), ...byBucket("taxable")]), ...rothSorted().map((a) => ({ a, cap: rothLayersCap })), ...plain(byBucket("pretax")), ...plain(rothSorted()), ...plain(byBucket("hsa"))];
+        }
         return conventional;
       };
       let order = baseOrder();
-      if (lock.withdrawFirst) order = [...byBucket(lock.withdrawFirst), ...order.filter((a) => a.taxBucket !== lock.withdrawFirst)];
+      if (lock.withdrawFirst) order = [...plain(byBucket(lock.withdrawFirst)), ...order.filter((e) => e.a.taxBucket !== lock.withdrawFirst)];
       const cashAccounts = byBucket("cash");
       const harvestWanted = !retired ? 0 : lock.harvest !== undefined ? lock.harvest : policy.gainHarvesting === "fillZeroBracket" ? Infinity : 0;
       let lastTotal = -1;
+      pretaxWithdrawal = forcedPretax;
       for (let i = 0; i < 100; i++) {
         withdrawals.clear();
         rothAfter = new Map();
         receiptsUsed = new Map();
         basisAfter = new Map();
-        const trial = { salesGains: 0, penalized: 0, rothEarnings: 0, hsaOrdinary: 0, pretaxOrdinary: forcedPretax };
+        const trial = { salesGains: 0, penalized: 0, rothEarnings: 0, hsaOrdinary: 0, pretaxOrdinary: forcedPretax, rothBasis: 0, rothSeasoned: 0, rothUnseasoned: 0, rothEarningsDrawn: 0 };
         // The conversion is sized with last pass's sales gains and Roth earnings still counted, then those are reset for this pass.
         m2s.conversion = sizeConversion();
+        // The need is grossed up for last pass's taxes on the withdrawals themselves (pretax draws, realized gains, Roth earnings,
+        // penalties, the conversion), so taxes are paid from the accounts and settle across passes (M1 tie-out convention 9;
+        // fixed 2026-10-04 in the M2 tie-out: before this the year's withdrawal taxes were owed but never drawn).
+        let need = -(cashIn(0, 0, pretaxWithdrawal) - spendTotal() - scheduledDebt) - forcedPretax;
         m2s.salesGains = 0;
         m2s.penalized = 0;
         m2s.rothEarnings = 0;
@@ -1232,9 +1272,12 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           m2s.penalized = trial.penalized;
           m2s.rothEarnings = trial.rothEarnings;
           m2s.hsaOrdinary = trial.hsaOrdinary;
+          m2s.rothBasis = trial.rothBasis;
+          m2s.rothSeasoned = trial.rothSeasoned;
+          m2s.rothUnseasoned = trial.rothUnseasoned;
+          m2s.rothEarningsDrawn = trial.rothEarningsDrawn;
           return taxesFor(0, 0, trial.pretaxOrdinary);
         };
-        let need = -(cashIn(0, 0, trial.pretaxOrdinary) - spendTotal() - scheduledDebt) - forcedPretax;
         let cashReserveLeft = reserve;
         const bracketTopTaxable = policy.withdrawalOrder === "bracketBased" ? bracketTop(12, hh.filingStatus, ledger) : Infinity;
         const takeFrom = (a: AssetState, w: number) => {
@@ -1252,7 +1295,13 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           } else if (a.taxBucket === "roth" && a.roth) {
             const d = drawRoth(w, a.balance / f, rothAfter.get(a.id) ?? a.roth, y, ownerAge(a), DEFAULTS.penaltyFreeAge, ledger);
             trial.penalized += d.penalizedConversions;
-            trial.rothEarnings += d.earnings;
+            // Qualified distributions (59 and a half and the five-year clock) are tax free; only unqualified earnings are ordinary income.
+            // Fixed 2026-10-04 in the M2 tie-out: before this, qualified earnings were taxed as ordinary income.
+            if (!d.earningsQualified) trial.rothEarnings += d.earnings;
+            trial.rothEarningsDrawn += d.earnings;
+            trial.rothBasis += d.fromBasis;
+            trial.rothSeasoned += d.seasonedConversions;
+            trial.rothUnseasoned += d.penalizedConversions;
             if (d.earningsPenalized) trial.penalized += d.earnings;
             rothAfter.set(a.id, d.after);
           } else if (a.taxBucket === "hsa") {
@@ -1269,9 +1318,10 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           const target = need;
           for (const a of pool) takeFrom(a, Math.min((a.balance / f) - (withdrawals.get(a.id) ?? 0), (target * a.balance) / total));
         }
-        for (const a of order) {
+        for (const { a, cap } of order) {
           if (need <= 0) break;
           let available = a.balance / f - (withdrawals.get(a.id) ?? 0);
+          if (cap) available = Math.min(available, Math.max(0, cap(a) - (withdrawals.get(a.id) ?? 0)));
           if (a.taxBucket === "cash") {
             const keep = Math.min(available, cashReserveLeft);
             cashReserveLeft -= keep;
@@ -1308,8 +1358,13 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           if (Number.isFinite(magiBudget)) h = Math.min(h, Math.max(0, magiBudget - tv.magiAca));
           m2s.harvest = Math.max(0, h);
         }
-        const total = taxView().total;
+        let total = taxView().total;
         pretaxWithdrawal = trial.pretaxOrdinary;
+        if (m2TieOut) {
+          // Tie-out convention 11: the premium is settled on this year's MAGI along with the taxes.
+          healthcare = healthcareFor(m2Tax(taxView()).magiAca);
+          total += healthcare.total;
+        }
         if (Math.abs(total - lastTotal) < 0.01) break;
         lastTotal = total;
       }
@@ -1319,7 +1374,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         actions.push(`Convert about ${Math.round(m2s.conversion * f).toLocaleString("en-US")} from the ${conversionSource.label} to Roth.`);
       }
       if (m2s.harvest > 0) actions.push(`Harvest about ${Math.round(m2s.harvest * f).toLocaleString("en-US")} of gains at 0%.`);
-      healthcare = healthcareFor(m2Tax(taxesFor(0, 0, pretaxWithdrawal)).magiAca);
+      if (!m2TieOut) healthcare = healthcareFor(m2Tax(taxesFor(0, 0, pretaxWithdrawal)).magiAca);
       if (shortfall <= 0) {
         // Cash left over after spending (Social Security, part-time pay, or forced pretax income above the need) goes to taxable.
         const drawn = [...withdrawals.values()].reduce((a, b) => a + b, 0);
@@ -1490,6 +1545,8 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
               taxDetail: { ordinary: m2r.ordinaryTax * f, capitalGains: m2r.capitalGainsTax * f, niit: m2r.niit * f, taxableSocialSecurity: m2r.taxableSocialSecurity * f, seniorDeduction: m2r.seniorDeduction },
               healthcare: { total: healthcare.total * f, pieces: healthcare.pieces, acaPctFpl: healthcare.aca?.pctFpl ?? null, irmaaTier: healthcare.irmaa?.tier ?? null },
               actions,
+              rothDraw: { basis: m2s.rothBasis * f, seasonedConversions: m2s.rothSeasoned * f, unseasonedConversions: m2s.rothUnseasoned * f, earnings: m2s.rothEarningsDrawn * f },
+              taxableBasisEnd: assets().filter((a) => a.taxBucket === "taxable").reduce((sum, a) => sum + a.basis, 0),
             },
           }
         : {}),

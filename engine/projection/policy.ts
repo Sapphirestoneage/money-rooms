@@ -25,7 +25,12 @@ export type GainHarvesting = "off" | "fillZeroBracket";
 /** The ACA income target as a percent of the poverty line, or off. */
 export type AcaTarget = "off" | 138 | 150 | 200 | 250 | 400;
 
-export type WithdrawalOrder = "conventional" | "proportional" | "bracketBased";
+/**
+ * conventional: cash, taxable, pretax, Roth. bracketBased: pretax before taxable, up to the top of the 12% bracket.
+ * proportional: taxable, pretax, and Roth in proportion to their balances. rothLayersFirst (the Roth ladder's access
+ * order): cash, taxable, Roth contributions and conversions, then pretax, then Roth earnings.
+ */
+export type WithdrawalOrder = "conventional" | "proportional" | "bracketBased" | "rothLayersFirst";
 
 export interface SeppPlan {
   startAge: number;
@@ -100,4 +105,4 @@ export function defaultPolicy(): DrawdownPolicy {
 
 export const CONVERSION_TARGETS: readonly ConversionTarget[] = ["none", "fillStandardDeduction", "fill10", "fill12", "fill22", "fillToAcaTarget", "fillToIrmaaTier"];
 export const ACA_TARGETS: readonly AcaTarget[] = ["off", 138, 150, 200, 250, 400];
-export const WITHDRAWAL_ORDERS: readonly WithdrawalOrder[] = ["conventional", "proportional", "bracketBased"];
+export const WITHDRAWAL_ORDERS: readonly WithdrawalOrder[] = ["conventional", "proportional", "bracketBased", "rothLayersFirst"];
