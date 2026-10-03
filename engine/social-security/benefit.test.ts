@@ -93,7 +93,12 @@ describe("annual benefit and the earnings record estimate", () => {
 
 describe("spousal and survivor factors (decision H9; schedules unverified until Eli confirms them)", () => {
   const spousal = { firstMonths: 36, ratePerMonthFirst: 25 / 36, ratePerMonthBeyond: 5 / 12 };
-  const survivor = { earliestAge: 60, reductionAtEarliestAgePct: 28.5 };
+  const fra = (years: number, months: number) => ({ years, months });
+  const survivor = {
+    earliestAge: 60,
+    shareAtEarliestAgePct: 71.5,
+    fullRetirementAgeTable: { bornThrough1939: fra(65, 0), "1940": fra(65, 2), "1941": fra(65, 4), "1942": fra(65, 6), "1943": fra(65, 8), "1944": fra(65, 10), "1945to1956": fra(66, 0), "1957": fra(66, 2), "1958": fra(66, 4), "1959": fra(66, 6), "1960": fra(66, 8), "1961": fra(66, 10), "1962orLater": fra(67, 0) },
+  };
 
   it("pays the full spousal share at full retirement age and never adds delayed credits", () => {
     expect(spousalFactor(1970, { years: 67, months: 0 }, spousal, p)).toBe(1);
@@ -109,11 +114,19 @@ describe("spousal and survivor factors (decision H9; schedules unverified until 
     expect(spousalFactor(1970, { years: 62, months: 0 }, spousal, p)).not.toBeCloseTo(0.7, 6);
   });
 
-  it("reduces the survivor share in a straight line from full retirement age down to 60", () => {
+  it("pays the spousal shares Eli specified: 32.5% of the worker's PIA at 62 and 37.5% at 64, with full retirement age 67", () => {
+    expect(0.5 * spousalFactor(1970, { years: 62, months: 0 }, spousal, p)).toBeCloseTo(0.325, 6);
+    expect(0.5 * spousalFactor(1970, { years: 64, months: 0 }, spousal, p)).toBeCloseTo(0.375, 6);
+  });
+
+  it("reduces the survivor share evenly by month from 100% at the survivor's full retirement age to 71.5% at 60", () => {
     expect(survivorFactor(1970, { years: 67, months: 0 }, survivor, p)).toBe(1);
     expect(survivorFactor(1970, { years: 60, months: 0 }, survivor, p)).toBeCloseTo(0.715, 6);
     expect(survivorFactor(1970, { years: 63, months: 6 }, survivor, p)).toBeCloseTo(1 - 0.285 * 0.5, 6);
     // Claiming before 60 is treated as 60.
     expect(survivorFactor(1970, { years: 58, months: 0 }, survivor, p)).toBeCloseTo(0.715, 6);
+    // The survivor table: full retirement age 66 for a 1950 birth, so 66 pays 100% and 63 is halfway.
+    expect(survivorFactor(1950, { years: 66, months: 0 }, survivor, p)).toBe(1);
+    expect(survivorFactor(1950, { years: 63, months: 0 }, survivor, p)).toBeCloseTo(1 - 0.285 * 0.5, 6);
   });
 });

@@ -10,9 +10,13 @@ const table = [
 
 describe("poverty line and applicable percentage", () => {
   it("reads the 2026 guideline for one and adds per extra person", () => {
-    expect(povertyLine(1, ledger())).toBe(15960);
-    expect(povertyLine(4, ledger())).toBe(33000);
-    expect(povertyLine(10, ledger())).toBe(55720 + 2 * 5680);
+    // 2025 guidelines, which apply to coverage year 2026 (Federal Register 2025-01377).
+    expect(povertyLine(1, ledger())).toBe(15650);
+    expect(povertyLine(4, ledger())).toBe(32150);
+    expect(povertyLine(10, ledger())).toBe(54150 + 2 * 5500);
+    expect(povertyLine(1, ledger(), "AK")).toBe(19550);
+    expect(povertyLine(3, ledger(), "HI")).toBe(17990 + 2 * 6330);
+    expect(povertyLine(1, ledger(), "TX")).toBe(15650);
   });
   it("interpolates inside a band and is flat at 9.96% from 300% to 400%", () => {
     expect(applicablePercentage(100, table)).toBe(2.1);
@@ -25,15 +29,15 @@ describe("poverty line and applicable percentage", () => {
 
 describe("the premium tax credit", () => {
   it("at 250% of the poverty line for one, the household pays 8.44% of income and the credit covers the rest", () => {
-    const magi = 2.5 * 15960;
+    const magi = 2.5 * 15650;
     const r = acaPremiumCredit(magi, 1, 9000, ledger());
     expect(r.applicablePercent).toBeCloseTo(8.44, 9);
     expect(r.netPremium).toBeCloseTo(0.0844 * magi, 6);
     expect(r.credit).toBeCloseTo(9000 - 0.0844 * magi, 6);
   });
   it("the cliff: a dollar over 400% loses the whole credit", () => {
-    const under = acaPremiumCredit(4 * 15960, 1, 9000, ledger());
-    const over = acaPremiumCredit(4 * 15960 + 1, 1, 9000, ledger());
+    const under = acaPremiumCredit(4 * 15650, 1, 9000, ledger());
+    const over = acaPremiumCredit(4 * 15650 + 1, 1, 9000, ledger());
     expect(under.credit).toBeGreaterThan(0);
     expect(over.credit).toBe(0);
     expect(over.aboveCliff).toBe(true);
@@ -42,7 +46,7 @@ describe("the premium tax credit", () => {
     expect(acaPremiumCredit(10000, 1, 9000, ledger()).belowRange).toBe(true);
   });
   it("gives the MAGI for a target percent of the poverty line", () => {
-    expect(magiForPctFpl(200, 1, ledger())).toBeCloseTo(31920, 6);
+    expect(magiForPctFpl(200, 1, ledger())).toBeCloseTo(31300, 6);
   });
 });
 

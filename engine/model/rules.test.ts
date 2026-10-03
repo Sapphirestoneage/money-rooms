@@ -16,9 +16,12 @@ describe("the rules registry", () => {
   });
 
   it("refuses an unverified rule, so a feature cannot lean on an unchecked number", () => {
+    // Since Eli's review of 2026-10-04 every rule is verified, so the guard is checked on the predicate it uses.
     const unverified = [...loadRules().values()].find((r) => r.lastVerified === null);
-    expect(unverified).toBeDefined();
-    expect(() => rule(unverified!.id)).toThrow(/not been verified/);
+    expect(unverified).toBeUndefined();
+    const sample = loadRules().get("fed.niit")!;
+    expect(isVerified({ ...sample, lastVerified: null })).toBe(false);
+    expect(isVerified(sample)).toBe(true);
   });
 
   it("throws for an id that does not exist", () => {
@@ -61,10 +64,11 @@ describe("stale rules (decision F7)", () => {
     expect(ledger.stale("2028-06-01", 15).map((r) => r.id)).toEqual(["fed.seniorDeduction"]);
   });
 
-  it("ignores unverified rules (they are flagged on their own)", () => {
+  it("reads a rule through the unverified door and reports it verified once it is", () => {
     const ledger = new RuleLedger();
-    ledger.getUnverified("ss.spousalAndSurvivor");
-    expect(ledger.stale("2040-01-01", 15)).toEqual([]);
-    expect(ledger.unverified().map((r) => r.id)).toEqual(["ss.spousalAndSurvivor"]);
+    const read = ledger.getUnverified("ss.spousalAndSurvivor");
+    expect(read.verified).toBe(true);
+    expect(ledger.stale("2027-01-01", 15)).toEqual([]);
+    expect(ledger.unverified()).toEqual([]);
   });
 });

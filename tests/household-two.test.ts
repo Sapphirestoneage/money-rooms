@@ -165,10 +165,10 @@ describe("households of two: Social Security and the horizon (acceptance tests 6
     const both = yearRow(result.rows, 2038);
     expect(both.partner!.socialSecurity).toBeCloseTo(0.5 * selfPia * 12 * policy, 0);
     expect(both.socialSecurity).toBeCloseTo(result.socialSecurity.annualBenefit + 0.5 * selfPia * 12 * policy, 0);
-    expect(result.flags.some((f) => f.includes("ss.spousalAndSurvivor"))).toBe(true);
+    // The spousal part is verified, so a spousal top-up alone carries no flag; the survivor years do (below).
     const ref = result.rulesUsed.find((r) => r.id === "ss.spousalAndSurvivor");
     expect(ref).toBeDefined();
-    expect(ref!.lastVerified).toBeNull();
+    expect(ref!.lastVerified).toBe("2026-10-04");
   });
 
   it("gives the survivor the larger benefit after the first plan-to age", () => {
@@ -179,6 +179,8 @@ describe("households of two: Social Security and the horizon (acceptance tests 6
     expect(after.partner!.socialSecurity).toBeCloseTo(result.socialSecurity.annualBenefit, 0);
     expect(after.socialSecurity).toBeCloseTo(result.socialSecurity.annualBenefit, 0);
     expect(after.partner!.alive).toBe(true);
+    // The survivor schedule is from secondary sources until Eli confirms it, so the plan it changes is flagged.
+    expect(result.flags.some((f) => f.includes("survivors"))).toBe(true);
   });
 
   it("runs the horizon to the younger person's plan-to age", () => {

@@ -85,7 +85,8 @@ describe("rules come only from the registry", () => {
 
   it("an unverified rule is in the registry but never in a run", () => {
     const unverified = [...loadRules().values()].filter((r) => r.lastVerified === null).map((r) => r.id);
-    expect(unverified).toContain("ss.wageBase.2026");
+    // Every rule has been verified since Eli's review of 2026-10-04; the door stays tested below for any future unverified rule.
+    expect(unverified).toEqual([]);
     const t = project(householdFromExample(maya as ExampleHouseholdFile, asOf), deps).bands.likely.timeline;
     for (const id of unverified) expect(t.rulesUsed.map((r) => r.id)).not.toContain(id);
   });

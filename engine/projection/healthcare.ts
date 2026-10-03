@@ -5,18 +5,23 @@
  */
 
 import healthcare from "../../data/healthcare.json";
-import type { FilingStatus, RuleLedger } from "../model";
+import type { FilingStatus, RuleLedger, StateCode } from "../model";
 
 export const HEALTHCARE_DATA = healthcare;
 
-interface FplRule {
+interface FplTable {
   byHouseholdSize: Record<string, number>;
   eachAdditionalPerson: number;
 }
+interface FplRule extends FplTable {
+  alaska?: FplTable;
+  hawaii?: FplTable;
+}
 
-/** The poverty guideline for a household size (48 states and DC). */
-export function povertyLine(householdSize: number, ledger: RuleLedger): number {
-  const r = ledger.get<FplRule>("health.fpl.2026");
+/** The poverty guideline for a household size: the contiguous-states table, or Alaska's or Hawaii's for those states. */
+export function povertyLine(householdSize: number, ledger: RuleLedger, state?: StateCode): number {
+  const rule = ledger.get<FplRule>("health.fpl.2026");
+  const r: FplTable = state === "AK" && rule.alaska ? rule.alaska : state === "HI" && rule.hawaii ? rule.hawaii : rule;
   const n = Math.max(1, Math.floor(householdSize));
   const base = r.byHouseholdSize[String(Math.min(n, 8))]!;
   return base + Math.max(0, n - 8) * r.eachAdditionalPerson;
@@ -62,9 +67,9 @@ export function applicablePercentage(pctFpl: number, table: AcaRule["applicableP
  * silver premium for the household. The credit is the benchmark less the applicable percent
  * of MAGI, never below zero, and nothing above 400% of the poverty line while the cliff stands.
  */
-export function acaPremiumCredit(magi: number, householdSize: number, benchmarkPremium: number, ledger: RuleLedger): AcaResult {
+export function acaPremiumCredit(magi: number, householdSize: number, benchmarkPremium: number, ledger: RuleLedger, state?: StateCode): AcaResult {
   const r = ledger.get<AcaRule>("health.acaPtc.2026");
-  const fpl = povertyLine(householdSize, ledger);
+  const fpl = povertyLine(householdSize, ledger, state);
   const pctFpl = fpl > 0 ? (magi / fpl) * 100 : Infinity;
   const [lo, hi] = r.eligibleIncomePctFpl;
   if (pctFpl < lo) return { pctFpl, applicablePercent: null, credit: 0, netPremium: benchmarkPremium, belowRange: true, aboveCliff: false };
@@ -77,8 +82,8 @@ export function acaPremiumCredit(magi: number, householdSize: number, benchmarkP
 }
 
 /** The most MAGI that keeps a household at or under a target percent of the poverty line (the ACA knob). */
-export function magiForPctFpl(pctFpl: number, householdSize: number, ledger: RuleLedger): number {
-  return (pctFpl / 100) * povertyLine(householdSize, ledger);
+export function magiForPctFpl(pctFpl: number, householdSize: number, ledger: RuleLedger, state?: StateCode): number {
+  return (pctFpl / 100) * povertyLine(householdSize, ledger, state);
 }
 
 interface IrmaaRule {
@@ -141,6 +146,8 @@ export function healthcareLine(args: {
   persons?: readonly { age: number }[];
   /** Internal: how many adults the marketplace premium covers. Set by the per-person branch. */
   adultsUnder65?: number;
+  /** The household's state, for Alaska's and Hawaii's poverty guidelines. */
+  state?: StateCode;
 }): HealthcareLine {
   if (args.persons && args.persons.length !== 1) {
     const under65 = args.persons.filter((p) => p.age < 65);
@@ -166,7 +173,7 @@ export function healthcareLine(args: {
   if (args.age < 65) {
     const adults = args.adultsUnder65 ?? Math.max(1, args.householdSize);
     const benchmark = healthcare.before65.benchmarkSilverPremiumAnnualPerAdult.value * adults;
-    const aca = acaPremiumCredit(args.magiAca, args.householdSize, benchmark, args.ledger);
+    const aca = acaPremiumCredit(args.magiAca, args.householdSize, benchmark, args.ledger, args.state);
     let cost = aca.netPremium + healthcare.before65.outOfPocketAnnual.value;
     if (aca.belowRange) {
       if (args.medicaidExpansion === true) {

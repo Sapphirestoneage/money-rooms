@@ -570,16 +570,17 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   /** Spousal and survivor rules (spec 2.5), read through the one door for an unverified rule. */
   type SpousalRule = {
     spousal: { maxShareOfWorkerPia: number; requiresWorkerClaimed: boolean; delayedCreditsApply: boolean; reductionBeforeOwnFra: SpousalReductionSchedule };
-    survivor: SurvivorReductionSchedule & { maxShareOfDeceasedBenefit: number; takesLargerOfTwo: boolean };
+    survivor: SurvivorReductionSchedule & { maxShareOfDeceasedBenefit: number; takesLargerOfTwo: boolean; confirmPending?: boolean };
   };
   const spousal = partner && !ssOverride ? ledger.getUnverified<SpousalRule>("ss.spousalAndSurvivor") : null;
-  const SPOUSAL_FLAG = "Spousal or survivor Social Security changes this plan. That rule's reduction schedules have not been verified against ssa.gov yet (rules registry ss.spousalAndSurvivor), so treat those years as rough.";
+  const SURVIVOR_FLAG = "A survivor Social Security benefit changes this plan. The survivor schedule is verified from secondary sources only (rules registry ss.spousalAndSurvivor; confirm at https://www.ssa.gov/benefits/survivors/), so treat those years as rough until it is confirmed.";
   /**
    * Each person's Social Security for a year (spec 2.5, decision H9): the own benefit; the spousal top-up once both
-   * have claimed, up to half the worker's full-retirement-age benefit, reduced on the spousal schedule for the
-   * claimant's own early claiming and never raised by delayed credits; and the survivor rule after the first
-   * plan-to age, up to the deceased's full benefit, reduced if the survivor's own claiming age is before their
-   * full retirement age (as early as 60). The survivor start is a known simplification until mortality is modeled.
+   * have claimed, up to half the worker's PIA, reduced on the spousal schedule for the claimant's own early
+   * claiming and never raised by delayed credits (verified, SSA OACT); and the survivor rule after the first
+   * plan-to age, up to 100% of the deceased's benefit including their delayed credits, reduced evenly by month
+   * from the survivor's full retirement age (the survivor table) to 71.5% at 60 (secondary sources; flagged until
+   * confirmed). The survivor start is a known simplification until mortality is modeled.
    */
   const socialSecurityFor = (y: number): { self: number; partner: number } => {
     const selfAlive = y <= selfLastYear;
@@ -595,18 +596,18 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       const partnerSpousalFactor = r.spousal.delayedCreditsApply ? pFactor : spousalFactor(pBirth!.year, pClaimingAge, r.spousal.reductionBeforeOwnFra, ssParams);
       const spousalSelf = y >= ssStartYear && !hh.socialSecurity.claimZero?.value ? annualBenefit(share * pPia, selfSpousalFactor, band.socialSecurityPolicy) : 0;
       const spousalPartner = y >= pSsStartYear && !pClaimZero ? annualBenefit(share * pia, partnerSpousalFactor, band.socialSecurityPolicy) : 0;
-      if (spousalSelf > s + 0.5) { s = spousalSelf; flags.add(SPOUSAL_FLAG); }
-      if (spousalPartner > p + 0.5) { p = spousalPartner; flags.add(SPOUSAL_FLAG); }
+      if (spousalSelf > s + 0.5) s = spousalSelf;
+      if (spousalPartner > p + 0.5) p = spousalPartner;
     }
     if (r.survivor.takesLargerOfTwo) {
       const survivorShare = r.survivor.maxShareOfDeceasedBenefit / 100;
       if (!selfAlive && pAlive && y >= pSsStartYear && !pClaimZero) {
         const inherited = survivorShare * ssAnnual * survivorFactor(pBirth!.year, pClaimingAge, r.survivor, ssParams);
-        if (inherited > p + 0.5) { p = inherited; flags.add(SPOUSAL_FLAG); }
+        if (inherited > p + 0.5) { p = inherited; if (r.survivor.confirmPending) flags.add(SURVIVOR_FLAG); }
       }
       if (!pAlive && selfAlive && y >= ssStartYear && !hh.socialSecurity.claimZero?.value) {
         const inherited = survivorShare * pSsAnnual * survivorFactor(birth.year, claimingAge, r.survivor, ssParams);
-        if (inherited > s + 0.5) { s = inherited; flags.add(SPOUSAL_FLAG); }
+        if (inherited > s + 0.5) { s = inherited; if (r.survivor.confirmPending) flags.add(SURVIVOR_FLAG); }
       }
     }
     return { self: s, partner: p };
@@ -770,9 +771,9 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       if (partner) {
         const persons = [...(selfAlive ? [{ age }] : []), ...(pAlive && pAge !== null ? [{ age: pAge }] : [])];
         if (persons.length === 0) return { total: 0, pieces: [], flags: [] };
-        return healthcareLine({ age: persons[0]!.age, magiAca, magiTwoYearsBack: magiTwoBack, householdSize, filingStatus: hh.filingStatus, medicaidExpansion, ledger, persons });
+        return healthcareLine({ age: persons[0]!.age, magiAca, magiTwoYearsBack: magiTwoBack, householdSize, filingStatus: hh.filingStatus, medicaidExpansion, ledger, persons, state: hh.state });
       }
-      return healthcareLine({ age, magiAca, magiTwoYearsBack: magiTwoBack, householdSize, filingStatus: hh.filingStatus, medicaidExpansion, ledger });
+      return healthcareLine({ age, magiAca, magiTwoYearsBack: magiTwoBack, householdSize, filingStatus: hh.filingStatus, medicaidExpansion, ledger, state: hh.state });
     };
     healthcare = healthcareFor(magiHistory.get(y - 1) ?? 0);
     const spendTotal = () => spend.total * spendingScale + healthcare.total;
@@ -1159,8 +1160,8 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       let magiBudget = Infinity;
       const youngestLiving = Math.min(selfAlive || !partner ? age : Infinity, pAlive && pAge !== null ? pAge : Infinity);
       if (youngestLiving < 65) {
-        if (acaTarget !== "off") magiBudget = Math.min(magiBudget, magiForPctFpl(acaTarget, householdSize, ledger));
-        else if (policy.limits.stayUnderAcaCliff) magiBudget = Math.min(magiBudget, magiForPctFpl(400, householdSize, ledger));
+        if (acaTarget !== "off") magiBudget = Math.min(magiBudget, magiForPctFpl(acaTarget, householdSize, ledger, hh.state));
+        else if (policy.limits.stayUnderAcaCliff) magiBudget = Math.min(magiBudget, magiForPctFpl(400, householdSize, ledger, hh.state));
       }
       if (policy.limits.irmaaTierCap !== null && Math.max(age, pAge ?? 0) >= 63) {
         const tiers = ledger.get<{ tiers: { single: [number | null, number | null]; marriedJoint: [number | null, number | null] }[] }>("health.irmaa.2026").tiers;
