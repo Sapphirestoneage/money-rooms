@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import history from "../../data/returns-history.json";
 import maya from "../../tests/households/maya.json";
 import { assetFromPreset, emptyHousehold, householdFromExample, userValue, type ExampleHouseholdFile, type Household } from "../model";
 import { resolveAssumptions } from "../model";
@@ -12,11 +13,27 @@ const asOf = "2026-10-03";
 const mayaHousehold = (): Household => householdFromExample(maya as ExampleHouseholdFile, asOf);
 
 describe("the return series and a start year's returns (acceptance tests 1, 6, 7)", () => {
-  it("the series runs from 1928 and carries its source; results are flagged while it is unverified", () => {
+  it("the series runs from 1928 to 2025, carries its source, and is verified (Eli, 2026-10-04)", () => {
     expect(RETURN_SERIES[0]!.year).toBe(1928);
-    expect(RETURN_SERIES.length).toBeGreaterThan(90);
+    expect(RETURN_SERIES[RETURN_SERIES.length - 1]!.year).toBe(2025);
+    expect(RETURN_SERIES.length).toBe(98);
     expect(SERIES_SOURCE.url).toMatch(/^https:\/\//);
-    expect(SERIES_SOURCE.unverified).toBe(true);
+    expect(SERIES_SOURCE.unverified).toBe(false);
+    expect(SERIES_SOURCE.lastVerified).toBe("2026-10-04");
+  });
+
+  it("sanity check: the real geometric average of S&P 500 returns 1928 to 2025 is 6.78%", () => {
+    const growth = RETURN_SERIES.reduce((g, r) => g * (1 + r.stocks / 100), 1);
+    const geometric = (Math.pow(growth, 1 / RETURN_SERIES.length) - 1) * 100;
+    expect(Math.abs(geometric - 6.78)).toBeLessThan(0.05);
+  });
+
+  it("each real return is the nominal return deflated by the year's inflation", () => {
+    for (const r of history.series) {
+      expect(r.stocks).toBeCloseTo(((1 + r.nominal.stocks / 100) / (1 + r.inflation / 100) - 1) * 100, 3);
+      expect(r.bonds).toBeCloseTo(((1 + r.nominal.bonds / 100) / (1 + r.inflation / 100) - 1) * 100, 3);
+      expect(r.cash).toBeCloseTo(((1 + r.nominal.cash / 100) / (1 + r.inflation / 100) - 1) * 100, 3);
+    }
   });
 
   it("a start year uses that year's real stock return: a one-stock-account retiree grows by it less fees in the first full year", () => {
@@ -32,7 +49,8 @@ describe("the return series and a start year's returns (acceptance tests 1, 6, 7
     const band = resolveBand(resolveAssumptions(h.assumptions), "likely");
     const start = 1995;
     const { byYear, filledYears } = returnsFromStart(start, 2026, 2056, band);
-    expect(filledYears).toBe(1);
+    // The series now runs through 2025, so a 1995 start covers all 31 years of this window with history.
+    expect(filledYears).toBe(0);
     expect(byYear[2027]!.stocks).toBe(RETURN_SERIES.find((r) => r.year === 1996)!.stocks);
     const t = runFor(requireComplete(h), band, { ...defaultDeps(), returnsByYear: byYear }, 2026);
     const y1 = t.rows[1]!;
@@ -48,7 +66,7 @@ describe("the return series and a start year's returns (acceptance tests 1, 6, 7
     const b = backtest(h, fi.retirementYear!, { minHistoryYears: 30 });
     expect(b.startsFilled).toBeGreaterThan(0);
     expect(b.flags.some((f) => f.includes("ran out of history"))).toBe(true);
-    expect(b.flags.some((f) => f.includes("not been verified"))).toBe(true);
+    expect(b.flags.some((f) => f.includes("not been verified"))).toBe(false);
   });
 });
 
