@@ -11,7 +11,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   test: {
-    include: ["engine/**/*.test.ts", "tests/**/*.test.ts"],
+    include: ["engine/**/*.test.ts", "tests/**/*.test.ts", "ui/**/*.test.ts"],
     environment: "node",
   },
 });
