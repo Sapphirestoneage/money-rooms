@@ -1,0 +1,31 @@
+{
+  "_meta": {
+    "description": "Engine rule parameters that are numbers, kept out of code (CLAUDE.md). Each one is a proposed default until the open question that owns it is settled.",
+    "version": 1,
+    "updated": "2026-10-02"
+  },
+  "highInterestThresholdPercent": {
+    "value": 8,
+    "status": "Proposed",
+    "owner": "decisions.md O2",
+    "meaning": "Debts with a nominal rate above this get surplus in step 2 of the savings waterfall, before any account."
+  },
+  "assumedWorkStartAge": {
+    "value": 22,
+    "status": "Proposed",
+    "owner": "M1 convention C7",
+    "meaning": "For the Social Security estimate, years from this age through the year before the plan date are back-filled at the plan-year covered earnings when no ssa.gov record is entered."
+  },
+  "emergencyReserveMonths": {
+    "value": 0,
+    "status": "Proposed",
+    "owner": "M1 convention C9",
+    "meaning": "Months of spending kept in cash before a shortfall draws from it. Zero in M1; the M2 optimizer adds a cash buffer limit."
+  },
+  "penaltyFreeAge": {
+    "value": 59.5,
+    "status": "Locked (IRS)",
+    "owner": "data/tax/2026.json earlyWithdrawalPenalty.beforeAge",
+    "meaning": "M1 applies the penalty when age at year end is below this, so the year a person turns 59 is penalized and the year they turn 60 is not."
+  }
+}

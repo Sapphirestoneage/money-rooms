@@ -13,3 +13,4 @@ export * from "./assumptions";
 export * from "./household";
 export * from "./tax-tables";
 export * from "./social-security-params";
+export * from "./examples";
