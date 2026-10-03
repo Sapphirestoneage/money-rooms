@@ -25,3 +25,4 @@ export * from "./projection/policy";
 export * from "./optimizer";
 export * from "./flow";
 export * from "./levels";
+export * from "./whatifs";

@@ -11,7 +11,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 2 M2 optimizer and results | Done | `m2-optimizer` | (see git log) |
 | 3 M3 flow | Done (see weak spots) | `m3-flow` | (see git log) |
 | 4 Level content | Done (all three) | `levels` | (see git log) |
-| 5 M5 what-ifs | Not started | `m5-whatifs` | |
+| 5 M5 what-ifs | Done | `m5-whatifs` | (see git log) |
 | 6 M4 meaning | Not started | `m4-meaning` | |
 | 7 M6 risk | Not started | `m6-risk` | |
 | 8 Households of two | Not started | `household-two` | |
@@ -20,6 +20,8 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 11 Coaching spec | Not started | `coaching-specs` | |
 | 12 Feature register | Not started | `feature-register` | |
 | 13 Readiness audit | Not started | `readiness` | |
+
+**Phase 5 in plain English.** A What-ifs screen. Scenario blocks: pick a kind (home, car, kid, job change, sabbatical, move, side hustle, inheritance, marriage, custom), answer three or four questions (national defaults marked roughly), and the block lays its changes over a copy of your numbers; each block shows its change in monthly cash flow and the FI date moved, can carry several start dates to compare, can be turned off, and can replace another block. Dreams: each gets a price card in the spec's order (cost in time, true amount at 65, the other side of the trade as a question, best timing with a curve and markers from the plan's own events), plus the milestones it moves and ways to lower the price; the plan trims dreams first and wants second when short, and says from what age a trimmed dream fits. Payoff methods: avalanche, snowball, and peace-first side by side with months, interest, stress-months, and the price of peace. Engine in `engine/whatifs/` with 15 tests. Self-audit: `docs/audits/m5-self-audit.md`.
 
 **Phase 4 in plain English.** A Levels screen with three cards. Level 2 Resilience: the Rule of 5 (matches the spec's worked example to the dollar), the spending staircase with must-pays on every step, the graceful path, the runway stack (cash, the ability to cut, unemployment, severance, reachable investments, break glass shown but not counted), health insurance after a job loss through the ACA mechanics, disability and term life, five shock tests with their effect on runway and the FI date, and the zombie-readiness headline. Level 3: the FIRE spectrum on one line (walk-away money, start a business, Coast, Lean, Barista, Slow, FI, Fat; Flex FI "coming soon") with each milestone's condition and what moves it, plus editable settings. Level 5: the estate after heirs' taxes by band and money type, giving and giving forever at the plan's own withdrawal rate, legacy projects with money and hours, Legacy FI and the breathing room, the freedom budget, and the basics checklist. 30 engine tests. Unemployment uses a national placeholder marked unverified (DOL pages unreachable). Self-audit: `docs/audits/levels-self-audit.md`.
 
@@ -43,6 +45,7 @@ None yet (Phase 0 wrote dictionary additions, not a spec).
 
 | # | Where | Decision |
 |---|---|---|
+| W1 to W6 | `decisions.md` | M5: how blocks are applied, the questionnaire defaults, the headline measure, goal trimming, the true amount and timing curve, the payoff simulation |
 | R7 to R10, G6, Y6 | `decisions.md` | Levels: the staircase's category mapping, the unemployment placeholder, health insurance after a job loss, how shocks are applied, how each milestone condition is rendered, the plan's own withdrawal rate for giving forever |
 | L12 to L17 | `decisions.md` | M3: the FI number as the materiality measure and the two-projection sensitivity method, impact-weighted coverage and what passes a level, placeholder values for required and later items, small wins stored on the household (dictionary 9.7), entry mode and materiality as display preferences, the Sky's drawing rule |
 | N18 to N23 | `decisions.md` | Optimizer: coordinate search with a pair sweep, fixed retirement year for the other objectives, toggle effects measured at a fixed year, the knob set, the result screen's default order, and the True FI definition |
@@ -76,6 +79,8 @@ No page fetched during this session contained instructions aimed at the build.
 
 ## 7. Self-audit scorecards
 
+**M5** (`docs/audits/m5-self-audit.md`): all seven items pass; weak spots are unsourced block defaults and a browser prompt for the second timing.
+
 **Levels** (`docs/audits/levels-self-audit.md`): Level 2 five of six pass (the unemployment state table is a placeholder); Level 3 milestones two of three pass (no hand-computed household yet); Level 5 four of six pass (no hand-checked estate; Hamilton theming not built).
 
 **M3** (`docs/audits/m3-self-audit.md`): tests 5, 6, 7, 8 pass; 1, 2, 3, 4 partial (not timed with a person; only Maya asserted for the ranking rule; the result screen lacks the rough-results label; staleness widening not yet wired into the ranking); 9 passes by construction.
@@ -92,6 +97,6 @@ Not started.
 
 ## 10. Handoff
 
-**Where I am:** Phases 0 to 4 complete and pushed. **Next:** branch `m5-whatifs` from `levels` and build scenario blocks (layered proposed changes applied in memory), goal buckets in the projection with must, want, dream trimming, dream pricing (cost in time, true amount, best-timing curve with markers), and payoff methods (avalanche, snowball, peace-first with the price of peace).
+**Where I am:** Phases 0 to 5 complete and pushed. **Next:** branch `m4-meaning` from `m5-whatifs`, write `docs/m4-spec.md` (Proposed) for the ratio registry, metrics unlocked by level, lenses, the 4% rule lens, the DRAFTT scorecard, and the Advice Translator, then build it.
 
 **Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.

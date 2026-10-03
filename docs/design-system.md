@@ -216,6 +216,15 @@ Three toggle buttons at the top of Your numbers: One at a time (guided: one sect
 ### Level cards
 One card per level on the Levels screen: the level's headline sentence with a Computed badge, then subtitled parts (the Rule of 5, the staircase, the runway stack, shock tests; the spectrum line and each milestone with its condition and what moves it; the estate by money type, giving, legacy projects, Legacy FI, the freedom budget, the basics). Each card ends with a collapsed details card of that level's inputs, every one with a default and a plain help line.
 
+### Block card
+One per scenario block: its name with the block's kind badge, one line per start date with the change in monthly cash flow and the FI date moved, a muted line listing its changes, and three quiet buttons (Turn off, Compare a timing, Remove). Below the list, a select adds a block; choosing a kind shows its three or four questions with the national defaults as placeholders and "Add this as a block".
+
+### Price card
+One per dream: the name with its kind badge and priority, then an ordered list in the spec's order (the cost in time, the true amount, the other side of the trade, the best timing), a small bar chart of cost in years by start age with a dot above ages that carry a marker, the markers in words, the milestones moved, and ways to lower the price. "What would you rather have?" is a question on the card, never a verdict.
+
+### Comparison table
+Payoff methods side by side: method, order, months to debt free, interest, stress-months, with a sentence beneath naming the price of peace and a Computed badge. An input above sets the extra a month.
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 

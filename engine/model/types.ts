@@ -464,6 +464,34 @@ export interface Household {
   milestones?: MilestoneSettings;
   /** Level 5 (dictionary 9.10, Proposed): legacy inputs. */
   legacy?: LegacyInputs;
+  /** M5 (dictionary 9.5, Proposed): scenario blocks, layered proposed changes never applied to the real rows. */
+  blocks?: ScenarioBlock[];
+}
+
+/** Dictionary 9.5. One proposed change inside a block. */
+export type BlockChange =
+  | { target: "spending"; op: "add"; category: string; label: string; annual: number; start?: YearMonth; end?: YearMonth }
+  | { target: "spending"; op: "scale"; factor: number; start?: YearMonth; end?: YearMonth }
+  | { target: "income"; op: "add"; type: IncomeType; label: string; grossAnnual: number; start?: YearMonth; end?: YearMonth }
+  | { target: "income"; op: "scale"; factor: number; start?: YearMonth; end?: YearMonth }
+  | { target: "income"; op: "pause"; start: YearMonth; end: YearMonth }
+  | { target: "asset"; op: "add"; preset: AccountPresetKey; label: string; balance: number }
+  | { target: "debt"; op: "add"; preset: AccountPresetKey; label: string; balance: number; ratePercent: number; paymentMonthly: number }
+  | { target: "asset"; op: "remove"; amount: number; from: "cash" | "taxable" };
+
+export type ScenarioBlockType = "home" | "car" | "kid" | "jobChange" | "sabbatical" | "geoArbitrage" | "sideHustle" | "inheritance" | "marriage" | "custom";
+
+export interface ScenarioBlock {
+  id: string;
+  type: ScenarioBlockType;
+  name: string;
+  /** One or more start months, to compare timings side by side. The first is the chosen one. */
+  startDates: YearMonth[];
+  changes: BlockChange[];
+  /** Per block: how sure the numbers are. Defaults from the questionnaire are roughly. */
+  confidence: "known" | "lookUp" | "roughly";
+  relation?: { kind: "inAdditionTo" | "replacing"; blockId: string };
+  enabled: boolean;
 }
 
 /** Level 2 (docs/levels/level-2-resilience.md section 11). */

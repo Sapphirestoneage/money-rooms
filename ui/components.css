@@ -1372,3 +1372,75 @@
   align-items: center;
   margin-bottom: var(--space-4);
 }
+
+/* ---- What-ifs: timing curve, comparison table ---- */
+
+.timing-curve {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  height: 96px;
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.timing-curve__bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.timing-curve__fill {
+  width: 100%;
+  background: var(--color-brand-300);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  min-height: 2px;
+}
+
+.timing-curve__age {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.timing-curve__marker {
+  position: absolute;
+  top: -4px;
+  color: var(--color-attention-ink);
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.compare-table th,
+.compare-table td {
+  text-align: left;
+  padding: var(--space-2) var(--space-1);
+  border-bottom: var(--border-width) solid var(--color-rule);
+  vertical-align: top;
+}
+
+.compare-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar__nav {
+  flex-wrap: wrap;
+}
+
+/* A wide table scrolls inside its card; the page itself never scrolls sideways. */
+.table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.timing-curve {
+  max-width: 100%;
+  overflow: hidden;
+}

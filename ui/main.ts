@@ -10,14 +10,16 @@ import { entryScreen } from "./screens/entry";
 import { levelsScreen } from "./screens/levels";
 import { nextScreen } from "./screens/next";
 import { resultScreen } from "./screens/result";
+import { whatIfsScreen } from "./screens/whatifs";
 import { browserStore } from "./store";
 
-type Route = "entry" | "result" | "next" | "levels";
+type Route = "entry" | "result" | "next" | "levels" | "whatifs";
 
 function currentRoute(): Route {
   if (window.location.hash === "#/result") return "result";
   if (window.location.hash.startsWith("#/next")) return "next";
   if (window.location.hash === "#/levels") return "levels";
+  if (window.location.hash === "#/whatifs") return "whatifs";
   return "entry";
 }
 
@@ -37,7 +39,7 @@ function boot(): void {
 
   const drawer = sharedDrawer();
 
-  const nav = el("nav", { class: "topbar__nav", "aria-label": "Screens" }, el("a", { href: "#/entry" }, "Your numbers"), el("a", { href: "#/next" }, "What's next"), el("a", { href: "#/levels" }, "Levels"), el("a", { href: "#/result" }, "Your FI date"));
+  const nav = el("nav", { class: "topbar__nav", "aria-label": "Screens" }, el("a", { href: "#/entry" }, "Your numbers"), el("a", { href: "#/next" }, "What's next"), el("a", { href: "#/levels" }, "Levels"), el("a", { href: "#/whatifs" }, "What-ifs"), el("a", { href: "#/result" }, "Your FI date"));
   const topbar = el("header", { class: "topbar" }, el("a", { class: "topbar__brand", href: "#/entry" }, "Money Rooms"), nav);
   document.body.prepend(topbar);
 
@@ -54,6 +56,8 @@ function boot(): void {
     clear(main);
     if (route === "result") {
       main.append(resultScreen({ household, store, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
+    } else if (route === "whatifs") {
+      main.append(whatIfsScreen({ household, store, save, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
     } else if (route === "levels") {
       main.append(levelsScreen({ household, store, save, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
     } else if (route === "next") {
