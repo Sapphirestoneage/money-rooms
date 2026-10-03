@@ -59,6 +59,7 @@ Every settled decision, with its date and reason, so nothing gets relitigated by
 | E5 | Savings order based on the Money Guy Financial Order of Operations. | Proposed | Two-way | 2026-10-02 | |
 | E6 | FI date = earliest fully funded retirement year, per band. Never a fake date. | Proposed | One-way | 2026-10-02 | |
 | E7 | Stack: TypeScript, Vite, Vitest; static site on GitHub Pages. No UI framework in M1. | Proposed | One-way | 2026-10-02 | Industry standard; types catch data-model mistakes; stays a simple static site like v1. |
+| E8 | Year 0 is a stub period from the plan's as-of month through December. Every flow, tax, limit, and growth rate is prorated by months remaining over 12. Full calendar years follow. | Locked | Two-way | 2026-10-02 | Matches advisor platforms (eMoney, RightCapital, MoneyGuidePro). Balances are dated today, so the projection starts today, not last January. |
 
 ## Meaning and presentation
 
