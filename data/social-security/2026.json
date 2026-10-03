@@ -1,0 +1,72 @@
+{
+  "_meta": {
+    "year": 2026,
+    "description": "Social Security benefit parameters for the M1 estimate (data dictionary 4.4, engine spec section 3 step 7). The engine reads these numbers only from this file.",
+    "version": 1,
+    "retrieved": "2026-10-02",
+    "retrievedBy": "Claude Code, from the SSA Office of the Chief Actuary pages cited below. Reviewed by Eli before use.",
+    "m1Method": "The engine works in real dollars, so M1 applies the 2026 bend points to real-dollar earnings without a separate wage-growth assumption. In effect this assumes the national average wage index rises with inflation. Advisor platforms make the same simplification unless a wage-growth assumption is entered. The earnings record is estimated from the person's income streams (covered wages capped at the wage base), with the 35 highest years averaged and missing years counted as zero."
+  },
+  "sources": {
+    "bendPoints": { "document": "SSA, Benefit Formula Bend Points (year of eligibility 2026)", "url": "https://www.ssa.gov/oact/cola/bendpoints.html", "retrieved": "2026-10-02" },
+    "piaFormula": { "document": "SSA, Primary Insurance Amount: 90, 32, and 15 percent; rounded down to a multiple of 10 cents", "url": "https://www.ssa.gov/oact/cola/piaformula.html", "retrieved": "2026-10-02" },
+    "normalRetirementAge": { "document": "SSA, Normal Retirement Age by year of birth", "url": "https://www.ssa.gov/oact/ProgData/nra.html", "retrieved": "2026-10-02" },
+    "earlyAndDelayed": { "document": "SSA, Early or Late Retirement: 5/9 of 1% per month for the first 36 months early, 5/12 of 1% beyond; delayed credit by year of birth; no credit after 69", "url": "https://www.ssa.gov/oact/quickcalc/early_late.html", "retrieved": "2026-10-02" },
+    "averageWageIndex": { "document": "SSA, National Average Wage Index (2024 index 69,846.57, used for 2026 eligibility)", "url": "https://www.ssa.gov/oact/cola/AWI.html", "retrieved": "2026-10-02" },
+    "wageBase": { "document": "SSA, 2026 Cost-of-Living Adjustment Fact Sheet (taxable maximum $184,500; see data/tax/2026.json)", "url": "https://www.ssa.gov/cola/factsheets/2026.html", "retrieved": "2026-10-02" }
+  },
+  "pia": {
+    "bendPointsMonthly": [1286, 7749],
+    "rates": [90, 32, 15],
+    "roundDownToCents": 10,
+    "averagingYears": 35,
+    "eligibilityAge": 62,
+    "indexingNote": "Earnings are indexed to the average wage two years before the year of eligibility. M1 treats real-dollar earnings as already indexed."
+  },
+  "averageWageIndex2024": 69846.57,
+  "normalRetirementAge": {
+    "description": "Full retirement age by year of birth, in years and months. People born on January 1 use the prior year.",
+    "byBirthYear": [
+      { "throughYear": 1937, "years": 65, "months": 0 },
+      { "throughYear": 1938, "years": 65, "months": 2 },
+      { "throughYear": 1939, "years": 65, "months": 4 },
+      { "throughYear": 1940, "years": 65, "months": 6 },
+      { "throughYear": 1941, "years": 65, "months": 8 },
+      { "throughYear": 1942, "years": 65, "months": 10 },
+      { "throughYear": 1954, "years": 66, "months": 0 },
+      { "throughYear": 1955, "years": 66, "months": 2 },
+      { "throughYear": 1956, "years": 66, "months": 4 },
+      { "throughYear": 1957, "years": 66, "months": 6 },
+      { "throughYear": 1958, "years": 66, "months": 8 },
+      { "throughYear": 1959, "years": 66, "months": 10 },
+      { "throughYear": null, "years": 67, "months": 0 }
+    ]
+  },
+  "claiming": {
+    "earliestAge": 62,
+    "latestCreditedAge": 70,
+    "earlyReduction": {
+      "description": "Percent of PIA lost per month claimed before full retirement age.",
+      "firstMonths": 36,
+      "ratePerMonthFirst": 0.5555555555555556,
+      "ratePerMonthBeyond": 0.4166666666666667,
+      "maximumReductionPercentAtNra67": 30
+    },
+    "delayedCredit": {
+      "description": "Percent of PIA gained per year claimed after full retirement age, through age 69, by year of birth.",
+      "byBirthYear": [
+        { "throughYear": 1924, "percentPerYear": 3.0 },
+        { "throughYear": 1926, "percentPerYear": 3.5 },
+        { "throughYear": 1928, "percentPerYear": 4.0 },
+        { "throughYear": 1930, "percentPerYear": 4.5 },
+        { "throughYear": 1932, "percentPerYear": 5.0 },
+        { "throughYear": 1934, "percentPerYear": 5.5 },
+        { "throughYear": 1936, "percentPerYear": 6.0 },
+        { "throughYear": 1938, "percentPerYear": 6.5 },
+        { "throughYear": 1940, "percentPerYear": 7.0 },
+        { "throughYear": 1942, "percentPerYear": 7.5 },
+        { "throughYear": null, "percentPerYear": 8.0 }
+      ]
+    }
+  }
+}
