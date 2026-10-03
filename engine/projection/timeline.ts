@@ -136,6 +136,8 @@ export interface YearRow {
   gap: number;
   contributions: Record<string, number>;
   withdrawals: Record<string, number>;
+  /** The part of the cash withdrawals that came out of the emergency reserve itself (drawn last). */
+  fromReserve: number;
   /** Each savings waterfall step that took money this year (prorated), in order. */
   waterfall: WaterfallStep[];
   shortfall: number;
@@ -188,6 +190,8 @@ interface AssetState {
   balance: number;
   /** Blended real percent per year after fees. */
   rate: number;
+  /** Percent per year. Decides which Roth account is drawn first. */
+  fees: number;
   implicit: boolean;
 }
 
@@ -216,6 +220,7 @@ function assetState(a: AssetAccount, band: BandNumbers): AssetState {
     taxBucket: a.taxBucket.value,
     balance: isAnswered(a.balance) ? a.balance.value : 0,
     rate: blendedRealReturn(a.allocation.value, band.returns, a.fees.value),
+    fees: a.fees.value,
     implicit: false,
   };
 }
@@ -230,6 +235,7 @@ function implicitAsset(id: string, presetKey: "trad401k" | "roth401k" | "rothIRA
     taxBucket: p.taxBucket,
     balance: 0,
     rate: blendedRealReturn(p.allocation, band.returns, p.fees),
+    fees: p.fees,
     implicit: true,
   };
 }
@@ -411,6 +417,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     const withdrawals = new Map<string, number>();
     let pretaxWithdrawal = 0;
     let shortfall = 0;
+    let reserveDrawn = 0;
 
     const gap0 = cashIn(0, 0, 0) - spendTotal - scheduledDebt;
     const steps: WaterfallStep[] = [];
@@ -499,7 +506,8 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         ...assets().filter((a) => a.taxBucket === "cash"),
         ...assets().filter((a) => a.taxBucket === "taxable"),
         ...assets().filter((a) => a.taxBucket === "pretax"),
-        ...assets().filter((a) => a.taxBucket === "roth"),
+        // Among Roth accounts, the higher fee is drawn first (so a Roth 401(k) goes before a Roth IRA).
+        ...assets().filter((a) => a.taxBucket === "roth").sort((a, b) => b.fees - a.fees),
         ...assets().filter((a) => a.taxBucket === "hsa"),
       ];
       // The cash reserve is a set number of months of this year's spending, in dollars.
@@ -527,12 +535,14 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           }
         }
         // Last resort, after every other account: the reserve itself.
+        reserveDrawn = 0;
         for (const a of cashAccounts) {
           if (need <= 0) break;
           const already = withdrawals.get(a.id) ?? 0;
           const w = Math.max(0, Math.min(a.balance / f - already, need));
           if (w > 0) {
             withdrawals.set(a.id, already + w);
+            reserveDrawn += w;
             need -= w;
           }
         }
@@ -544,6 +554,8 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         pretaxWithdrawal = pretaxTaken;
       }
       if (pretaxWithdrawal > 0 && age < DEFAULTS.penaltyFreeAge) rowFlags.push("Pretax withdrawals before 59 and a half pay the 10% penalty in M1.");
+      const rothDrawn = assets().some((a) => a.taxBucket === "roth" && (withdrawals.get(a.id) ?? 0) > 0);
+      if (rothDrawn && age < DEFAULTS.penaltyFreeAge) flags.add(EARLY_ROTH_FLAG);
     }
 
     // Final taxes and take-home for the year (annualized).
@@ -642,6 +654,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       gap: gap * f,
       contributions: scale(contributions),
       withdrawals: scale(withdrawals),
+      fromReserve: reserveDrawn * f,
       waterfall: steps.map((st) => ({ ...st, amount: st.amount * f, taxSaved: st.taxSaved * f, remainingAfter: st.remainingAfter * f })),
       shortfall: shortfall * f,
       balances,
@@ -664,6 +677,10 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     flags: [...flags],
   };
 }
+
+/** M1 limitation, shown on the result screen whenever a plan draws Roth money early (engine spec section 4). */
+export const EARLY_ROTH_FLAG =
+  "This plan draws Roth money before 59 and a half. M1 treats that as tax and penalty free, which is optimistic: in reality only contributions are. Results that lean on early Roth money will sharpen in M2.";
 
 function emptyIncome(): YearIncome {
   return { streams: [], wages: 0, selfEmploymentNet: 0, otherTaxable: 0, nonTaxable: 0, grossTotal: 0, netTotal: 0 };

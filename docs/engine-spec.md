@@ -85,6 +85,10 @@ Then the order depends on the savings strategy:
 
 **The emergency reserve** is 6 months of that year's spending: working spending in working years, retirement spending in retired years. Level 2 (Resilience) will later replace the flat 6 months with the Rule of 5 target.
 
+**Roth 401(k).** Roth 401(k) contributions go to their own account at the Roth 401(k) preset's fee. When drawing from Roth money, the Roth 401(k) is drawn before the Roth IRA (higher fee first).
+
+**M1 limitation (flagged).** Roth withdrawals are treated as tax- and penalty-free at any age. In reality only contributions are; earnings withdrawn before 59 and a half are taxed and penalized. M2 applies the ordering rules using contribution basis. Until then, early-retirement results that lean on Roth money are optimistic, and the result screen says so when a plan draws Roth money before 59 and a half.
+
 M2 replaces this with an optimized drawdown: Roth conversion ladders, filling low tax brackets, and the order that maximizes lifetime spending.
 
 ---
