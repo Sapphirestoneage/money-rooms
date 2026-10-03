@@ -137,9 +137,9 @@ On `feature-register`, docs only: `data/feature-register.json`, `docs/features/f
 
 | | |
 |---|---|
-| Features | 123 |
-| Scored above 25 (planned) | 104 |
-| Icebox (25 or below) | 19 |
+| Features | 244 |
+| Scored above 25 (planned) | 224 |
+| Icebox (25 or below) | 20 |
 
 **Top twenty by score**
 
@@ -147,24 +147,24 @@ On `feature-register`, docs only: `data/feature-register.json`, `docs/features/f
 |---|---|---|---|
 | 1 | Decumulation (The Back Half) | 87 | M2 Level 4 (built) |
 | 2 | Return on Hassle | 84 | M3 next card (built as value per minute) |
-| 3 | Two-question opening with immediate runway | 84 | onboarding |
-| 4 | Five-input opening | 83 | onboarding (Level 1 is these five) |
-| 5 | Readiness score | 83 | coaching spec |
-| 6 | Advice Translator | 82 | M4 (built) |
-| 7 | Between Jobs | 81 | Level 2 (built) |
-| 8 | Quantum collapse onboarding module | 81 | Level 1 and the Sky (partly built: bands narrow with kinds) |
-| 9 | Rule of 5 | 81 | Level 2 (built) |
-| 10 | Worth the Hassle (Return on Hassle) | 81 | M3 next card (built as value per minute) |
-| 11 | DRAFTT | 80 | M4 lens (built) |
-| 12 | Earn more pack | 80 | pack |
-| 13 | Partner (Family) | 80 | Households of two (built) and the Partner pack |
-| 14 | Money phases | 78 | coaching spec |
-| 15 | Price the Dream | 78 | M5 price card (built) |
-| 16 | Rules update routine | 78 | Upkeep |
-| 17 | Sunday recap | 78 | coaching spec |
-| 18 | Guided programs (four drafted) | 77 | coaching spec |
-| 19 | Health pack (sourced placeholders, COBRA, long-term care, age curve) | 77 | pack |
-| 20 | Weekly money rings | 77 | coaching spec |
+| 3 | Round 1 opening (five questions: take-home, FI band, coast date, ranked levers) | 84 | onboarding (Level 1) |
+| 4 | Two-question opening with immediate runway | 84 | onboarding |
+| 5 | Five-input opening | 83 | onboarding (Level 1 is these five) |
+| 6 | Readiness score | 83 | coaching spec |
+| 7 | Roth conversions versus ACA (the price of cover, cliff on and off) | 83 | M2 optimizer (built: acaTarget knob and MAGI budget) |
+| 8 | Advice Translator | 82 | M4 (built) |
+| 9 | Cost of not knowing (what a missing number costs in FI date, runway, net worth) | 82 | M3 materiality (built as the plausible range per input) |
+| 10 | Between Jobs | 81 | Level 2 (built) |
+| 11 | Quantum collapse onboarding module | 81 | Level 1 and the Sky (partly built: bands narrow with kinds) |
+| 12 | Rule of 5 | 81 | Level 2 (built) |
+| 13 | Worth the Hassle (Return on Hassle) | 81 | M3 next card (built as value per minute) |
+| 14 | DRAFTT | 80 | M4 lens (built) |
+| 15 | Earn more pack | 80 | pack |
+| 16 | Partner (Family) | 80 | Households of two (built) and the Partner pack |
+| 17 | Middle Class Trap test (wealth locked until 59 and a half, the paths through) | 79 | M2 Level 4 (built) and a lens |
+| 18 | The Bridge (what reaches before 59 and a half) | 79 | M2 Level 4 (built: Roth basis, taxable, 72(t), rule of 55) |
+| 19 | Money phases | 78 | coaching spec |
+| 20 | Price the Dream | 78 | M5 price card (built) |
 
 **Luxury-strategy claims that failed verification.** The SPARKS luxury strategies catalog and tradeoff matrix are not in the v1 repository (the word "luxury" appears only as a travel tier), so the four corrections you named are recorded as rules to carry into any copy that turns up: conversions do count toward MAGI for the ACA and IRMAA; the solo 401(k) is capped by the $72,000 annual additions limit; 2024 limits are replaced by the verified 2026 values; an out-of-state LLC changes nothing about where income is taxed. In their place the v1 moves and calculators were checked, and seventeen other claims fail: 2025 Social Security figures in a 2026 file, a $70,000 additions limit with no super catch-up, a solo 401(k) deferral that ignores profit, a stale ACA table (8.66% top, 8.5% cap) where 2026 is 9.96% with the cliff back, KFF 2024 premiums, three definitions of the Rule of Five, a FOO ladder mislabeled as the Money Guy's, DRAFTT and Triple D each defined two ways, a hard-coded 7% in the $30k/$90k rule, three withdrawal rates, an incomplete safe-harbor rule (no 110% tier), "an HSA is never taxed", unsourced card-reward rates, a $15,000 poverty line in the student loan engine, unverified unemployment rules, and fixed insurance multiples. Each is in `docs/features/feature-register.md` with the registry evidence and whether it ports.
 

@@ -11,6 +11,7 @@
 | Memory dividends calculator | 22 | A framing, not a number the engine can source. | Revisit with rest days (coaching spec 9). |
 | Financial personality quiz (five elements, 20 traits) | 21 | Not a number; risks a verdict; weak evidence base. | Revisit if the coaching business wants an onboarding hook. |
 | Future-self connector (goals over an aspirational board) | 21 | No numbers; the dreams screen carries the goals. | Revisit with the coaching lessons. |
+| Marketing scoreboard, content log, people CRM | 21 | Not part of the personal finance app; a business tool. | Keep as its own tool. |
 | Dungeons & Dividends (stats, HP, classes, debt as status, monsters, IRS faction, DM mode) | 20 | A separate product; the frame can call the v2 engine later. The IRS as a faction cuts against trust. | Revisit after the audience decision. |
 | Ledgerfell (life-sim game) | 19 | A different product. | Revisit after M7. |
 | The six planets with moons | 19 | The Sky is this map, done. | Done by the Sky. |
