@@ -117,3 +117,13 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | R4 | Disability insurance in the core level; term life only with dependents; other insurance as a side quest. | Locked | Two-way | 2026-10-02 | Most insurance isn't material for most people in their 20s. |
 | R5 | Zombie readiness theme with original humor; peer comparisons only from a sourced dataset. | Locked | Two-way | 2026-10-02 | You don't have to outrun the zombies, just your friends. |
 | R6 | Stability multipliers 0.8 / 1.0 / 1.5; graceful path steps down every 2 months. | Proposed | Two-way | 2026-10-02 | Placeholder defaults. |
+
+## Level 3 decisions (added 2026-10-02)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| G1 | Every dream shows its price in order: cost in time, true amount (invested at the likely return, today's dollars), the other side of the trade, best timing. | Locked | Two-way | 2026-10-02 | A real choice, not a guilt trip. |
+| G2 | Best timing slides the dream across its window and marks where the cost drops (debt payoff, Coast FI, other events). Suggestions only. | Locked | Two-way | 2026-10-02 | Push it off a little, shown rather than preached. |
+| G3 | Milestones beyond FI: walk-away money, start a business, sabbatical, plus the FIRE spectrum (Coast, Barista, Lean, Flex, Slow, FI, Fat), each with a date. | Locked | One-way | 2026-10-02 | Next-stage paths matter more than one finish line. |
+| G4 | Lean FI uses the FAT step of the Level 2 staircase. Slow FI means enjoying the journey: the most extra spending or least work that still hits FI by a chosen age. Flex FI arrives with M6. | Locked | Two-way | 2026-10-02 | |
+| G5 | Defaults: coast age 65, part-time income $20,000, Fat FI 1.5x spending, Flex trim 10%, Slow FI target = FI date + 5 years, walk-away 12 months. | Proposed | Two-way | 2026-10-02 | Placeholders, all editable. |

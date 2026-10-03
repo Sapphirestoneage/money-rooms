@@ -46,6 +46,8 @@ Ratio registry, metrics unlocked, lenses ("more ways to look at this"), the 4% r
 
 Scenario blocks, goal buckets in the projection, the dream and surplus views, payoff methods including peace-first.
 
+Level content spec: [`levels/level-3-life-plans.md`](levels/level-3-life-plans.md). Milestone dates (section 5) can ship earlier, in M3.
+
 ## M6. Risk
 
 Sequence-of-returns risk and historical backtesting (Big ERN's territory), the remaining phenomena behind feature switches.
