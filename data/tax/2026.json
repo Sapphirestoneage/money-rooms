@@ -17,7 +17,8 @@
         "document": "IRS Revenue Procedure 2025-32, sections 4.01 (tax rate tables) and 4.14 (standard deduction)",
         "url": "https://www.irs.gov/pub/irs-drop/rp-25-32.pdf",
         "summary": "https://www.irs.gov/newsroom/irs-releases-tax-inflation-adjustments-for-tax-year-2026-including-amendments-from-the-one-big-beautiful-bill",
-        "retrieved": "2026-10-02"
+        "retrieved": "2026-10-02",
+        "verified": "2026-10-03"
       },
       "fica": {
         "document": "Social Security Administration, 2026 Cost-of-Living Adjustment Fact Sheet",
@@ -41,8 +42,10 @@
       },
       "retirementLimits": {
         "document": "IRS Notice 2025-67 (news release IR-2025-111)",
-        "url": "https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500",
-        "retrieved": "2026-10-02"
+        "url": "https://www.irs.gov/pub/irs-drop/n-25-67.pdf",
+        "retrieved": "2026-10-02",
+        "summary": "https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500",
+        "verified": "2026-10-03"
       },
       "hsaLimits": {
         "document": "IRS Revenue Procedure 2025-19, section 2.01; catch-up is statutory under IRC section 223(b)(3)",
@@ -237,10 +240,13 @@
           242000,
           252000
         ],
-        "marriedSeparate": null
+        "marriedSeparate": [
+          0,
+          10000
+        ]
       },
       "notes": [
-        "Married filing separately Roth phase-out was not in the cited source and is left null until sourced.",
+        "Married filing separately Roth phase-out is $0 to $10,000 per IRS Notice 2025-67 (added 2026-10-03; it is not inflation-adjusted).",
         "The IRA limit is shared between traditional and Roth. Workplace limits cover 401(k), 403(b), governmental 457, and the TSP."
       ]
     }
