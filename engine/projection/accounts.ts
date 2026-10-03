@@ -14,13 +14,12 @@ export function blendedRealReturn(allocation: Allocation, returns: Record<AssetC
 
 /**
  * Balance at the end of a period. The opening balance grows for the whole
- * period; the net flow (contributions minus withdrawals) lands mid-period.
+ * period. The net flow (contributions minus withdrawals) earns half the
+ * period's rate: flow x rate / 2 in a full year (engine spec section 2).
  */
 export function growBalance(opening: number, netFlow: number, ratePercent: number, fraction: number): number {
-  const r = ratePercent / 100;
-  const full = Math.pow(1 + r, fraction);
-  const half = Math.pow(1 + r, fraction / 2);
-  return opening * full + netFlow * half;
+  const periodRate = Math.pow(1 + ratePercent / 100, fraction) - 1;
+  return opening * (1 + periodRate) + netFlow * (1 + periodRate / 2);
 }
 
 /** Growth earned in the period: the end balance less what was put in or taken out. */

@@ -502,7 +502,9 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         ...assets().filter((a) => a.taxBucket === "roth"),
         ...assets().filter((a) => a.taxBucket === "hsa"),
       ];
+      // The cash reserve is a set number of months of this year's spending, in dollars.
       const reserve = (DEFAULTS.reserveMonths / 12) * spendTotal;
+      const cashAccounts = order.filter((a) => a.taxBucket === "cash");
       for (let i = 0; i < 100; i++) {
         withdrawals.clear();
         let need = -(cashIn(0, 0, pretaxWithdrawal) - spendTotal - scheduledDebt);
@@ -510,17 +512,28 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         let cashReserveLeft = reserve;
         for (const a of order) {
           if (need <= 0) break;
-          let capacity = a.balance / f;
+          let available = a.balance;
           if (a.taxBucket === "cash") {
-            const keep = Math.min(capacity, cashReserveLeft);
+            const keep = Math.min(available, cashReserveLeft);
             cashReserveLeft -= keep;
-            capacity -= keep;
+            available -= keep;
           }
+          const capacity = available / f;
           const w = Math.max(0, Math.min(capacity, need));
           if (w > 0) {
             withdrawals.set(a.id, w);
             need -= w;
             if (a.taxBucket === "pretax") pretaxTaken += w;
+          }
+        }
+        // Last resort, after every other account: the reserve itself.
+        for (const a of cashAccounts) {
+          if (need <= 0) break;
+          const already = withdrawals.get(a.id) ?? 0;
+          const w = Math.max(0, Math.min(a.balance / f - already, need));
+          if (w > 0) {
+            withdrawals.set(a.id, already + w);
+            need -= w;
           }
         }
         shortfall = Math.max(0, need);

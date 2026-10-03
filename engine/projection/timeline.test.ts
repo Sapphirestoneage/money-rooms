@@ -107,11 +107,13 @@ describe("runTimeline, Maya, retiring at 42", () => {
     expect(r.assetsAtRetirement).toBeCloseTo(last.assets, 6);
   });
 
-  it("withdraws in order: cash, then taxable, then pretax with the penalty before 59 and a half", () => {
+  it("keeps the cash reserve and withdraws taxable first, then pretax with the penalty before 59 and a half", () => {
+    // Her cash (about 10,000) is under the reserve of 6 months of spending (18,600), so none of it is drawn.
     const first = r.rows.find((row) => row.year === 2043)!;
     const ids = Object.keys(first.withdrawals);
-    expect(ids.length).toBeGreaterThan(0);
-    expect(["chk", "hysa"]).toContain(ids[0]);
+    expect(ids).toEqual(["engine:brokerage"]);
+    expect(first.withdrawals["chk"]).toBeUndefined();
+    expect(first.withdrawals["hysa"]).toBeUndefined();
     const penalized = r.rows.find((row) => row.retired && row.age < 59.5 && (row.withdrawals["k401"] ?? 0) > 0);
     if (penalized) expect(penalized.taxes.penalty).toBeGreaterThan(0);
     const after60 = r.rows.find((row) => row.age === 60 && (row.withdrawals["k401"] ?? 0) > 0);
@@ -149,5 +151,42 @@ describe("runTimeline, strategies", () => {
     expect(y0.contributions["engine:rothIRA"]).toBeCloseTo(7500 * 0.25, 6);
     expect(y0.contributions["engine:roth401k"]).toBeCloseTo((13780.12 - 7500) * 0.25, 2);
     expect(y0.taxes.federalIncome).toBeCloseTo(6376.4 * 0.25, 2);
+  });
+});
+
+describe("runTimeline, the cash reserve (engine spec section 4)", () => {
+  const withCash = (hysa: number) => {
+    const h = mayaHousehold();
+    if (h.accounts.kind !== "rows") throw new Error("rows expected");
+    const acct = h.accounts.rows.find((a) => a.id === "hysa")!;
+    acct.balance = userValue(hysa, asOf);
+    return h;
+  };
+
+  it("draws cash above 6 months of spending first, and leaves the reserve", () => {
+    // Retire at once. Spending 37,200, so the reserve is 18,600. Cash is 3,500 + 60,000 = 63,500.
+    // The stub year needs spending plus the loan payment: (37,200 + 3,120) x 0.25 = 10,080,
+    // all of it available above the reserve.
+    const r = runTimeline(requireComplete(withCash(60000)), { ...deps, band: likely, retirementYear: 2026 });
+    const y0 = r.rows[0]!;
+    const fromCash = (y0.withdrawals["chk"] ?? 0) + (y0.withdrawals["hysa"] ?? 0);
+    expect(fromCash).toBeCloseTo((37200 + 3120) * 0.25, 2);
+    expect(y0.withdrawals["k401"]).toBeUndefined();
+    // Later, once cash is down to the reserve, the next account takes over and cash stays near 18,600.
+    const later = r.rows.find((row) => (row.withdrawals["k401"] ?? 0) > 0)!;
+    const cashThen = (later.balances["chk"] ?? 0) + (later.balances["hysa"] ?? 0);
+    expect(cashThen).toBeGreaterThan(18000);
+  });
+
+  it("draws the reserve itself last, only after every other account is empty", () => {
+    const r = runTimeline(requireComplete(withCash(6000)), { ...deps, band: likely, retirementYear: 2026 });
+    const firstCashDraw = r.rows.find((row) => (row.withdrawals["chk"] ?? 0) + (row.withdrawals["hysa"] ?? 0) > 0)!;
+    expect(firstCashDraw).toBeDefined();
+    // In that year the 401(k), the only other account she has, was drawn to its opening balance.
+    // What remains is only that year's growth on money that left mid-year (half the rate).
+    expect(firstCashDraw.withdrawals["k401"]).toBeGreaterThan(0);
+    expect(firstCashDraw.balances["k401"]).toBeLessThan(500);
+    const before = r.rows[r.rows.indexOf(firstCashDraw) - 1];
+    if (before) expect((before.withdrawals["chk"] ?? 0) + (before.withdrawals["hysa"] ?? 0)).toBe(0);
   });
 });

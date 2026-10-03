@@ -61,7 +61,8 @@ export function debtYear(d: DebtYearInput): DebtYearResult {
   }
   const r = realRate(d.nominalRatePercent, d.inflationPercent);
   const growthFull = Math.pow(1 + r, d.fraction);
-  const growthHalf = Math.pow(1 + r, d.fraction / 2);
+  // A mid-period payment saves half the period's interest (engine spec section 2).
+  const growthHalf = 1 + (growthFull - 1) / 2;
 
   const realScheduled = (d.nominalPaymentAnnual / Math.pow(1 + d.inflationPercent / 100, d.t)) * d.fraction;
   // The payment at mid-period that leaves exactly zero at period end.

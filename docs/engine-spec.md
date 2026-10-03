@@ -24,7 +24,7 @@ Every room in Money Rooms reads from this one engine. No room runs its own math.
 | Time step | One row per year. Year 0 is the current calendar year. |
 | Stub period | Year 0 runs from the plan's as-of month through December. Its fraction is months remaining (as-of month included) over 12. In October that is 3/12. Every annual flow (income, spending, debt payments, contributions, Social Security) is multiplied by the fraction. Taxes are computed on the full year's annualized income, then multiplied by the fraction. Contribution limits are prorated the same way. Balances grow for the fraction of a year. Year 1 onward are full calendar years. See decision E8. |
 | Dollars | Real (today's dollars) throughout. |
-| Timing | Income, spending, and contributions happen mid-period: half the period's growth in the period they occur. For the stub period, half of the stub fraction. |
+| Timing | Income, spending, contributions, withdrawals, and debt payments happen mid-period. An account's opening balance earns the full period's rate. Its net flow during the period earns half the period's rate: flow x rate / 2 in a full year. This is simple halving, not half-year compounding. In the stub period, the period's rate is the annual rate compounded over the stub fraction, and flows earn half of that. |
 | Horizon | From year 0 through the year the person reaches plan-to age. |
 | Ending | The balance left at plan-to age is reported as the estate amount. |
 | Determinism | Same inputs always produce the same outputs. No randomness in M1. |
@@ -81,6 +81,9 @@ Then the order depends on the savings strategy:
 2. Taxable accounts
 3. Pretax accounts (with the 10% penalty before 59½ in M1; access strategies in M2)
 4. Roth accounts
+5. The emergency reserve itself, last
+
+**The emergency reserve** is 6 months of that year's spending: working spending in working years, retirement spending in retired years. Level 2 (Resilience) will later replace the flat 6 months with the Rule of 5 target.
 
 M2 replaces this with an optimized drawdown: Roth conversion ladders, filling low tax brackets, and the order that maximizes lifetime spending.
 

@@ -29,7 +29,9 @@ describe("debtYear", () => {
     const r = debtYear(base);
     const rr = realRate(5.5, 3);
     expect(r.paid).toBeCloseTo(3120, 9);
-    expect(r.endBalance).toBeCloseTo(24000 * (1 + rr) - 3120 * Math.sqrt(1 + rr), 6);
+    // Maya's loan: 24,000 x 1.02427 - 3,120 x (1 + 0.02427 / 2) = 21,424.6 (workpaper: 21,425)
+    expect(r.endBalance).toBeCloseTo(24000 * (1 + rr) - 3120 * (1 + rr / 2), 6);
+    expect(Math.round(r.endBalance)).toBe(21425);
     expect(r.interest + r.principal).toBeCloseTo(r.paid, 9);
     expect(r.paidOff).toBe(false);
     expect(r.paymentBelowInterest).toBe(false);
@@ -39,7 +41,8 @@ describe("debtYear", () => {
     const r = debtYear({ ...base, fraction: 0.25 });
     expect(r.paid).toBeCloseTo(780, 9);
     const rr = realRate(5.5, 3);
-    expect(r.endBalance).toBeCloseTo(24000 * (1 + rr) ** 0.25 - 780 * (1 + rr) ** 0.125, 6);
+    const period = (1 + rr) ** 0.25 - 1;
+    expect(r.endBalance).toBeCloseTo(24000 * (1 + period) - 780 * (1 + period / 2), 6);
   });
 
   it("a fixed nominal payment shrinks in real terms over time", () => {

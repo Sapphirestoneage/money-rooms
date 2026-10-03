@@ -101,6 +101,19 @@ const fi = findFiDate(hh, band, deps);
 console.log(`FI age under the tie-out settings: ${fi.fiAge} (retire in ${fi.retirementYear}). Workpaper: 42 (2043).`);
 if (fi.oneYearEarlier) console.log(`Retiring one year earlier first falls short at age ${fi.oneYearEarlier.age}. Workpaper (entered only): 85.`);
 
+console.log("");
+console.log("By strategy (workpaper values from tests/households/maya.json):");
+const expectedByStrategy = (maya as unknown as { expected: { byStrategy: Record<string, { fiAgeLikely: number; assetsAtRetirement: number; lifetimeTaxes: number; oneYearEarlierFailsAt: number }> } }).expected.byStrategy;
+for (const strategy of ["maxTaxSavingsNow", "maxTaxFreeGrowth", "enteredOnly"] as const) {
+  const h2 = householdFromExample(maya as ExampleHouseholdFile, AS_OF);
+  h2.savingsStrategy = userValue(strategy, AS_OF);
+  const r = findFiDate(requireComplete(h2), band, deps);
+  const e = expectedByStrategy[strategy]!;
+  console.log(
+    `  ${strategy}: FI age ${r.fiAge} (workpaper ${e.fiAgeLikely}); assets at retirement ${Math.round(r.timeline.assetsAtRetirement ?? 0)} (${e.assetsAtRetirement}); lifetime taxes ${Math.round(r.timeline.lifetimeTaxes)} (${e.lifetimeTaxes}); one year earlier fails at ${r.oneYearEarlier?.age ?? "never"} (${e.oneYearEarlierFailsAt})`,
+  );
+}
+
 const timeline = runTimeline(hh, { band, retirementYear: 2043, tables: deps.tables, ssParams: deps.ssParams, testSettings: TEST_SETTINGS });
 console.log(`With retirement fixed at 42 (2043): first shortfall ${timeline.firstShortfall ? `age ${timeline.firstShortfall.age}` : "none"}; lifetime taxes ${Math.round(timeline.lifetimeTaxes)} (workpaper 416,466).`);
 

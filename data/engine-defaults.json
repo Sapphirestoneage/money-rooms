@@ -2,7 +2,7 @@
   "_meta": {
     "description": "Engine rule parameters that are numbers, kept out of code (CLAUDE.md). Each one is a proposed default until the open question that owns it is settled.",
     "version": 1,
-    "updated": "2026-10-02"
+    "updated": "2026-10-03"
   },
   "highInterestThresholdPercent": {
     "value": 8,
@@ -17,10 +17,10 @@
     "meaning": "For the Social Security estimate, years from this age through the year before the plan date are back-filled at the plan-year covered earnings when no ssa.gov record is entered."
   },
   "emergencyReserveMonths": {
-    "value": 0,
-    "status": "Proposed",
-    "owner": "M1 convention C9",
-    "meaning": "Months of spending kept in cash before a shortfall draws from it. Zero in M1; the M2 optimizer adds a cash buffer limit."
+    "value": 6,
+    "status": "Locked (Eli, 2026-10-03)",
+    "owner": "engine-spec.md section 4",
+    "meaning": "Months of that year's spending kept in cash. A shortfall draws cash above the reserve first and the reserve itself last, after Roth. Level 2 will replace the flat 6 months with the Rule of 5 target."
   },
   "penaltyFreeAge": {
     "value": 59.5,

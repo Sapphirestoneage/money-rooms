@@ -13,14 +13,16 @@ describe("blendedRealReturn", () => {
 });
 
 describe("growBalance", () => {
-  it("grows the opening balance for the full period and the flow for half", () => {
-    const end = growBalance(10000, 1200, 6, 1);
-    expect(end).toBeCloseTo(10000 * 1.06 + 1200 * Math.sqrt(1.06), 9);
+  it("grows the opening balance at the full rate and the flow at half the rate", () => {
+    // 10,000 x 1.06 = 10,600; 1,200 x (1 + 0.06 / 2) = 1,236; total 11,836
+    expect(growBalance(10000, 1200, 6, 1)).toBeCloseTo(11836, 9);
   });
 
   it("prorates both in the stub period", () => {
+    // The stub period's rate is 1.06^0.25 - 1; the flow earns half of it.
+    const period = 1.06 ** 0.25 - 1;
     const end = growBalance(10000, 300, 6, 0.25);
-    expect(end).toBeCloseTo(10000 * 1.06 ** 0.25 + 300 * 1.06 ** 0.125, 9);
+    expect(end).toBeCloseTo(10000 * (1 + period) + 300 * (1 + period / 2), 9);
   });
 
   it("handles withdrawals as negative flow and zero rates", () => {
@@ -29,6 +31,7 @@ describe("growBalance", () => {
 
   it("reports growth separately from flows", () => {
     expect(growthEarned(10000, 0, 6, 1)).toBeCloseTo(600, 9);
-    expect(growthEarned(10000, 1200, 6, 1)).toBeCloseTo(600 + 1200 * (Math.sqrt(1.06) - 1), 9);
+    // 600 on the opening balance plus 1,200 x 3% = 36 on the flow
+    expect(growthEarned(10000, 1200, 6, 1)).toBeCloseTo(636, 9);
   });
 });
