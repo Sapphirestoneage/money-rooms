@@ -10,7 +10,10 @@ import jordan from "../../tests/households/jordan.json";
 import maya from "../../tests/households/maya.json";
 import {
   STATE_CODES,
+  accountGroups,
   addMonths,
+  entrySummary,
+  firstSectionNeedingAttention,
   weeksThroughEndOf,
   amountFromPercentOfPay,
   assetFromPreset,
@@ -36,6 +39,8 @@ import {
   type AnnualDeduction,
   type Cadence,
   type Confidence,
+  type EntrySectionId,
+  type SectionSummary,
   type DebtAccount,
   type ExampleHouseholdFile,
   type FilingStatus,
@@ -50,6 +55,7 @@ import {
   type Value,
   type WorkplaceAccountType,
 } from "../../engine";
+import { collapsibleSection } from "../components/collapsible-section";
 import { confirmPanel } from "../components/confirm-panel";
 import { gentleFlag } from "../components/gentle-flag";
 import { kindBadge, type EditableKind } from "../components/kind-badge";
@@ -196,6 +202,26 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     }, 0);
   };
 
+  /** Which sections are open. On arrival, only the first one that needs attention. */
+  const openSections = new Set<EntrySectionId>();
+  {
+    const first = firstSectionNeedingAttention(h());
+    if (first) openSections.add(first);
+  }
+
+  /** A section's one-line summary: "7 items, $35,829, 2 rough". The numbers come from the engine. */
+  const summaryText = (id: EntrySectionId, s: SectionSummary): string => {
+    const parts: string[] = [];
+    if (id === "about") parts.push(`${s.count} of 3 answers`);
+    else {
+      parts.push(`${s.count} ${s.count === 1 ? "item" : "items"}`);
+      if (s.count > 0 && s.total !== null) parts.push(id === "income" || id === "spending" ? `${dollars(s.total)} a year now` : dollars(s.total));
+    }
+    if (s.rough > 0) parts.push(`${s.rough} rough`);
+    if (s.missing > 0) parts.push(`${s.missing} missing`);
+    return parts.join(", ");
+  };
+
   function render(): void {
     // Remember where the person is: scroll position, the field with the cursor, and any open section.
     const scrollY = window.scrollY;
@@ -203,7 +229,22 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const isNewRow = pendingFocusKey !== null;
     const focusKey = pendingFocusKey ?? active?.dataset.key ?? null;
     pendingFocusKey = null;
-    const openSections = [...root.querySelectorAll("details")].map((d) => d.open);
+    const openDetails = [...root.querySelectorAll("details")].map((d) => d.open);
+    const summaries = entrySummary(h());
+    const section = (id: EntrySectionId, title: string, body: (HTMLElement | null)[]): HTMLElement =>
+      collapsibleSection({
+        id,
+        title,
+        summary: summaryText(id, summaries[id]),
+        complete: summaries[id].complete,
+        open: openSections.has(id),
+        onToggle: () => {
+          if (openSections.has(id)) openSections.delete(id);
+          else openSections.add(id);
+          schedule();
+        },
+        body,
+      });
 
     clear(root);
     const parts: (HTMLElement | null)[] = [
@@ -212,10 +253,11 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       ctx.store.isPersistent()
         ? null
         : gentleFlag("This browser is not keeping what you enter (a private window does this). Your numbers will be gone when you close it. Export a file below to keep them."),
-      aboutYou(),
-      income(),
-      spending(),
-      accounts(),
+      section("about", "About you", aboutYou()),
+      section("income", "Income", income()),
+      section("spending", "Spending", spending()),
+      section("accounts", "Accounts", accounts("asset")),
+      section("debts", "Debts", accounts("debt")),
       sharpeners(),
       examples(),
       templateCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
@@ -225,7 +267,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     for (const part of parts) if (part) root.append(part);
 
     // Put everything back.
-    [...root.querySelectorAll("details")].forEach((d, i) => { if (openSections[i]) d.open = true; });
+    [...root.querySelectorAll("details")].forEach((d, i) => { if (openDetails[i]) d.open = true; });
     window.scrollTo(0, scrollY);
     if (focusKey) {
       const target = [...root.querySelectorAll<HTMLElement>("[data-key]")].find((n) => n.dataset.key === focusKey);
@@ -237,7 +279,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   }
 
   // ---- About you -----------------------------------------------------------
-  function aboutYou(): HTMLElement {
+  function aboutYou(): HTMLElement[] {
     fieldScope = "about";
     // Two plain pickers. The browser's own month control is missing in Safari and Firefox.
     const born = h().self.birthDate ? parseYearMonth(h().self.birthDate!.value) : null;
@@ -268,10 +310,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       ctx.save();
       schedule();
     });
-    return el(
-      "section",
-      { class: "card" },
-      el("div", { class: "card__title" }, el("h2", {}, "About you")),
+    return [
       el(
         "div",
         { class: "field-grid" },
@@ -280,11 +319,11 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         field("State", state),
         field("Filing status", filing, kindBadge(h().self.filingStatus.confidence)),
       ),
-    );
+    ];
   }
 
   // ---- Income ----------------------------------------------------------------
-  function income(): HTMLElement {
+  function income(): HTMLElement[] {
     const answer = h().self.income;
     const body = el("div", { class: "stack" });
 
@@ -316,13 +355,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
 
     const none = el("button", { type: "button", class: "button button--quiet", onClick: () => { h().self.income = { kind: "none", asOf: asOf() }; ctx.save(); schedule(); } }, "I don't have income right now");
 
-    return el(
-      "section",
-      { class: "card" },
-      el("div", { class: "card__title" }, el("h2", {}, "Income")),
-      body,
-      el("div", { class: "row-actions" }, addType, answer.kind !== "none" ? none : null),
-    );
+    return [body, el("div", { class: "row-actions" }, addType, answer.kind !== "none" ? none : null)];
   }
 
   function streamEditor(s: IncomeStream): HTMLElement {
@@ -573,7 +606,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   /** Spending rows whose start and end fields are showing. */
   const openDates = new Set<string>();
 
-  function spending(): HTMLElement {
+  function spending(): HTMLElement[] {
     const currentRows = (): SpendingRow[] => {
       const sp = h().spending;
       return sp.kind === "rows" ? sp.rows : [];
@@ -787,27 +820,34 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       body.append(grid);
     }
 
-    return el("section", { class: "card" }, el("div", { class: "card__title" }, el("h2", {}, "Spending")), body);
+    return [body];
   }
 
   // ---- Accounts --------------------------------------------------------------
-  let pickerOpen = false;
+  /** Which add list is showing: accounts, debts, or neither. */
+  let pickerOpen: "asset" | "debt" | null = null;
 
-  function accounts(): HTMLElement {
+  /** One side of the accounts list: what the person owns ("asset") or owes ("debt"). */
+  function accounts(side: "asset" | "debt"): (HTMLElement | null)[] {
     const answer = h().accounts;
+    const noun = side === "asset" ? "accounts" : "debts";
+    const mine = answer.kind === "rows" ? answer.rows.filter((a) => a.side === side) : [];
     const body = el("div", { class: "stack" });
-    if (answer.kind === "none") body.append(el("p", { class: "empty-state" }, "No accounts. That counts as answered."));
-    else if (answer.kind === "unanswered" || answer.rows.length === 0) body.append(el("p", { class: "empty-state" }, "No accounts yet. Add your first one."));
-    else for (const a of answer.rows) body.append(accountEditor(a));
+    if (answer.kind === "none") body.append(el("p", { class: "empty-state" }, `No ${noun}. That counts as answered.`));
+    else if (mine.length === 0) body.append(el("p", { class: "empty-state" }, side === "asset" ? "No accounts yet. Add your first one." : "No debts listed."));
+    else for (const a of mine) body.append(accountEditor(a));
 
+    const open = pickerOpen === side;
     const actions = el(
       "div",
       { class: "row-actions" },
-      el("button", { type: "button", class: "button", onClick: () => { pickerOpen = !pickerOpen; schedule(); } }, pickerOpen ? "Close the list" : "Add account"),
-      answer.kind !== "none" ? el("button", { type: "button", class: "button button--quiet", onClick: () => { h().accounts = { kind: "none", asOf: asOf() }; ctx.save(); schedule(); } }, "I don't have any accounts") : null,
+      el("button", { type: "button", class: "button", "aria-expanded": String(open), onClick: () => { pickerOpen = open ? null : side; schedule(); } }, open ? "Close the list" : side === "asset" ? "Add account" : "Add debt"),
+      side === "asset" && answer.kind !== "none" && (answer.kind === "unanswered" || answer.rows.length === 0)
+        ? el("button", { type: "button", class: "button button--quiet", onClick: () => { h().accounts = { kind: "none", asOf: asOf() }; ctx.save(); schedule(); } }, "I don't have any accounts or debts")
+        : null,
     );
 
-    const picker = pickerOpen
+    const picker = open
       ? presetPicker((key: AccountPresetKey) => {
           const acc = h().accounts;
           const rows = acc.kind === "rows" ? acc.rows : [];
@@ -829,13 +869,13 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
           }
           h().accounts = { kind: "rows", rows: [...rows, account] };
           pendingFocusKey = `${id}|${preset.side === "asset" ? "Balance" : "Balance owed"}`;
-          pickerOpen = false;
+          pickerOpen = null;
           ctx.save();
           schedule();
-        })
+        }, side)
       : null;
 
-    return el("section", { class: "card" }, el("div", { class: "card__title" }, el("h2", {}, "Accounts and debts")), body, actions, picker);
+    return [body, actions, picker];
   }
 
   /** Keeps a debt's estimated payment in step with its balance and rate until the person enters a real one. */

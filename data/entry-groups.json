@@ -1,0 +1,14 @@
+{
+  "description": "How the entry screen groups accounts and debts. Each group lists the account presets (data/account-presets.json) it holds. Anything not listed falls into the 'other' group.",
+  "assets": [
+    { "id": "cash", "label": "Cash", "presets": ["checking", "savings"] },
+    { "id": "investing", "label": "Investing", "presets": ["brokerage"] },
+    { "id": "retirement", "label": "Retirement", "presets": ["trad401k", "roth401k", "tradIRA", "rothIRA", "hsa"] }
+  ],
+  "otherAssetsLabel": "Other",
+  "debts": [
+    { "id": "cards", "label": "Credit cards", "presets": ["creditCard", "businessCard"] },
+    { "id": "studentLoans", "label": "Student loans", "presets": ["studentFederal", "studentPrivate"] }
+  ],
+  "otherDebtsLabel": "Other debts"
+}

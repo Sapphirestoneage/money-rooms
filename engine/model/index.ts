@@ -11,6 +11,7 @@ export * from "./presets";
 export * from "./categories";
 export * from "./assumptions";
 export * from "./household";
+export * from "./entry-summary";
 export * from "./tax-tables";
 export * from "./social-security-params";
 export * from "./examples";
