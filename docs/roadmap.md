@@ -30,9 +30,13 @@ The thinnest version that runs all the way through: inputs, engine, one answer, 
 
 ## M2. Net FI and the strategy engine
 
+**Built 2026-10-04 (Proposed, awaiting Eli's review) on branches `m2-engine` and `m2-optimizer`.** The engine runs at M2 depth behind an m1/m2 switch; the Maya tie-out runs m1 and still passes.
+
 Full spec: [`m2-spec.md`](m2-spec.md). Full tax depth, every early-access strategy as a toggle, ACA and IRMAA, the optimizer with selectable objectives, year-by-year locks, Gross FI vs Net FI, and the rules registry with tripwires.
 
 ## M3. The Ledger and the flow
+
+**Built 2026-10-04 (Proposed) on `m3-flow`; Level 2, Level 3 milestones, and Level 5 on `levels`.**
 
 Levels and rounds (the planets), the next card (one big, two small), the list of every roughly and unknown number, the gross and take-home reconciliation, proof of cash.
 
@@ -40,9 +44,13 @@ Level content specs: [`levels/level-2-resilience.md`](levels/level-2-resilience.
 
 ## M4. Meaning
 
+**Spec written and built 2026-10-04 (Proposed) on `m4-meaning`: `m4-spec.md`.**
+
 Ratio registry, metrics unlocked, lenses ("more ways to look at this"), the 4% rule as a comparison lens, the Advice Translator.
 
 ## M5. What-ifs and goals
+
+**Built 2026-10-04 (Proposed) on `m5-whatifs`.**
 
 Scenario blocks, goal buckets in the projection, the dream and surplus views, payoff methods including peace-first.
 

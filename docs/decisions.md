@@ -215,3 +215,14 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | W4 | Goals are laid into spending as dated rows. "Short" means not funded at the baseline FI year; dreams are trimmed first (largest first), then wants; musts are never trimmed. A trimmed goal's "fits from" is the earliest start age at which it keeps the plan funded. | Proposed | Two-way | 2026-10-04 | Data dictionary 5.1 layer 3. |
 | W5 | The true amount grows the cost at the likely blended real return to age 65 (the spec's example). The timing curve covers ten years from the chosen age (eight on screen); markers are debt payoffs, Coast, Lean, and FI dates, income starts and ends, and other dreams ending. | Proposed | Two-way | 2026-10-04 | Spec sections 3 and 4. |
 | W6 | Payoff methods run a monthly simulation of the debts alone at a fixed budget (the minimums plus any extra): minimums first, the rest to the method's first open debt. Peace-first tries every order when there are six or fewer debts and minimizes stress times months owed; stress defaults to 3. The price of peace is its extra interest over the avalanche. | Proposed | Two-way | 2026-10-04 | Decision M2 made concrete. |
+
+## M4 meaning decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| K1 | Every ratio lives in `data/ratios.json` with formula, inputs, unit, unlock level, sentence template, optional plain-word bands, and the lenses it belongs to. Values are computed each time. | Proposed | Two-way | 2026-10-04 | M4 spec 2.1; a reader can repeat the arithmetic. |
+| K2 | A ratio is locked until its level is passed, unless the person asks for it. Level 1 ratios are never locked. | Proposed | Two-way | 2026-10-04 | M4 spec 2.2. |
+| K3 | The Shockingly simple math table is recomputed from its stated 5% real return and 4% withdrawal rate, and compared with the plan's own years to FI. | Proposed | Two-way | 2026-10-04 | A lens shows the idea, the plan shows the answer. |
+| K4 | The DRAFTT scorecard measures five letters against take-home pay and taxes against gross pay; therapy and taxes are optional letters off and on by toggle. The ranges are common guidance written as plain words, never verdicts. | Proposed | Two-way | 2026-10-04 | Decision M1 says the letters are optional. |
+| K5 | The Advice Translator's ten lines and their rules live in `data/advice.json`; each verdict (applies, partly, unlearn) is one sentence from the person's numbers. New lines are added to the data file, never to code. | Proposed | Two-way | 2026-10-04 | M4 spec 2.4. |
+| K6 | M4 stores nothing; which lens is open and the DRAFTT letters are display state. A test scans every M4 sentence for instructing phrases. | Proposed | Two-way | 2026-10-04 | Style guide: never a verdict. |

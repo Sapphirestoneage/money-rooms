@@ -225,6 +225,12 @@ One per dream: the name with its kind badge and priority, then an ordered list i
 ### Comparison table
 Payoff methods side by side: method, order, months to debt free, interest, stress-months, with a sentence beneath naming the price of peace and a Computed badge. An input above sets the extra a month.
 
+### Ratio row
+One per ratio: the name, a Computed badge (or a quiet level pill when locked), the value right-aligned in tabular figures, the sentence beneath, and a muted "How:" line with the formula.
+
+### Lens buttons and verdict pills
+Lenses are toggle buttons in a row; the open lens shows its idea and its parts beneath. A verdict pill (Applies, Partly, Unlearn) sits right of each advice line: Applies filled brand 700, Unlearn filled attention ink, Partly outlined.
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 
