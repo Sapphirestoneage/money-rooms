@@ -23,6 +23,7 @@ import {
   assetFromPreset,
   debtFromPreset,
   debtsNeedingRate,
+  emptyPerson,
   estimatedMinimumPaymentAnnual,
   getAccountPreset,
   householdFromExample,
@@ -39,6 +40,7 @@ import {
   resolveAssumptions,
   userValue,
   type Account,
+  type AccountOwner,
   type AccountPresetKey,
   type AnnualDeduction,
   type Cadence,
@@ -414,26 +416,109 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         field("State", state),
         field("Filing status", filing, kindBadge(h().self.filingStatus.confidence)),
       ),
+      ...partnerBlock(years),
+    ];
+  }
+
+  /** Households of two (docs/household-two-spec.md 2.7): add a partner, their birth month, HSA, and claiming age; remove asks first. */
+  let confirmRemovePartner = false;
+  function partnerBlock(years: { value: string; label: string }[]): HTMLElement[] {
+    const partner = h().partner;
+    if (!partner) {
+      const married = h().self.filingStatus.value === "marriedJoint" || h().self.filingStatus.value === "marriedSeparate";
+      return [
+        el(
+          "div",
+          { class: "row-actions" },
+          el("button", { type: "button", class: "button button--quiet", onClick: () => { h().partner = emptyPerson(asOf()); ctx.save(); schedule(); } }, "Add a partner"),
+          married ? el("p", { class: "notice" }, "The filing status is married. Adding your partner lets the plan use both ages, both earnings records, and both Social Security benefits.") : null,
+        ),
+      ];
+    }
+    fieldScope = "partner";
+    const born = partner.birthDate ? parseYearMonth(partner.birthDate.value) : null;
+    const birthBadge = badgeSlot(() => partner.birthDate, () => undefined, false);
+    const setBirth = () => {
+      if (birthMonth.value && birthYear.value) partner.birthDate = userValue(`${birthYear.value}-${birthMonth.value}`, asOf());
+      else delete partner.birthDate;
+      ctx.save();
+      birthBadge.refresh();
+    };
+    const birthMonth = select(MONTH_NAMES.map((name, i) => ({ value: String(i + 1).padStart(2, "0"), label: name })), born ? String(born.month).padStart(2, "0") : undefined, setBirth, "Month");
+    const birthYear = select(years, born ? String(born.year) : undefined, setBirth, "Year");
+    const hsa = select([{ value: "no", label: "No" }, { value: "yes", label: "Yes, a high-deductible health plan" }], partner.hsaEligible.value ? "yes" : "no", (v) => { partner.hsaEligible = userValue(v === "yes", asOf()); ctx.save(); });
+    const fra = born ? loadSocialSecurityParams().normalRetirementAge(born.year).years : 67;
+    const claimOptions = [{ value: "default", label: `Full retirement age (${fra})` }, ...[62, 63, 64, 65, 66, 67, 68, 69, 70].map((a) => ({ value: String(a), label: `Age ${a}` }))];
+    const claim = select(claimOptions, partner.socialSecurity.claimingAge ? String(partner.socialSecurity.claimingAge.value.years) : "default", (v) => {
+      if (v === "default") delete partner.socialSecurity.claimingAge;
+      else partner.socialSecurity.claimingAge = userValue({ years: Number(v), months: 0 }, asOf());
+      ctx.save();
+    });
+    const partnerIncome = partner.income.kind === "rows" ? partner.income.rows.length : 0;
+    const remove = confirmRemovePartner
+      ? confirmPanel({
+          sentence: partnerIncome > 0 ? `Removing your partner also removes their ${partnerIncome === 1 ? "income stream" : `${partnerIncome} income streams`}. Accounts marked as theirs become yours.` : "Removing your partner takes their ages and benefits out of the plan. Accounts marked as theirs become yours.",
+          confirmLabel: "Remove partner",
+          cancelLabel: "Keep partner",
+          onConfirm: () => {
+            delete h().partner;
+            if (h().accounts.kind === "rows") for (const a of (h().accounts as { kind: "rows"; rows: Account[] }).rows) if (a.owner === "partner") a.owner = "self";
+            confirmRemovePartner = false;
+            ctx.save();
+            schedule();
+          },
+          onCancel: () => { confirmRemovePartner = false; schedule(); },
+        })
+      : el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: () => { confirmRemovePartner = true; schedule(); } }, "Remove partner"));
+    return [
+      el("h3", { class: "card__subheading" }, "Your partner"),
+      el(
+        "div",
+        { class: "field-grid" },
+        field("Partner's birth month", birthMonth, birthBadge.node),
+        field("Partner's birth year", birthYear),
+        field("Partner HSA eligible", hsa),
+        field("Partner's Social Security claiming age", claim),
+      ),
+      el("p", { class: "notice" }, "Add your partner's jobs in the Income section and mark whose they are. Each account can be marked yours, your partner's, or joint."),
+      remove,
     ];
   }
 
   // ---- Income ----------------------------------------------------------------
+  /** Which person a stream belongs to (households of two). */
+  const personOfStream = (id: string): "self" | "partner" => {
+    const p = h().partner;
+    return p && p.income.kind === "rows" && p.income.rows.some((r) => r.id === id) ? "partner" : "self";
+  };
+  const streamsOf = (who: "self" | "partner"): IncomeStream[] => {
+    const person = who === "partner" ? h().partner : h().self;
+    return person && person.income.kind === "rows" ? person.income.rows : [];
+  };
+  const setStreams = (who: "self" | "partner", rows: IncomeStream[]) => {
+    const person = who === "partner" ? h().partner : h().self;
+    if (!person) return;
+    person.income = rows.length ? { kind: "rows", rows } : who === "self" ? { kind: "unanswered" } : { kind: "none", asOf: asOf() };
+  };
   function income(): HTMLElement[] {
     const answer = h().self.income;
     const body = el("div", { class: "rows" });
+    const partnerRows = streamsOf("partner");
 
-    if (answer.kind === "none") {
+    if (answer.kind === "none" && partnerRows.length === 0) {
       body.append(el("p", { class: "empty-state" }, "No income right now. That counts as answered."));
-    } else if (answer.kind === "unanswered" || answer.rows.length === 0) {
+    } else if ((answer.kind !== "rows" || answer.rows.length === 0) && partnerRows.length === 0) {
       body.append(el("p", { class: "empty-state" }, "No income yet. Add your first stream."));
     } else {
-      for (const s of answer.rows) {
+      const listed = [...(answer.kind === "rows" ? answer.rows : []), ...partnerRows];
+      for (const s of listed) {
         if (openRow === s.id) {
           body.append(streamEditor(s));
           continue;
         }
         const missing = incomeState(s) === "missing";
         const detail: string[] = [];
+        if (personOfStream(s.id) === "partner") detail.push("partner's");
         if (s.start && s.start > asOf().slice(0, 7)) detail.push(`starts ${shortMonth(s.start)}`);
         if (s.end.kind === "date") detail.push(`through ${shortMonth(s.end.date)}`);
         else if (s.end.kind === "age") detail.push(`until age ${s.end.age}`);
@@ -450,9 +535,8 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       }
     }
 
-    const addType = select(INCOME_TYPES.map((t) => ({ value: t.type, label: t.label })), undefined, (type: IncomeType) => {
-      const inc = h().self.income;
-      const rows = inc.kind === "rows" ? inc.rows : [];
+    const addStream = (who: "self" | "partner", type: IncomeType) => {
+      const rows = streamsOf(who);
       const stream: IncomeStream = {
         id: rowId("income"),
         type,
@@ -461,17 +545,20 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         end: type === "unemployment" ? { kind: "date", date: addMonths(asOf().slice(0, 7), 5) } : { kind: "retirement" },
       };
       if (type === "salary" || type === "hourly") stream.payFrequency = { ...userValue("biweekly" as const, asOf()), confidence: "roughly" };
-      h().self.income = { kind: "rows", rows: [...rows, stream] };
+      setStreams(who, [...rows, stream]);
       openRow = stream.id;
       pendingFocusKey = `${stream.id}|${type === "unemployment" ? "Benefit amount" : "Gross pay"}`;
       ctx.save();
       schedule();
-    }, "Add income");
+    };
+    const addType = select(INCOME_TYPES.map((t) => ({ value: t.type, label: t.label })), undefined, (type: IncomeType) => addStream("self", type), "Add income");
     addType.setAttribute("aria-label", "Add income");
+    const addPartner = h().partner ? select(INCOME_TYPES.map((t) => ({ value: t.type, label: t.label })), undefined, (type: IncomeType) => addStream("partner", type), "Add partner's income") : null;
+    addPartner?.setAttribute("aria-label", "Add partner's income");
 
     const none = el("button", { type: "button", class: "button button--quiet", onClick: () => { h().self.income = { kind: "none", asOf: asOf() }; ctx.save(); schedule(); } }, "I don't have income right now");
 
-    return [body, el("div", { class: "row-actions" }, addType, answer.kind !== "none" ? none : null)];
+    return [body, el("div", { class: "row-actions" }, addType, addPartner, answer.kind !== "none" ? none : null)];
   }
 
   function streamEditor(s: IncomeStream): HTMLElement {
@@ -483,7 +570,18 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const isUnemployment = s.type === "unemployment";
 
     const grossBadge = badgeSlot(() => (s.grossAnnual.value > 0 ? s.grossAnnual : undefined), (v) => { s.grossAnnual = v; });
-    const fields: HTMLElement[] = [
+    const fields: HTMLElement[] = [];
+    if (h().partner) {
+      const who = personOfStream(s.id);
+      fields.push(field("Whose income", select([{ value: "self", label: "Mine" }, { value: "partner", label: "My partner's" }], who, (v: "self" | "partner") => {
+        if (v === who) return;
+        setStreams(who, streamsOf(who).filter((r) => r.id !== s.id));
+        setStreams(v, [...streamsOf(v), s]);
+        ctx.save();
+        schedule();
+      })));
+    }
+    fields.push(
       money({
         label: isUnemployment ? "Benefit amount" : "Gross pay",
         annual: s.grossAnnual.value || null,
@@ -499,7 +597,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
           grossBadge.refresh();
         },
       }),
-    ];
+    );
 
     if (isWage) {
       fields.push(field("Pay frequency", select(PAY_FREQUENCIES, s.payFrequency?.value ?? "biweekly", (v: PayFrequency) => { s.payFrequency = userValue(v, asOf()); ctx.save(); })));
@@ -697,10 +795,8 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     }
 
     return editorShell(s.id, s.label ? `${s.label} (${typeLabel.toLowerCase()})` : typeLabel, fields, [], () => {
-      const inc = h().self.income;
-      if (inc.kind !== "rows") return;
-      const rows = inc.rows.filter((r) => r.id !== s.id);
-      h().self.income = rows.length ? { kind: "rows", rows } : { kind: "unanswered" };
+      const who = personOfStream(s.id);
+      setStreams(who, streamsOf(who).filter((r) => r.id !== s.id));
       ctx.save();
     });
   }
@@ -999,6 +1095,12 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
 
     const fields: HTMLElement[] = [field(a.side === "asset" ? "Balance" : "Balance owed", balanceInput, balanceBadge.node)];
     const flags: HTMLElement[] = [];
+    if (h().partner) {
+      // Dictionary 9.4: retirement accounts are never joint.
+      const retirement = a.side === "asset" && (a.taxBucket.value === "pretax" || a.taxBucket.value === "roth" || a.taxBucket.value === "hsa");
+      const owners: { value: AccountOwner; label: string }[] = [{ value: "self", label: "Mine" }, { value: "partner", label: "My partner's" }, ...(retirement ? [] : [{ value: "joint" as const, label: "Joint" }])];
+      fields.push(field("Whose account", select(owners, a.owner ?? "self", (v: AccountOwner) => { a.owner = v; ctx.save(); })));
+    }
 
     if (a.side === "asset") {
       const quick = loadQuickAllocations();

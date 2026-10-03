@@ -237,3 +237,16 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | Q4 | Guardrails: cut 10% above 1.2 times the initial withdrawal rate, raise 10% under 0.8 times, never below 60% of plan. The initial rate is measured in the first retired year. | Proposed | Two-way | 2026-10-04 | Guyton-Klinger simplified to its two guardrails. |
 | Q5 | Flex FI trims spending by the Level 3 trim (10%) in every retired year whose stock return was negative, and its date is the sturdy FI date with the trim. It replaces "coming soon" on the spectrum; callers that need speed can skip it. | Proposed | Two-way | 2026-10-04 | M6 spec 2.4 and Level 3 decision G4. |
 | Q6 | The engine gained two hooks: real returns by calendar year, and a spending adjuster for retired years. Under the tie-out neither is set, so m1 is unchanged. | Proposed | Two-way | 2026-10-04 | The tripwire held: Maya ties out after the change. |
+
+## Households of two decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| H1 | One retirement date for the household. Both people's streams stop at it unless a stream carries its own end. Different dates per person wait. | Proposed | Two-way | 2026-10-04 | The FI search is one dimension; a second date is a later version. |
+| H2 | Married filing separately is two returns: the partner's on their own earned income and benefit, the self's on everything else (withdrawals, gains, conversions). State tax follows the same split. | Proposed | Two-way | 2026-10-04 | The simplest honest reading until account ownership drives the split. |
+| H3 | Spousal and survivor Social Security read `ss.spousalAndSurvivor` through a new ledger door for unverified rules; every plan the rule changes carries a flag until the rule is checked against ssa.gov. The survivor rule starts the year after the first plan-to age. | Proposed | Two-way | 2026-10-04 | Build rule 9: keep the value, mark it, give the URL. |
+| H4 | The optimizer's claiming-age knob moves the self only. The partner claims at their entered age or their full retirement age. | Proposed | Two-way | 2026-10-04 | One knob per search dimension for now. |
+| H5 | The waterfall fills the self's accounts first and then the partner's workplace plan (match top-up, then the plan to its limit) in the same strategy order. The partner's HSA and IRA get only what is entered. | Proposed | Two-way | 2026-10-04 | Spec 2.3 allows self first then partner; the other steps are a later version. |
+| H6 | Removing a partner asks first, then removes their income rows and marks their accounts as the self's. Rows are not kept in the export after removal. | Proposed | Two-way | 2026-10-04 | A removed partner's rows with no owner would be a dangling fact; the confirm panel says what goes. |
+| H7 | A joint account reads the older owner's age for penalties and the younger's for required distributions. Debts can be joint. | Proposed | Two-way | 2026-10-04 | The conservative reading of each rule. |
+| H8 | Health care in retirement is priced per adult: one marketplace line for the adults under 65 (benchmark per adult), one Medicare line per adult 65 and over, on the household's MAGI. | Proposed | Two-way | 2026-10-04 | A couple pays two premiums; IRMAA is per person. |

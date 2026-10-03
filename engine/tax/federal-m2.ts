@@ -9,7 +9,7 @@
 import type { FederalTables, FilingStatus } from "../model";
 import type { RuleLedger } from "../model";
 import { marginalRateFromBrackets, taxFromBrackets } from "./brackets";
-import { computeSelfEmploymentTax } from "./federal";
+import { payrollTaxesForPerson } from "./federal";
 
 export interface FederalTaxM2Input {
   year: number;
@@ -31,6 +31,10 @@ export interface FederalTaxM2Input {
   penalized: number;
   /** A deductible traditional IRA contribution this year (above the line). */
   iraDeduction: number;
+  /** Households of two: the partner's age and earned income, for per-person payroll caps and the 65-plus pieces. Blank for one person. */
+  partnerAge?: number;
+  partnerWages?: number;
+  partnerSelfEmploymentNet?: number;
 }
 
 export interface FederalTaxM2Result {
@@ -107,20 +111,24 @@ export function capitalGainsTax(ordinaryTaxableIncome: number, gains: number, sc
 }
 
 export function computeFederalTaxM2(input: FederalTaxM2Input, t: FederalTables, ledger: RuleLedger): FederalTaxM2Result {
-  const { filingStatus, wages, year } = input;
+  const { filingStatus, year } = input;
   const fica = t.fica;
+  const wages = input.wages + (input.partnerWages ?? 0);
+  const selfEmploymentNet = input.selfEmploymentNet + (input.partnerSelfEmploymentNet ?? 0);
 
-  // Payroll taxes, as in M1.
-  const socialSecurityTax = (Math.min(wages, fica.socialSecurityWageBase) * fica.socialSecurityRate) / 100;
-  const medicareTax = (wages * fica.medicareRate) / 100;
-  const se = computeSelfEmploymentTax(input.selfEmploymentNet, wages, t);
+  // Payroll taxes, capped per person.
+  const own = payrollTaxesForPerson(input.wages, input.selfEmploymentNet, t);
+  const partner = input.partnerWages !== undefined || input.partnerSelfEmploymentNet !== undefined ? payrollTaxesForPerson(input.partnerWages ?? 0, input.partnerSelfEmploymentNet ?? 0, t) : null;
+  const socialSecurityTax = own.socialSecurityTax + (partner?.socialSecurityTax ?? 0);
+  const medicareTax = own.medicareTax + (partner?.medicareTax ?? 0);
+  const se = { tax: own.se.tax + (partner?.se.tax ?? 0), base: own.se.base + (partner?.se.base ?? 0) };
   const earned = wages + se.base;
   const additionalMedicareTax = (Math.max(0, earned - fica.additionalMedicareThreshold[filingStatus]) * fica.additionalMedicareRate) / 100;
   const halfSe = t.selfEmployment.halfDeductibleFromIncome ? se.tax / 2 : 0;
 
   // Ordinary income before Social Security.
   const ordinaryBeforeSs =
-    Math.max(0, wages - input.pretaxPayrollDeductions) + input.selfEmploymentNet - halfSe + input.otherOrdinaryIncome + input.rothConversions - input.iraDeduction;
+    Math.max(0, wages - input.pretaxPayrollDeductions) + selfEmploymentNet - halfSe + input.otherOrdinaryIncome + input.rothConversions - input.iraDeduction;
   const otherForSs = ordinaryBeforeSs + input.longTermGains;
   const ssThresholds = ledger.get<SsThresholds>("ss.taxationThresholds");
   const taxableSs = taxableSocialSecurity(input.socialSecurity, otherForSs, filingStatus, ssThresholds);
@@ -131,9 +139,12 @@ export function computeFederalTaxM2(input: FederalTaxM2Input, t: FederalTables, 
 
   // Deductions: the standard deduction (plus the extra for 65+), and the senior deduction while it exists.
   const std = ledger.get<Record<FilingStatus, number> & { additionalAgedOrBlind: number; additionalAgedOrBlindUnmarried: number }>("fed.standardDeduction.2026");
-  const aged = input.age >= 65 ? (filingStatus === "single" || filingStatus === "headOfHousehold" ? std.additionalAgedOrBlindUnmarried : std.additionalAgedOrBlind) : 0;
+  const unmarried = filingStatus === "single" || filingStatus === "headOfHousehold";
+  const agedOne = (age: number | undefined) => (age !== undefined && age >= 65 ? (unmarried ? std.additionalAgedOrBlindUnmarried : std.additionalAgedOrBlind) : 0);
+  const aged = agedOne(input.age) + (filingStatus === "marriedJoint" ? agedOne(input.partnerAge) : 0);
   const standardDeduction = std[filingStatus] + aged;
-  const senior = seniorDeduction(input.age, agi, filingStatus, ledger.getIfApplies<SeniorDeductionRule>("fed.seniorDeduction", year));
+  const seniorRule = ledger.getIfApplies<SeniorDeductionRule>("fed.seniorDeduction", year);
+  const senior = seniorDeduction(input.age, agi, filingStatus, seniorRule) + (filingStatus === "marriedJoint" && input.partnerAge !== undefined ? seniorDeduction(input.partnerAge, agi, filingStatus, seniorRule) : 0);
   const deductions = standardDeduction + senior;
 
   const taxableIncome = Math.max(0, agi - deductions);

@@ -945,6 +945,30 @@
         "A6",
         "C4"
       ]
+    },
+    {
+      "id": "ss.spousalAndSurvivor",
+      "name": "Social Security spousal and survivor benefits",
+      "value": {
+        "spousalMaxShareOfOtherPia": 50,
+        "spousalRequiresOtherClaimed": true,
+        "spousalReducedBeforeOwnFra": true,
+        "survivorShareOfDeceasedBenefit": 100,
+        "survivorTakesLargerOfTwo": true
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "SSA, Benefits for Spouses and Benefits for Survivors (ssa.gov)",
+      "url": "https://www.ssa.gov/benefits/retirement/planner/applying7.html",
+      "lastVerified": null,
+      "status": "current",
+      "verification": "ssa.gov blocks automated requests from the build session. The rule is entered from the household-two spec and must be confirmed on the SSA planner pages before it is used without a flag. The engine reads it only when a partner exists and flags the result.",
+      "watch": null,
+      "affects": [
+        "D3"
+      ]
     }
   ]
 }

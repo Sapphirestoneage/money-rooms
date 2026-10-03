@@ -317,6 +317,8 @@ export type ForgivenessPath = "none" | "idr" | "pslf";
 
 export interface DebtAccount extends AccountCommon {
   side: "debt";
+  /** Dictionary 9.4. Blank means self. A debt can be joint. */
+  owner?: AccountOwner;
   /** Percent per year. */
   rate: Value<number>;
   promo?: PromoRate;

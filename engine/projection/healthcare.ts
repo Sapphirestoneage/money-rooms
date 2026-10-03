@@ -129,10 +129,43 @@ export interface HealthcareLine {
   irmaa?: IrmaaResult;
 }
 
-export function healthcareLine(args: { age: number; magiAca: number; magiTwoYearsBack: number; householdSize: number; filingStatus: FilingStatus; medicaidExpansion: boolean | null; ledger: RuleLedger }): HealthcareLine {
+export function healthcareLine(args: {
+  age: number;
+  magiAca: number;
+  magiTwoYearsBack: number;
+  householdSize: number;
+  filingStatus: FilingStatus;
+  medicaidExpansion: boolean | null;
+  ledger: RuleLedger;
+  /** Households of two (household-two-spec 2.2): every living adult's age. Marketplace coverage is priced per adult under 65, Medicare per adult 65 and over, on the household's MAGI. Blank means one adult at `age`. */
+  persons?: readonly { age: number }[];
+  /** Internal: how many adults the marketplace premium covers. Set by the per-person branch. */
+  adultsUnder65?: number;
+}): HealthcareLine {
+  if (args.persons && args.persons.length !== 1) {
+    const under65 = args.persons.filter((p) => p.age < 65);
+    const onMedicare = args.persons.filter((p) => p.age >= 65);
+    const line: HealthcareLine = { total: 0, pieces: [], flags: [] };
+    if (under65.length > 0) {
+      const aca = healthcareLine({ ...args, age: under65[0]!.age, persons: [{ age: under65[0]!.age }], adultsUnder65: under65.length });
+      line.total += aca.total;
+      line.pieces.push(...aca.pieces);
+      line.flags.push(...aca.flags);
+      if (aca.aca) line.aca = aca.aca;
+    }
+    for (const p of onMedicare) {
+      const med = healthcareLine({ ...args, age: p.age, persons: [{ age: p.age }] });
+      line.total += med.total;
+      line.pieces.push(...med.pieces);
+      if (p === onMedicare[0]) line.flags.push(...med.flags);
+      if (med.irmaa) line.irmaa = med.irmaa;
+    }
+    return line;
+  }
   const flags: string[] = [];
   if (args.age < 65) {
-    const benchmark = healthcare.before65.benchmarkSilverPremiumAnnualPerAdult.value * Math.max(1, args.householdSize);
+    const adults = args.adultsUnder65 ?? Math.max(1, args.householdSize);
+    const benchmark = healthcare.before65.benchmarkSilverPremiumAnnualPerAdult.value * adults;
     const aca = acaPremiumCredit(args.magiAca, args.householdSize, benchmark, args.ledger);
     let cost = aca.netPremium + healthcare.before65.outOfPocketAnnual.value;
     if (aca.belowRange) {

@@ -84,7 +84,7 @@ Age is never stored. It's computed from birth date and the projection year.
 | Cadence | Value with dated changes |
 | Default | `single`, confidence `roughly` |
 | Source | User |
-| Validation | Married statuses require a partner record (Later) |
+| Validation | Married statuses require a partner record (built as a flag, not an error: `docs/household-two-spec.md`, Proposed) |
 | Relevance | Always |
 | Feeds | Federal brackets and standard deduction; contribution limits; Roth IRA eligibility; ACA subsidy (Later) |
 
@@ -477,7 +477,7 @@ Self-employed and side-gig income (3.4), business expenses, and business debts (
 |---|---|---|---|
 | `owner` | Every account (3.6) and every workplace plan (9.2) | `self`, `partner`, `joint` | `self` |
 
-**Validation.** Retirement accounts (pretax, Roth, HSA) and workplace plans cannot be `joint`. `partner` requires a partner record (2.7). **Feeds:** whose age decides penalties, RMDs, and catch-ups; whose Social Security record; the household-of-two tax split; the Partner pack.
+**Validation.** Retirement accounts (pretax, Roth, HSA) and workplace plans cannot be `joint`; debts and taxable accounts can. `partner` requires a partner record (2.7); removing the partner resets their accounts to `self`. **Feeds:** whose age decides penalties, RMDs, and catch-ups; whose Social Security record; the household-of-two tax split; the Partner pack. Built in the households-of-two phase (`docs/household-two-spec.md`, Proposed).
 
 ### 9.5 Scenario blocks (layered proposed changes)
 

@@ -14,12 +14,14 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 5 M5 what-ifs | Done | `m5-whatifs` | (see git log) |
 | 6 M4 meaning | Done (spec and build) | `m4-meaning` | (see git log) |
 | 7 M6 risk | Done, with the series unverified | `m6-risk` | (see git log) |
-| 8 Households of two | Not started | `household-two` | |
+| 8 Households of two | Done, with the spousal rule unverified | `household-two` | (see git log) |
 | 9 Pack specs | Not started | `packs-specs` | |
 | 10 Foundations | Not started | `foundations` | |
 | 11 Coaching spec | Not started | `coaching-specs` | |
 | 12 Feature register | Not started | `feature-register` | |
 | 13 Readiness audit | Not started | `readiness` | |
+
+**Phase 8 in plain English.** `docs/household-two-spec.md` written (Proposed), then built. The partner is now a second person in the engine: their income runs in the same year loop with their own age, their own contribution limits and catch-ups, their own FICA cap, and their own Social Security record, benefit, and claiming age. Married filing jointly is one return on both incomes; married filing separately is two returns summed. Every account has an owner (mine, my partner's, or joint), and the owner's age decides the 10% tax, required distributions, HSA rules, and Roth ordering; a joint account reads the older for penalties and the younger for distributions. Health care in retirement is priced per adult. Spousal top-ups (half the other's PIA once both have claimed) and the survivor rule (the larger benefit after the first plan-to age) are built but read an unverified SSA rule through a new ledger door, so every plan they change carries a flag. The horizon runs to the younger person's plan-to age. On the entry screen: "Add a partner" on About you, "Whose income" on each stream, "Add partner's income", and "Whose account" on each account; removing a partner asks first. Nine tests cover the spec's eight acceptance tests; the 503 earlier tests and Maya are unchanged. Self-audit: `docs/audits/household-two-self-audit.md`.
 
 **Phase 7 in plain English.** `docs/m6-spec.md` written (Proposed), then built: the engine gained per-year returns and a spending-rule hook (m1 untouched, Maya ties out), and `engine/risk/` replays the whole plan from every start year in a long-run real return series, reporting the success rate, the worst starts ("retiring with 1966's markets ahead ran short at 81"), the sturdy FI date at a threshold, guardrails spending (Guyton-Klinger, two guardrails), and Flex FI, which now has a real date on the Level 3 spectrum instead of "coming soon". A Risk screen shows all of it. **The return series could not be fetched (every data host is blocked), so `data/returns-history.json` was typed from memory of the Damodaran series and is marked unverified; every result built on it carries a flag.** Self-audit: `docs/audits/m6-self-audit.md`.
 
@@ -39,12 +41,13 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 
 ## 2. Maya tie-out (M1 conventions mode)
 
-After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after commit 250e776. Full suite: 37 files, 349 tests, all passing.
+After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after the households-of-two engine change (branch `household-two`). Full suite: 50 files, 512 tests, all passing.
 
 ## 3. Proposed specs written (review first)
 
 | Spec | Branch | What it covers |
 |---|---|---|
+| `docs/household-two-spec.md` | `household-two` | The partner as a second person, ages and limits per person, taxes together or apart, Social Security for two, one retirement date, entry, eight acceptance tests |
 | `docs/m6-spec.md` | `m6-risk` | The return series, historical backtests, the sturdy FI date, guardrails, Flex FI, seven acceptance tests |
 | `docs/m4-spec.md` | `m4-meaning` | Ratio registry, metrics by level, lenses (4% rule, Shockingly simple math, DRAFTT, hours, taxes), the Advice Translator, eight acceptance tests |
 
@@ -52,6 +55,8 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 
 | # | Where | Decision |
 |---|---|---|
+| H1 to H8 | `decisions.md` | Households of two: one retirement date, how filing separately splits the returns, the unverified spousal and survivor rule and its flag, the optimizer moves the self's claiming age only, the waterfall fills the partner's workplace plan only, removing a partner, joint accounts read the older or younger owner, health care per adult |
+| (engine) | `engine/model/rules.ts` | A ledger door for unverified rules, `getUnverified`, which records the rule with its blank verified date; the only rule read through it is `ss.spousalAndSurvivor`. Two-way |
 | Q1 to Q6 | `decisions.md` | M6: the unverified return series, the backtest method, the sturdy date, guardrails, Flex FI, the two engine hooks |
 | K1 to K6 | `decisions.md` | M4: the ratio registry shape, locking by level, the simple-math table's assumptions, DRAFTT measurement, advice as data, nothing stored |
 | W1 to W6 | `decisions.md` | M5: how blocks are applied, the questionnaire defaults, the headline measure, goal trimming, the true amount and timing curve, the payoff simulation |
@@ -73,6 +78,8 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 6. The engine's default policy under m2 draws in the conventional order with no strategies, so the app's headline date now includes Roth earnings penalties, capital gains tax, and marketplace premiums. Maya's app-default likely date moved from 40 (m1) to 41 (m2). Is that the right default, or should the optimizer's best plan be the headline?
 7. `data/healthcare.json` placeholders: benchmark silver premium $7,200 a year, Part D $480, supplement and out of pocket $1,200. All marked lookUp. Open question O3 still needs a source.
 8. Accessibility judgment calls 1 to 5 in `docs/accessibility-audit-2026-10.md`: the preset picker's list roles, chart label contrast, and the darker theme's new brand shades.
+9. Households of two: should a married filing status with no partner be an error (the dictionary's validation) or the flag it is now? And is the survivor rule's start (the year after the first plan-to age) acceptable until mortality is modeled?
+10. Spousal and survivor benefits: the registry entry `ss.spousalAndSurvivor` (50% spousal, reduced by the claimant's own factor; 100% survivor; larger of the two) was typed from memory. Please check it against ssa.gov; the real reduction schedules differ from the retirement one.
 
 ## 6. Skipped or unverified
 
@@ -82,12 +89,15 @@ After every engine change: FI age 42 for all three strategies, 580 of 580 cells 
 | Poverty guidelines, Alaska and Hawaii | hhs.gov blocked | https://aspe.hhs.gov/topical-subjects/poverty-economic-mobility/poverty-guidelines |
 | SSA POMS IRMAA as a second source | ssa.gov blocked | https://secure.ssa.gov/poms.nsf/lnx/0601101020 |
 | **Long-run return series** (M6) | Damodaran, Shiller, FRED, BLS, Treasury, and the Fed were all unreachable; `data/returns-history.json` is typed from memory and flagged unverified | https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html |
+| `ss.spousalAndSurvivor` (households of two) | ssa.gov blocked; typed from memory, read through the unverified-rule door, every plan it changes is flagged | https://www.ssa.gov/benefits/retirement/planner/applying7.html and https://www.ssa.gov/benefits/survivors/ |
 | State unemployment benefit table | dol.gov and oui.doleta.gov unreachable; national placeholder in `data/resilience.json` | https://oui.doleta.gov/unemploy/statelaws.asp |
 | Medicaid expansion state list | medicaid.gov unreachable | https://www.medicaid.gov/medicaid/program-information/medicaid-and-chip-eligibility-levels/index.html |
 
 No page fetched during this session contained instructions aimed at the build.
 
 ## 7. Self-audit scorecards
+
+**Households of two** (`docs/audits/household-two-self-audit.md`): all eight acceptance tests pass, test 6 on an unverified rule; weak spots are the rule itself, mortality as the plan-to age, the filing-separately approximation, the partner's HSA and IRA outside the waterfall, one retirement date, and no partner view on the result screen yet.
 
 **M6** (`docs/audits/m6-self-audit.md`): all seven acceptance tests pass on the mechanics; the series itself is the open item.
 
@@ -111,6 +121,6 @@ Not started.
 
 ## 10. Handoff
 
-**Where I am:** Phases 0 to 7 complete and pushed. **Next:** branch `household-two` from `m6-risk`, write `docs/household-two-spec.md` (Proposed) for the partner as a second person, account owner, married filing statuses, and spousal and survivor Social Security, then build it.
+**Where I am:** Phases 0 to 8 complete and pushed. **Next:** branch `packs-specs` from `household-two` and write the ten expansion pack specs in `docs/packs/` (docs only), then `foundations`, `coaching-specs`, `feature-register`, `readiness`.
 
 **Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.

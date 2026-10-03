@@ -234,6 +234,9 @@ Lenses are toggle buttons in a row; the open lens shows its idea and its parts b
 ### Risk cards
 The return series card (source, years, verified date, and a gentle flag while unverified); the backtest card with the success rate in its title, the worst starts as sentences ("Retiring in 2041 with 1966's markets ahead: the plan ran short at 81"), and the sturdy FI date; the guardrails card; the Flex FI card with the date beside the plan's own. Every headline figure carries a Computed badge.
 
+### Partner block and owner pickers
+On About you, "Add a partner" opens a second set of person fields under a "Your partner" subheading (birth month and year, HSA eligible, Social Security claiming age). Removing the partner shows the confirm panel first and says what goes with them. Once a partner exists, each income row's editor gains a "Whose income" select (Mine, My partner's), the Income section gains an "Add partner's income" picker and marks the partner's rows "partner's", and each account editor gains a "Whose account" select (Mine, My partner's, Joint; retirement accounts never offer Joint).
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 

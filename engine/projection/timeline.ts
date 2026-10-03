@@ -10,6 +10,7 @@
 import engineDefaults from "../../data/engine-defaults.json";
 import type {
   Account,
+  AccountOwner,
   AssetAccount,
   DebtAccount,
   DrawdownInputs,
@@ -67,6 +68,16 @@ export interface CompleteHousehold {
   plans: readonly WorkplacePlan[];
   /** M2: the level-two drawdown inputs (spec section 7). */
   drawdown: DrawdownInputs;
+  /** Households of two (docs/household-two-spec.md): the partner's own fields. Blank for one person. */
+  partner?: CompletePartner;
+}
+
+/** The partner's person-level answers. The state and filing status are the household's, read from self. */
+export interface CompletePartner {
+  birthDate: YearMonth;
+  income: readonly IncomeStream[];
+  hsaEligible: boolean;
+  socialSecurity: Household["self"]["socialSecurity"];
 }
 
 /** Narrows a household, or throws naming what is still unanswered (data dictionary section 8). */
@@ -77,7 +88,16 @@ export function requireComplete(h: Household): CompleteHousehold {
   if (h.self.income.kind === "unanswered") missing.push("income");
   if (h.spending.kind === "unanswered") missing.push("spending");
   if (h.accounts.kind === "unanswered") missing.push("accounts");
+  if (h.partner && !h.partner.birthDate) missing.push("your partner's birth date");
   if (missing.length) throw new Error(`The household still needs: ${missing.join(", ")}`);
+  const partner: CompletePartner | undefined = h.partner
+    ? {
+        birthDate: h.partner.birthDate!.value,
+        income: h.partner.income.kind === "rows" ? h.partner.income.rows : [],
+        hsaEligible: h.partner.hsaEligible.value,
+        socialSecurity: h.partner.socialSecurity,
+      }
+    : undefined;
   return {
     asOf: h.asOf,
     birthDate: h.self.birthDate!.value,
@@ -91,6 +111,7 @@ export function requireComplete(h: Household): CompleteHousehold {
     socialSecurity: h.self.socialSecurity,
     plans: h.plans ?? [],
     drawdown: h.drawdown ?? {},
+    ...(partner ? { partner } : {}),
   };
 }
 
@@ -180,6 +201,8 @@ export interface YearRow {
   flags: string[];
   /** M2 only (undefined under m1 conventions). */
   m2?: YearRowM2;
+  /** Households of two: the partner's side of the year. */
+  partner?: { age: number; alive: boolean; income: number; socialSecurity: number };
 }
 
 /** The M2 detail behind a year: what the strategies did and what the taxes were made of. */
@@ -232,6 +255,8 @@ export interface TimelineResult {
   /** Total assets at the end of the last working year, or null if never retired within the horizon. */
   assetsAtRetirement: number | null;
   socialSecurity: { pia: number; claimingAgeYears: number; factor: number; annualBenefit: number };
+  /** Households of two: the partner's own benefit before any spousal top-up. */
+  partnerSocialSecurity?: { pia: number; claimingAgeYears: number; factor: number; annualBenefit: number };
   flags: string[];
   /** Which conventions this run followed. */
   conventions: EngineConventions;
@@ -266,6 +291,8 @@ interface AssetState {
   receipts: number;
   /** M2: the workplace plan this account belongs to, for the rule of 55 and 457(b). */
   plan: WorkplacePlan | null;
+  /** Dictionary 9.4: whose age decides penalties, catch-ups, and required distributions. */
+  owner: AccountOwner;
 }
 
 interface DebtState {
@@ -312,10 +339,11 @@ function assetState(a: AssetAccount, band: BandNumbers, year0: number, plans: re
     roth,
     receipts: bucket === "hsa" ? (a.savedReceipts?.value ?? 0) : 0,
     plan: plans.find((p) => p.id === a.planId) ?? null,
+    owner: a.owner ?? "self",
   };
 }
 
-function implicitAsset(id: string, presetKey: "trad401k" | "roth401k" | "rothIRA" | "tradIRA" | "hsa" | "brokerage", band: BandNumbers): AssetState {
+function implicitAsset(id: string, presetKey: "trad401k" | "roth401k" | "rothIRA" | "tradIRA" | "hsa" | "brokerage", band: BandNumbers, owner: AccountOwner = "self"): AssetState {
   const p = getAccountPreset(presetKey);
   if (p.side !== "asset") throw new Error("implicit accounts must be assets");
   return {
@@ -332,6 +360,7 @@ function implicitAsset(id: string, presetKey: "trad401k" | "roth401k" | "rothIRA
     roth: p.taxBucket === "roth" ? { basis: 0, conversions: [], firstYear: Infinity } : null,
     receipts: 0,
     plan: null,
+    owner,
   };
 }
 
@@ -344,15 +373,26 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   const fed = tables.federal;
   const birth = parseYearMonth(hh.birthDate);
   const year0 = parseYearMonth(hh.asOf.slice(0, 7)).year;
-  const lastYear = birth.year + band.planToAge;
   const flags = new Set<string>();
+
+  // ---- Households of two (docs/household-two-spec.md) -----------------------
+  const partner = hh.partner ?? null;
+  const pBirth = partner ? parseYearMonth(partner.birthDate) : null;
+  /** Each person's last year: their plan-to age. The horizon runs to the later one (spec 2.6). */
+  const selfLastYear = birth.year + band.planToAge;
+  const partnerLastYear = pBirth ? pBirth.year + band.planToAge : selfLastYear;
+  const lastYear = Math.max(selfLastYear, partnerLastYear);
+  const married = hh.filingStatus === "marriedJoint" || hh.filingStatus === "marriedSeparate";
+  if (married && !partner) flags.add("The filing status is married but no partner is entered, so the joint columns apply to one person's income.");
+  if (partner && !married) flags.add("A partner is entered but the filing status is not married, so each person's income is taxed on one return with that status.");
+  const separateReturns = partner !== null && hh.filingStatus === "marriedSeparate";
 
   // ---- M2 conventions, policy, and the rules ledger ---------------------
   const m2 = opts.conventions === "m2";
   const policy = opts.policy ?? defaultPolicy();
   const ledger = new RuleLedger(opts.disabledRules ?? []);
   const spendingScale = opts.spendingScale ?? 1;
-  const householdSize = hh.drawdown.acaHouseholdSize?.value ?? 1;
+  const householdSize = hh.drawdown.acaHouseholdSize?.value ?? (partner ? 2 : 1);
   const medicaidExpansion = hh.drawdown.medicaidExpansionState?.value ?? null;
   const reserveMonths = (m2 && policy.limits.cashBufferMonths !== null ? policy.limits.cashBufferMonths : DEFAULTS.reserveMonths);
   /** This year's returns: the band's, or the historical year's when the backtest supplies one (M6). */
@@ -371,11 +411,12 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 
   const presetOf = (id: string) => hh.accounts.find((a) => a.id === id)?.preset;
   const findAsset = (pred: (a: AssetState) => boolean) => assets().find(pred);
-  const ensure = (pred: (a: AssetState) => boolean, id: string, preset: Parameters<typeof implicitAsset>[1], label?: string): AssetState => {
-    const found = findAsset(pred);
+  const ensure = (pred: (a: AssetState) => boolean, id: string, preset: Parameters<typeof implicitAsset>[1], label?: string, owner?: AccountOwner): AssetState => {
+    const found = findAsset((a) => pred(a) && (owner === undefined || a.owner === owner));
     if (found) return found;
-    const created = implicitAsset(id, preset, band);
+    const created = implicitAsset(id, preset, band, owner ?? "self");
     if (label) created.label = `${label} (added by the engine)`;
+    else if (owner === "partner") created.label = `Partner's ${getAccountPreset(preset).label} (added by the engine)`;
     states.push(created);
     byId.set(id, created);
     flags.add(`The engine added an empty ${label ?? getAccountPreset(preset).label} account because the savings plan needed one.`);
@@ -389,17 +430,32 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   const rothWorkplaceDeductions = hh.income.some((s) => s.preTaxDeductions?.some((d) => isWorkplaceContribution(d) && d.accountType.value === "roth"));
   const anyMatch = hh.income.some((s) => s.employerMatch);
   const coveredByPlan = workplaceDeductions || rothWorkplaceDeductions || anyMatch || hh.plans.length > 0;
+  // The partner's side of the same questions (spec 2.3). Their contributions go to their own accounts.
+  const pIncome = partner?.income ?? [];
+  const pHasWages = pIncome.some((s) => s.type === "salary" || s.type === "hourly");
+  const pHsaEligible = partner !== null && (partner.hsaEligible || pIncome.some((s) => s.preTaxDeductions?.some((d) => d.type === "hsa")));
+  const pWorkplaceDeductions = pIncome.some((s) => s.preTaxDeductions?.some((d) => isWorkplaceContribution(d) && d.accountType.value === "traditional"));
+  const pRothWorkplaceDeductions = pIncome.some((s) => s.preTaxDeductions?.some((d) => isWorkplaceContribution(d) && d.accountType.value === "roth"));
+  const pAnyMatch = pIncome.some((s) => s.employerMatch);
   const governmental457 = m2 ? hh.plans.find((pl) => pl.planType === "457bGovernmental") ?? null : null;
   const megaBackdoorPlan = m2 ? hh.plans.find((pl) => pl.megaBackdoorAllowed.value === "yes") ?? null : null;
 
+  // With a partner, the self's accounts are the ones they own; without one, every account is the self's (owner defaults to self).
+  const selfOwner: AccountOwner | undefined = partner ? "self" : undefined;
   const workplacePretax = (): AssetState =>
-    ensure((a) => presetOf(a.id) === "trad401k" || a.id === "engine:trad401k", "engine:trad401k", "trad401k");
+    ensure((a) => presetOf(a.id) === "trad401k" || a.id === "engine:trad401k", "engine:trad401k", "trad401k", undefined, selfOwner);
   const workplaceRoth = (): AssetState =>
-    ensure((a) => presetOf(a.id) === "roth401k" || a.id === "engine:roth401k", "engine:roth401k", "roth401k");
-  const rothIra = (): AssetState => ensure((a) => presetOf(a.id) === "rothIRA" || a.id === "engine:rothIRA", "engine:rothIRA", "rothIRA");
-  const tradIra = (): AssetState => ensure((a) => presetOf(a.id) === "tradIRA" || a.id === "engine:tradIRA", "engine:tradIRA", "tradIRA");
-  const hsaAccount = (): AssetState => ensure((a) => a.taxBucket === "hsa", "engine:hsa", "hsa");
+    ensure((a) => presetOf(a.id) === "roth401k" || a.id === "engine:roth401k", "engine:roth401k", "roth401k", undefined, selfOwner);
+  const rothIra = (): AssetState => ensure((a) => presetOf(a.id) === "rothIRA" || a.id === "engine:rothIRA", "engine:rothIRA", "rothIRA", undefined, selfOwner);
+  const tradIra = (): AssetState => ensure((a) => presetOf(a.id) === "tradIRA" || a.id === "engine:tradIRA", "engine:tradIRA", "tradIRA", undefined, selfOwner);
+  const hsaAccount = (): AssetState => ensure((a) => a.taxBucket === "hsa", "engine:hsa", "hsa", undefined, selfOwner);
   const taxable = (): AssetState => ensure((a) => a.taxBucket === "taxable", "engine:brokerage", "brokerage");
+  // The partner's accounts (spec 2.3).
+  const workplacePretaxP = (): AssetState =>
+    ensure((a) => presetOf(a.id) === "trad401k" || a.id === "engine:trad401k:partner", "engine:trad401k:partner", "trad401k", undefined, "partner");
+  const workplaceRothP = (): AssetState =>
+    ensure((a) => presetOf(a.id) === "roth401k" || a.id === "engine:roth401k:partner", "engine:roth401k:partner", "roth401k", undefined, "partner");
+  const hsaAccountP = (): AssetState => ensure((a) => a.taxBucket === "hsa", "engine:hsa:partner", "hsa", undefined, "partner");
   const account457 = (): AssetState => {
     const found = findAsset((a) => a.plan?.planType === "457bGovernmental" || a.id === "engine:457b");
     if (found) return found;
@@ -415,6 +471,11 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   taxable();
   if (rothWorkplaceDeductions || (hh.savingsStrategy === "maxTaxFreeGrowth" && hasWages)) workplaceRoth();
   if (governmental457 && hasWages) account457();
+  if (partner) {
+    if (pWorkplaceDeductions || pAnyMatch || (hh.savingsStrategy === "maxTaxSavingsNow" && pHasWages)) workplacePretaxP();
+    if (pHsaEligible) hsaAccountP();
+    if (pRothWorkplaceDeductions || (hh.savingsStrategy === "maxTaxFreeGrowth" && pHasWages)) workplaceRothP();
+  }
 
   // ---- Pass 1: income by year, for the Social Security earnings record ----
   const planMonth = parseYearMonth(hh.asOf.slice(0, 7)).month;
@@ -451,6 +512,21 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   // so testing "stop now" does not wipe out the earnings record (found by the age-70 edge case, 2026-10-04).
   const incomeNow = incomeForYear(hh.income, { ...ctxFor(year0), retirementYear: Infinity }, band);
   const coveredNow = Math.min(incomeNow.wages + incomeNow.selfEmploymentNet, fed.fica.socialSecurityWageBase);
+  // The partner's streams run in the same loop with the partner's age and the household's retirement date (spec 2.3, 2.6).
+  const pCtxFor = (year: number): YearContext => ({ ...ctxFor(year), age: pBirth ? year - pBirth.year : 0 });
+  const pIncomeFor = (y: number): YearIncome => {
+    if (!partner) return emptyIncome();
+    return m2 ? incomeForYear(pIncome, pCtxFor(y), band) : y >= retirementYear ? emptyIncome() : incomeForYear(pIncome, pCtxFor(y), band);
+  };
+  const pIncomeByYear = new Map<number, YearIncome>();
+  const pCovered: Record<number, number> = {};
+  for (let y = year0; y <= lastYear; y++) {
+    const inc = pIncomeFor(y);
+    pIncomeByYear.set(y, inc);
+    pCovered[y] = Math.min(inc.wages + inc.selfEmploymentNet, fed.fica.socialSecurityWageBase);
+  }
+  const pIncomeNow = partner ? incomeForYear(pIncome, { ...pCtxFor(year0), retirementYear: Infinity }, band) : emptyIncome();
+  const pCoveredNow = Math.min(pIncomeNow.wages + pIncomeNow.selfEmploymentNet, fed.fica.socialSecurityWageBase);
 
   // ---- Social Security ----------------------------------------------------
   const record = hh.socialSecurity.earningsRecord
@@ -471,11 +547,59 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   const ssStartYear = ssOverride ? birth.year + ssOverride.fromAge : birth.year + claimingAge.years;
   if (!hh.socialSecurity.earningsRecord) flags.add("Social Security is estimated from your income. Enter your ssa.gov record to sharpen it.");
 
+  // The partner's own record and benefit (spec 2.5). The optimizer's claiming-age knob moves the self only (decision H4).
+  const pRecord = partner
+    ? partner.socialSecurity.earningsRecord
+      ? Object.values(partner.socialSecurity.earningsRecord.value)
+      : estimateEarningsRecord({ projected: pCovered, birthYear: pBirth!.year, firstProjectionYear: year0, assumedPastAnnual: pCoveredNow, startAge: DEFAULTS.workStartAge })
+    : [];
+  const pPia = partner ? primaryInsuranceAmount(averageIndexedMonthlyEarnings(pRecord, ssParams), ssParams) : 0;
+  const pClaimingAge = partner ? partner.socialSecurity.claimingAge?.value ?? ssParams.normalRetirementAge(pBirth!.year) : claimingAge;
+  const pFactor = partner ? claimingFactor(pBirth!.year, pClaimingAge, ssParams) : 0;
+  const pClaimZero = partner?.socialSecurity.claimZero?.value === true;
+  const pSsAnnual = partner && !pClaimZero ? annualBenefit(pPia, pFactor, band.socialSecurityPolicy) : 0;
+  const pSsStartYear = partner ? pBirth!.year + pClaimingAge.years : Infinity;
+  if (partner && !partner.socialSecurity.earningsRecord) flags.add("Your partner's Social Security is estimated from their income. Enter their ssa.gov record to sharpen it.");
+  /** Spousal and survivor rules (spec 2.5), read through the one door for an unverified rule. */
+  type SpousalRule = { spousalMaxShareOfOtherPia: number; spousalRequiresOtherClaimed: boolean; spousalReducedBeforeOwnFra: boolean; survivorShareOfDeceasedBenefit: number; survivorTakesLargerOfTwo: boolean };
+  const spousal = partner && !ssOverride ? ledger.getUnverified<SpousalRule>("ss.spousalAndSurvivor") : null;
+  const SPOUSAL_FLAG = "Spousal or survivor Social Security changes this plan. That rule has not been verified against ssa.gov yet (rules registry ss.spousalAndSurvivor), so treat those years as rough.";
+  /** Each person's Social Security for a year: own benefit, the spousal top-up once both have claimed, and the survivor rule after the first plan-to age. */
+  const socialSecurityFor = (y: number): { self: number; partner: number } => {
+    const selfAlive = y <= selfLastYear;
+    const pAlive = y <= partnerLastYear;
+    let s = y >= ssStartYear && selfAlive ? ssAnnualUsed : 0;
+    let p = y >= pSsStartYear && pAlive ? pSsAnnual : 0;
+    if (!spousal) return { self: s, partner: p };
+    const r = spousal.value;
+    const share = r.spousalMaxShareOfOtherPia / 100;
+    const bothClaimed = y >= ssStartYear && y >= pSsStartYear;
+    if (selfAlive && pAlive && (bothClaimed || !r.spousalRequiresOtherClaimed)) {
+      const spousalSelf = y >= ssStartYear && !hh.socialSecurity.claimZero?.value ? annualBenefit(share * pPia, r.spousalReducedBeforeOwnFra ? Math.min(1, factor) : 1, band.socialSecurityPolicy) : 0;
+      const spousalPartner = y >= pSsStartYear && !pClaimZero ? annualBenefit(share * pia, r.spousalReducedBeforeOwnFra ? Math.min(1, pFactor) : 1, band.socialSecurityPolicy) : 0;
+      if (spousalSelf > s + 0.5) { s = spousalSelf; flags.add(SPOUSAL_FLAG); }
+      if (spousalPartner > p + 0.5) { p = spousalPartner; flags.add(SPOUSAL_FLAG); }
+    }
+    if (r.survivorTakesLargerOfTwo) {
+      const survivorShare = r.survivorShareOfDeceasedBenefit / 100;
+      if (!selfAlive && pAlive && y >= pSsStartYear && !pClaimZero) {
+        const inherited = survivorShare * ssAnnual;
+        if (inherited > p + 0.5) { p = inherited; flags.add(SPOUSAL_FLAG); }
+      }
+      if (!pAlive && selfAlive && y >= ssStartYear && !hh.socialSecurity.claimZero?.value) {
+        const inherited = survivorShare * pSsAnnual;
+        if (inherited > s + 0.5) { s = inherited; flags.add(SPOUSAL_FLAG); }
+      }
+    }
+    return { self: s, partner: p };
+  };
+
   // ---- M2 state that carries across years -----------------------------------
   const magiHistory = new Map<number, number>();
   let seppAmount: number | null = null;
   let seppStartYear: number | null = null;
-  const separationYearOf = (pl: WorkplacePlan | null): number => (pl?.separationAge ? birth.year + pl.separationAge.value : retirementYear);
+  const separationYearOf = (pl: WorkplacePlan | null, owner: AccountOwner = "self"): number =>
+    pl?.separationAge ? (owner === "partner" && pBirth ? pBirth.year : birth.year) + pl.separationAge.value : retirementYear;
 
   // ---- Pass 2: the annual loop --------------------------------------------
   const rows: YearRow[] = [];
@@ -494,16 +618,42 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     const rowFlags: string[] = [];
     const lock = lockFor(y);
     const actions: string[] = [];
+    // The partner's side of the year (spec 2.2): their own age and limits; the household's totals add both.
+    const pAge = pBirth ? y - pBirth.year : null;
+    const pInc = pIncomeByYear.get(y) ?? emptyIncome();
+    const pLimits = pAge !== null ? contributionLimits(pAge, fed) : limits;
+    const selfAlive = y <= selfLastYear;
+    const pAlive = partner !== null && y <= partnerLastYear;
+    const incAll: YearIncome = {
+      streams: [...inc.streams, ...pInc.streams],
+      wages: inc.wages + pInc.wages,
+      selfEmploymentNet: inc.selfEmploymentNet + pInc.selfEmploymentNet,
+      otherTaxable: inc.otherTaxable + pInc.otherTaxable,
+      nonTaxable: inc.nonTaxable + pInc.nonTaxable,
+      grossTotal: inc.grossTotal + pInc.grossTotal,
+      netTotal: inc.netTotal + pInc.netTotal,
+    };
+    /** Whose age an account's rules read (spec 2.2): the owner's; joint reads the older for penalties and the younger for required distributions. */
+    const ownerAge = (a: AssetState, forRmd = false): number => {
+      if (pAge === null) return age;
+      if (a.owner === "partner") return pAge;
+      if (a.owner === "joint") return forRmd ? Math.min(age, pAge) : Math.max(age, pAge);
+      return age;
+    };
+    const ownerBirthYear = (a: AssetState, forRmd = false): number => (pAge === null ? birth.year : ownerAge(a, forRmd) === age ? birth.year : pBirth!.year);
 
-    // Step 3: entered pre-tax deductions, capped at the legal limits.
+    // Step 3: entered pre-tax deductions, capped at the legal limits, per person (spec 2.3).
+    type Matcher = { gross: number; cap: number; pct: number; employee: number; accountType: "traditional" | "roth" | null };
+    type Entered = { workplace: number; rothWorkplace: number; hsa: number; premiums: number; matchers: Matcher[] };
+    const enteredFor = (streams: readonly IncomeStream[], yearIncome: YearIncome, lim: ReturnType<typeof contributionLimits>): Entered => {
     let enteredWorkplace = 0;
     let enteredRothWorkplace = 0;
     let enteredHsaAmt = 0;
     let premiumsAndOther = 0;
-    const matchers: { gross: number; cap: number; pct: number; employee: number; accountType: "traditional" | "roth" | null }[] = [];
+    const matchers: Matcher[] = [];
     if (!retired) {
-      for (const s of hh.income) {
-        const active = inc.streams.find((x) => x.id === s.id);
+      for (const s of streams) {
+        const active = yearIncome.streams.find((x) => x.id === s.id);
         if (!active) continue;
         // Workplace contributions are a percent of this stream's pay, in the account type the person chose.
         // M2's contribution-type knob can test the other type (or a split) without changing what is stored.
@@ -538,13 +688,30 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           });
         }
       }
-      if (enteredWorkplace + enteredRothWorkplace > limits.workplace) {
+      if (enteredWorkplace + enteredRothWorkplace > lim.workplace) {
         rowFlags.push(`Workplace contributions were capped at the ${y} limit.`);
-        enteredWorkplace = Math.min(enteredWorkplace, limits.workplace);
-        enteredRothWorkplace = Math.min(enteredRothWorkplace, limits.workplace - enteredWorkplace);
+        enteredWorkplace = Math.min(enteredWorkplace, lim.workplace);
+        enteredRothWorkplace = Math.min(enteredRothWorkplace, lim.workplace - enteredWorkplace);
       }
-      if (enteredHsaAmt > limits.hsa) enteredHsaAmt = limits.hsa;
+      if (enteredHsaAmt > lim.hsa) enteredHsaAmt = lim.hsa;
     }
+    return { workplace: enteredWorkplace, rothWorkplace: enteredRothWorkplace, hsa: enteredHsaAmt, premiums: premiumsAndOther, matchers };
+    };
+    const enteredSelf = enteredFor(hh.income, inc, limits);
+    const enteredPartner = partner ? enteredFor(pIncome, pInc, pLimits) : { workplace: 0, rothWorkplace: 0, hsa: 0, premiums: 0, matchers: [] };
+    const enteredWorkplace = enteredSelf.workplace;
+    const enteredRothWorkplace = enteredSelf.rothWorkplace;
+    const enteredHsaAmt = enteredSelf.hsa;
+    const premiumsAndOther = enteredSelf.premiums;
+    const matchers = enteredSelf.matchers;
+    const pEnteredWorkplace = enteredPartner.workplace;
+    const pEnteredRothWorkplace = enteredPartner.rothWorkplace;
+    const pEnteredHsaAmt = enteredPartner.hsa;
+    const pPremiums = enteredPartner.premiums;
+    const pMatchers = enteredPartner.matchers;
+    /** The partner's pre-tax payroll deductions: on the joint return, or on their own separate return. */
+    const pPretaxEntered = pEnteredWorkplace + pEnteredHsaAmt + pPremiums;
+    const pEnteredAll = pPretaxEntered + pEnteredRothWorkplace;
 
     // Spending, Social Security, scheduled debt payments (annualized).
     const spend = spendingForYear(hh.spending, ctx, retired, band.phases);
@@ -554,7 +721,8 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       spend.total *= factor;
     }
     const healthcareSetting = opts.testSettings?.retirementHealthcare;
-    const ss = y >= ssStartYear ? ssAnnualUsed : 0;
+    const ssSplit = partner ? socialSecurityFor(y) : { self: y >= ssStartYear ? ssAnnualUsed : 0, partner: 0 };
+    const ss = ssSplit.self + ssSplit.partner;
     const debtPreview = debts().map((d) => ({
       d,
       r: debtYear({
@@ -581,6 +749,11 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         return { total: amount, pieces: [{ label: "Health care (tie-out setting)", amount }], flags: [] };
       }
       if (!m2) return { total: 0, pieces: [], flags: [] };
+      if (partner) {
+        const persons = [...(selfAlive ? [{ age }] : []), ...(pAlive && pAge !== null ? [{ age: pAge }] : [])];
+        if (persons.length === 0) return { total: 0, pieces: [], flags: [] };
+        return healthcareLine({ age: persons[0]!.age, magiAca, magiTwoYearsBack: magiTwoBack, householdSize, filingStatus: hh.filingStatus, medicaidExpansion, ledger, persons });
+      }
       return healthcareLine({ age, magiAca, magiTwoYearsBack: magiTwoBack, householdSize, filingStatus: hh.filingStatus, medicaidExpansion, ledger });
     };
     healthcare = healthcareFor(magiHistory.get(y - 1) ?? 0);
@@ -588,46 +761,99 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 
     // Taxes as a function of the pre-tax extras and the taxable withdrawals.
     type TaxView = { fedR: FederalTaxResult | FederalTaxM2Result; stR: StateTaxResult; total: number; marginal: number; agi: number };
-    const taxesFor = (pretaxExtra: number, hsaExtra: number, pretaxWithdrawal: number, iraExtra = 0): TaxView => {
+    /** Adds a second return to the first: every dollar field is summed; rates and room stay the first return's (spec 2.4). */
+    const addReturn = <T extends FederalTaxResult | FederalTaxM2Result>(a: T, b: T): T => {
+      const out = { ...a } as Record<string, number>;
+      for (const k of Object.keys(out)) {
+        if (k === "marginalRate" || k === "ordinaryRoom" || k === "zeroPercentGainRoom") continue;
+        out[k] = (a as unknown as Record<string, number>)[k]! + (b as unknown as Record<string, number>)[k]!;
+      }
+      return out as unknown as T;
+    };
+    /**
+     * Taxes as a function of the pre-tax extras and the taxable withdrawals. `pExtra` is the partner's
+     * waterfall contribution. Filing jointly: one return on both incomes. Filing separately: two returns,
+     * the partner's on their own earned income and benefit, the self's on everything else.
+     */
+    const taxesFor = (pretaxExtra: number, hsaExtra: number, pretaxWithdrawal: number, iraExtra = 0, pExtra = 0): TaxView => {
+      const selfDeductions = enteredWorkplace + enteredHsaAmt + premiumsAndOther + pretaxExtra + hsaExtra;
+      const partnerFields = partner && !separateReturns ? { partnerWages: pInc.wages, partnerSelfEmploymentNet: pInc.selfEmploymentNet } : {};
+      const jointPartnerDeductions = partner && !separateReturns ? pPretaxEntered + pExtra : 0;
+      const jointPartnerOther = partner && !separateReturns ? pInc.otherTaxable : 0;
       if (!m2) {
-        const fedR = computeFederalTax(
+        let fedR = computeFederalTax(
           {
             filingStatus: hh.filingStatus,
             wages: inc.wages,
-            pretaxPayrollDeductions: enteredWorkplace + enteredHsaAmt + premiumsAndOther + pretaxExtra + hsaExtra,
+            pretaxPayrollDeductions: selfDeductions + jointPartnerDeductions,
             selfEmploymentNet: inc.selfEmploymentNet,
-            otherOrdinaryIncome: inc.otherTaxable + pretaxWithdrawal,
+            otherOrdinaryIncome: inc.otherTaxable + jointPartnerOther + pretaxWithdrawal,
             earlyWithdrawals: age < DEFAULTS.penaltyFreeAge ? pretaxWithdrawal : 0,
+            ...partnerFields,
           },
           fed,
         );
-        const stR = computeStateTax(fedR.agi, hh.state, hh.filingStatus, tables);
+        let stR = computeStateTax(fedR.agi, hh.state, hh.filingStatus, tables);
+        if (separateReturns) {
+          const fedP = computeFederalTax(
+            { filingStatus: hh.filingStatus, wages: pInc.wages, pretaxPayrollDeductions: pPretaxEntered + pExtra, selfEmploymentNet: pInc.selfEmploymentNet, otherOrdinaryIncome: pInc.otherTaxable, earlyWithdrawals: 0 },
+            fed,
+          );
+          const stP = computeStateTax(fedP.agi, hh.state, hh.filingStatus, tables);
+          fedR = addReturn(fedR, fedP);
+          stR = { ...stR, tax: stR.tax + stP.tax };
+        }
         return { fedR, stR, total: fedR.total + stR.tax, marginal: (fedR.marginalRate + stR.marginalRate) / 100, agi: fedR.agi };
       }
-      const fedR = computeFederalTaxM2(
+      let fedR = computeFederalTaxM2(
         {
           year: y,
           age,
           filingStatus: hh.filingStatus,
           wages: inc.wages,
-          pretaxPayrollDeductions: enteredWorkplace + enteredHsaAmt + premiumsAndOther + pretaxExtra + hsaExtra,
+          pretaxPayrollDeductions: selfDeductions + jointPartnerDeductions,
           selfEmploymentNet: inc.selfEmploymentNet,
-          otherOrdinaryIncome: inc.otherTaxable + pretaxWithdrawal + m2s.rothEarnings + m2s.hsaOrdinary,
+          otherOrdinaryIncome: inc.otherTaxable + jointPartnerOther + pretaxWithdrawal + m2s.rothEarnings + m2s.hsaOrdinary,
           rothConversions: m2s.conversion,
-          socialSecurity: ss,
+          socialSecurity: separateReturns ? ssSplit.self : ss,
           longTermGains: m2s.salesGains + m2s.harvest,
           penalized: m2s.penalized,
           iraDeduction: m2s.iraDeduction + iraExtra,
+          ...partnerFields,
+          ...(partner && !separateReturns && pAge !== null && pAlive ? { partnerAge: pAge } : {}),
         },
         fed,
         ledger,
       );
-      const stR = computeStateTax(fedR.agi, hh.state, hh.filingStatus, tables);
+      let stR = computeStateTax(fedR.agi, hh.state, hh.filingStatus, tables);
+      if (separateReturns && pAge !== null) {
+        const fedP = computeFederalTaxM2(
+          {
+            year: y,
+            age: pAge,
+            filingStatus: hh.filingStatus,
+            wages: pInc.wages,
+            pretaxPayrollDeductions: pPretaxEntered + pExtra,
+            selfEmploymentNet: pInc.selfEmploymentNet,
+            otherOrdinaryIncome: pInc.otherTaxable,
+            rothConversions: 0,
+            socialSecurity: ssSplit.partner,
+            longTermGains: 0,
+            penalized: 0,
+            iraDeduction: 0,
+          },
+          fed,
+          ledger,
+        );
+        const stP = computeStateTax(fedP.agi, hh.state, hh.filingStatus, tables);
+        fedR = addReturn(fedR, fedP);
+        stR = { ...stR, tax: stR.tax + stP.tax };
+      }
       return { fedR, stR, total: fedR.total + stR.tax, marginal: (fedR.marginalRate + stR.marginalRate) / 100, agi: fedR.agi };
     };
     const m2Tax = (v: TaxView): FederalTaxM2Result => v.fedR as FederalTaxM2Result;
-    const cashIn = (pretaxExtra: number, hsaExtra: number, pretaxWithdrawal: number, iraExtra = 0) =>
-      inc.netTotal - enteredWorkplace - enteredRothWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - iraExtra - taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal, iraExtra).total + ss;
+    const cashIn = (pretaxExtra: number, hsaExtra: number, pretaxWithdrawal: number, iraExtra = 0, pExtra = 0) =>
+      incAll.netTotal - enteredWorkplace - enteredRothWorkplace - enteredHsaAmt - premiumsAndOther - pEnteredAll - pretaxExtra - hsaExtra - iraExtra - pExtra - taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal, iraExtra, pExtra).total + ss;
 
     // Step 8: surplus or shortfall.
     let pretaxExtra = 0;
@@ -638,6 +864,9 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     let taxableAmt = 0;
     let megaBackdoorAmt = 0;
     let amount457 = 0;
+    /** The partner's waterfall contributions: traditional and Roth workplace (spec 2.3, self first then partner). */
+    let pPretaxExtra = 0;
+    let pRothWorkplace = 0;
     const debtExtra = new Map<string, number>();
     const withdrawals = new Map<string, number>();
     let pretaxWithdrawal = 0;
@@ -664,12 +893,25 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         if ((m.accountType ?? fallbackType) === "roth") matchRoomRoth += room;
         else matchRoomTraditional += room;
       }
+      let pMatchRoomTraditional = 0;
+      let pMatchRoomRoth = 0;
+      for (const m of pMatchers) {
+        const room = Math.max(0, m.cap - m.employee);
+        if ((m.accountType ?? fallbackType) === "roth") pMatchRoomRoth += room;
+        else pMatchRoomTraditional += room;
+      }
 
       /** A pre-tax step with the tax-savings loop and the exact final step (E10). */
-      const pretaxStep = (room: number, into: "workplace" | "hsa" | "ira" | "457b", name: string) => {
+      const pretaxStep = (room: number, into: "workplace" | "hsa" | "ira" | "457b" | "partnerWorkplace", name: string) => {
         if (room <= 0 || remaining <= 0) return;
         const current = (x: number) =>
-          into === "workplace" || into === "457b" ? taxesFor(pretaxExtra + x, hsaExtra, 0, iraExtra) : into === "hsa" ? taxesFor(pretaxExtra, hsaExtra + x, 0, iraExtra) : taxesFor(pretaxExtra, hsaExtra, 0, iraExtra + x);
+          into === "workplace" || into === "457b"
+            ? taxesFor(pretaxExtra + x, hsaExtra, 0, iraExtra, pPretaxExtra)
+            : into === "hsa"
+              ? taxesFor(pretaxExtra, hsaExtra + x, 0, iraExtra, pPretaxExtra)
+              : into === "partnerWorkplace"
+                ? taxesFor(pretaxExtra, hsaExtra, 0, iraExtra, pPretaxExtra + x)
+                : taxesFor(pretaxExtra, hsaExtra, 0, iraExtra + x, pPretaxExtra);
         const taxNow = current(0).total;
         const saved = (x: number) => taxNow - current(x).total;
         let x = Math.min(room, remaining);
@@ -687,6 +929,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         // Measure the tax saved before moving the extras, or the saving is counted twice.
         const taxSaved = saved(x);
         if (into === "workplace") pretaxExtra += x;
+        else if (into === "partnerWorkplace") pPretaxExtra += x;
         else if (into === "457b") {
           pretaxExtra += x;
           amount457 += x;
@@ -706,6 +949,9 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       const enteredTotal = enteredWorkplace + enteredRothWorkplace;
       if (matchRoomTraditional > 0) pretaxStep(Math.min(matchRoomTraditional, limits.workplace - enteredTotal), "workplace", "1. Employer match (traditional)");
       if (matchRoomRoth > 0) rothWorkplace += afterTaxStep(Math.min(matchRoomRoth, limits.workplace - enteredTotal - pretaxExtra), "1. Employer match (Roth 401(k))");
+      const pEnteredTotal = pEnteredWorkplace + pEnteredRothWorkplace;
+      if (pMatchRoomTraditional > 0) pretaxStep(Math.min(pMatchRoomTraditional, pLimits.workplace - pEnteredTotal), "partnerWorkplace", "1. Partner's employer match (traditional)");
+      if (pMatchRoomRoth > 0) pRothWorkplace += afterTaxStep(Math.min(pMatchRoomRoth, pLimits.workplace - pEnteredTotal - pPretaxExtra), "1. Partner's employer match (Roth 401(k))");
       // Step 2: debts above the high-interest threshold, to payoff.
       for (const x of debtPreview) {
         if (x.d.balance <= 0 || nominalRateFor(x.d.account, y, ctx.startMonth ?? 1) <= DEFAULTS.highInterest) continue;
@@ -715,6 +961,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       }
       // Steps 3 to 8 by strategy.
       const workplaceRoom = () => Math.max(0, limits.workplace - enteredWorkplace - enteredRothWorkplace - (pretaxExtra - amount457) - rothWorkplace);
+      const pWorkplaceRoom = () => (partner && pHasWages ? Math.max(0, pLimits.workplace - pEnteredWorkplace - pEnteredRothWorkplace - pPretaxExtra - pRothWorkplace) : 0);
       const hsaRoom = () => (hsaEligible ? Math.max(0, limits.hsa - enteredHsaAmt - hsaExtra) : 0);
       /** M2: the governmental 457(b) has its own limit, separate from the 401(k) (rule limits.457b.2026). */
       const room457 = (): number => {
@@ -745,6 +992,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         case "maxTaxSavingsNow":
           pretaxStep(hsaRoom(), "hsa", "3. HSA");
           if (hasWages) pretaxStep(workplaceRoom(), "workplace", "4. Traditional 401(k) to the limit");
+          if (partner) pretaxStep(pWorkplaceRoom(), "partnerWorkplace", "4. Partner's traditional 401(k) to the limit");
           if (m2) pretaxStep(room457(), "457b", "5. Governmental 457(b) to its limit");
           if (m2 && iraDeductibleShare() >= 0.999) pretaxStep(limits.ira, "ira", "6. Traditional IRA (deductible)");
           else rothIraAmt += afterTaxStep(limits.ira, "6. Roth IRA");
@@ -755,6 +1003,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           pretaxStep(hsaRoom(), "hsa", "3. HSA");
           rothIraAmt += afterTaxStep(limits.ira, "4. Roth IRA");
           if (hasWages) rothWorkplace += afterTaxStep(workplaceRoom(), "5. Roth 401(k) to the limit");
+          if (partner) pRothWorkplace += afterTaxStep(pWorkplaceRoom(), "5. Partner's Roth 401(k) to the limit");
           if (m2) pretaxStep(room457(), "457b", "6. Governmental 457(b) to its limit");
           if (m2) megaBackdoorAmt += afterTaxStep(megaRoom(), "7. Mega backdoor Roth");
           taxableAmt += afterTaxStep(Infinity, "8. Taxable brokerage");
@@ -769,7 +1018,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         const phase = m2
           ? ledger.get<Record<FilingStatus, [number, number]>>("limits.rothIraIncome.2026")[hh.filingStatus]
           : fed.contributionLimits.rothIraPhaseOut[hh.filingStatus];
-        if (phase && taxesFor(pretaxExtra, hsaExtra, 0, iraExtra).agi > phase[0]) rowFlags.push("Income is above the Roth IRA limit; the contribution assumes a backdoor Roth.");
+        if (phase && taxesFor(pretaxExtra, hsaExtra, 0, iraExtra, pPretaxExtra).agi > phase[0]) rowFlags.push("Income is above the Roth IRA limit; the contribution assumes a backdoor Roth.");
       }
     } else if (gap0 >= 0 && retired && !m2) {
       // A surplus in retirement (Social Security above spending) goes to taxable.
@@ -840,20 +1089,20 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       const planOf = (a: AssetState): WorkplacePlan | null => a.plan ?? (a.id === "engine:trad401k" || presetOf(a.id) === "trad401k" ? hh.plans[0] ?? null : null);
       /** Whether a pretax draw from this account owes the 10% additional tax this year. */
       const penaltyOn = (a: AssetState): boolean => {
-        if (penaltyFree) return false;
+        if (ownerAge(a) >= DEFAULTS.penaltyFreeAge) return false;
         const pl = planOf(a);
-        if (pl?.planType === "457bGovernmental" && governmental457bPenaltyFree(y, separationYearOf(pl), ledger)) return false;
+        if (pl?.planType === "457bGovernmental" && governmental457bPenaltyFree(y, separationYearOf(pl, a.owner), ledger)) return false;
         if (policy.ruleOf55 && pl && pl.ruleOf55Allowed.value === "yes" && presetOf(a.id) !== "tradIRA" && a.id !== "engine:tradIRA") {
-          const sepYear = separationYearOf(pl);
-          if (ruleOf55Applies(sepYear - birth.year, age, y, sepYear, ledger)) return false;
+          const sepYear = separationYearOf(pl, a.owner);
+          if (ruleOf55Applies(sepYear - ownerBirthYear(a), ownerAge(a), y, sepYear, ledger)) return false;
         }
         return true;
       };
 
-      // 1. Required minimum distributions, from each pretax account's balance at the start of the year.
+      // 1. Required minimum distributions, from each pretax account's balance at the start of the year, by the owner's age.
       const rmdBy = new Map<string, number>();
       for (const a of pretaxAccounts()) {
-        const r = requiredMinimumDistribution(a.balance, age, birth.year, ledger) / f;
+        const r = requiredMinimumDistribution(a.balance, ownerAge(a, true), ownerBirthYear(a, true), ledger) / f;
         if (r > 0) {
           rmdBy.set(a.id, Math.min(r, a.balance / f));
           m2s.rmd += rmdBy.get(a.id)!;
@@ -890,11 +1139,12 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       // 3. The MAGI budget for the ACA (a target, the cliff limit, or an IRMAA cap), shared by conversions and harvests.
       const acaTarget = lock.acaTarget ?? policy.acaTarget;
       let magiBudget = Infinity;
-      if (age < 65) {
+      const youngestLiving = Math.min(selfAlive || !partner ? age : Infinity, pAlive && pAge !== null ? pAge : Infinity);
+      if (youngestLiving < 65) {
         if (acaTarget !== "off") magiBudget = Math.min(magiBudget, magiForPctFpl(acaTarget, householdSize, ledger));
         else if (policy.limits.stayUnderAcaCliff) magiBudget = Math.min(magiBudget, magiForPctFpl(400, householdSize, ledger));
       }
-      if (policy.limits.irmaaTierCap !== null && age >= 63) {
+      if (policy.limits.irmaaTierCap !== null && Math.max(age, pAge ?? 0) >= 63) {
         const tiers = ledger.get<{ tiers: { single: [number | null, number | null]; marriedJoint: [number | null, number | null] }[] }>("health.irmaa.2026").tiers;
         const top = tiers[policy.limits.irmaaTierCap]?.[hh.filingStatus === "marriedJoint" ? "marriedJoint" : "single"][1];
         if (top != null) magiBudget = Math.min(magiBudget, top);
@@ -981,7 +1231,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
             trial.pretaxOrdinary += w;
             if (penaltyOn(a)) trial.penalized += w;
           } else if (a.taxBucket === "roth" && a.roth) {
-            const d = drawRoth(w, a.balance / f, rothAfter.get(a.id) ?? a.roth, y, age, DEFAULTS.penaltyFreeAge, ledger);
+            const d = drawRoth(w, a.balance / f, rothAfter.get(a.id) ?? a.roth, y, ownerAge(a), DEFAULTS.penaltyFreeAge, ledger);
             trial.penalized += d.penalizedConversions;
             trial.rothEarnings += d.earnings;
             if (d.earningsPenalized) trial.penalized += d.earnings;
@@ -1008,7 +1258,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
             cashReserveLeft -= keep;
             available -= keep;
           }
-          if (a.taxBucket === "hsa" && age < 65) available = Math.min(available, Math.max(0, a.receipts - (receiptsUsed.get(a.id) ?? 0)));
+          if (a.taxBucket === "hsa" && ownerAge(a) < 65) available = Math.min(available, Math.max(0, a.receipts - (receiptsUsed.get(a.id) ?? 0)));
           if (a.taxBucket === "pretax" && policy.limits.neverPayPenalty && penaltyOn(a)) continue;
           if (a.taxBucket === "pretax" && Number.isFinite(bracketTopTaxable)) {
             const room = Math.max(0, bracketTopTaxable - m2Tax(taxView()).ordinaryTaxableIncome);
@@ -1065,18 +1315,23 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     }
 
     // Final taxes and take-home for the year (annualized).
-    const tx = taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal, iraExtra);
-    const takeHome = inc.netTotal - enteredWorkplace - enteredRothWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - iraExtra - tx.total;
+    const tx = taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal, iraExtra, pPretaxExtra);
+    const takeHome = incAll.netTotal - enteredWorkplace - enteredRothWorkplace - enteredHsaAmt - premiumsAndOther - pEnteredAll - pretaxExtra - hsaExtra - iraExtra - pPretaxExtra - tx.total;
     const gap = takeHome + ss - spendTotal() - scheduledDebt;
 
-    // Employer match on total employee workplace contributions (pretax plus Roth), attributed to the first matcher.
-    let match = 0;
-    let extraEmployee = pretaxExtra - amount457 + rothWorkplace;
-    for (const m of matchers) {
-      const employee = m.employee + extraEmployee;
-      extraEmployee = 0;
-      match += Math.min(employee, m.cap) * m.pct;
-    }
+    // Employer match on total employee workplace contributions (pretax plus Roth), attributed to the first matcher, per person.
+    const matchFor = (ms: Matcher[], extra: number): number => {
+      let total = 0;
+      let extraEmployee = extra;
+      for (const m of ms) {
+        const employee = m.employee + extraEmployee;
+        extraEmployee = 0;
+        total += Math.min(employee, m.cap) * m.pct;
+      }
+      return total;
+    };
+    const match = matchFor(matchers, pretaxExtra - amount457 + rothWorkplace);
+    const pMatch = matchFor(pMatchers, pPretaxExtra + pRothWorkplace);
 
     // Contributions by account (annualized).
     const contributions = new Map<string, number>();
@@ -1088,6 +1343,11 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     if (iraExtra > 0) add(tradIra(), iraExtra);
     if (rothIraAmt > 0) add(rothIra(), rothIraAmt);
     if (taxableAmt > 0) add(taxable(), taxableAmt);
+    if (partner) {
+      if (pEnteredWorkplace + pPretaxExtra + pMatch > 0) add(workplacePretaxP(), pEnteredWorkplace + pPretaxExtra + pMatch);
+      if (pEnteredRothWorkplace + pRothWorkplace > 0) add(workplaceRothP(), pEnteredRothWorkplace + pRothWorkplace);
+      if (pEnteredHsaAmt > 0) add(hsaAccountP(), pEnteredHsaAmt);
+    }
     // Entered annual contributions on accounts (data dictionary 3.6) are in addition, while working.
     if (!retired) {
       for (const a of hh.accounts) {
@@ -1165,9 +1425,14 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       age,
       retired,
       phaseId: spend.phaseId,
-      income: { wages: inc.wages * f, selfEmploymentNet: inc.selfEmploymentNet * f, otherTaxable: inc.otherTaxable * f, nonTaxable: inc.nonTaxable * f, gross: inc.grossTotal * f },
-      deductions: { workplacePretax: (enteredWorkplace + pretaxExtra - amount457) * f, workplaceRoth: (enteredRothWorkplace + rothWorkplace) * f, hsa: (enteredHsaAmt + hsaExtra) * f, premiumsAndOther: premiumsAndOther * f },
-      employerMatch: match * f,
+      income: { wages: incAll.wages * f, selfEmploymentNet: incAll.selfEmploymentNet * f, otherTaxable: incAll.otherTaxable * f, nonTaxable: incAll.nonTaxable * f, gross: incAll.grossTotal * f },
+      deductions: {
+        workplacePretax: (enteredWorkplace + pretaxExtra - amount457 + pEnteredWorkplace + pPretaxExtra) * f,
+        workplaceRoth: (enteredRothWorkplace + rothWorkplace + pEnteredRothWorkplace + pRothWorkplace) * f,
+        hsa: (enteredHsaAmt + hsaExtra + pEnteredHsaAmt) * f,
+        premiumsAndOther: (premiumsAndOther + pPremiums) * f,
+      },
+      employerMatch: (match + pMatch) * f,
       taxes: {
         federalIncome: federalIncomeTax * f,
         fica: (tx.fedR.socialSecurityTax + tx.fedR.medicareTax + tx.fedR.additionalMedicareTax) * f,
@@ -1191,6 +1456,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       debts: debtTotal,
       netWorth: assetTotal - debtTotal,
       flags: rowFlags,
+      ...(partner && pAge !== null ? { partner: { age: pAge, alive: pAlive, income: pInc.grossTotal * f, socialSecurity: ssSplit.partner * f } } : {}),
       ...(m2r
         ? {
             m2: {
@@ -1220,6 +1486,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     estate: last ? last.netWorth : 0,
     assetsAtRetirement,
     socialSecurity: { pia, claimingAgeYears: claimingAge.years, factor, annualBenefit: ssAnnual },
+    ...(partner ? { partnerSocialSecurity: { pia: pPia, claimingAgeYears: pClaimingAge.years, factor: pFactor, annualBenefit: pSsAnnual } } : {}),
     flags: [...flags],
     conventions: m2 ? "m2" : "m1",
     rulesUsed: ledger.refs(),

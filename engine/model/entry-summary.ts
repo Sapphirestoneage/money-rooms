@@ -73,9 +73,9 @@ export function entrySummary(h: Household): Record<EntrySectionId, SectionSummar
   const planMonth = h.asOf.slice(0, 7);
 
   // About you: birth month and state are required. Filing status has a default, marked roughly.
-  const aboutMissing = (h.self.birthDate ? 0 : 1) + (h.self.state ? 0 : 1);
+  const aboutMissing = (h.self.birthDate ? 0 : 1) + (h.self.state ? 0 : 1) + (h.partner && !h.partner.birthDate ? 1 : 0);
   const about: SectionSummary = {
-    count: 3 - aboutMissing,
+    count: (h.partner ? 4 : 3) - aboutMissing,
     total: null,
     rough: (h.self.filingStatus.confidence === "roughly" ? 1 : 0) + (h.self.state?.confidence === "roughly" ? 1 : 0),
     missing: aboutMissing,
@@ -83,13 +83,15 @@ export function entrySummary(h: Household): Record<EntrySectionId, SectionSummar
   };
 
   const inc = h.self.income;
-  const streams = inc.kind === "rows" ? inc.rows : [];
+  const partnerInc = h.partner?.income;
+  // Households of two: both people's streams count in the section.
+  const streams = [...(inc.kind === "rows" ? inc.rows : []), ...(partnerInc?.kind === "rows" ? partnerInc.rows : [])];
   const incomeTally = tally(streams.map(incomeState));
   const income: SectionSummary = {
     count: streams.length,
     total: streams.filter((s) => countsNow(s.start, s.end, planMonth)).reduce((sum, s) => sum + s.grossAnnual.value, 0),
     ...incomeTally,
-    complete: inc.kind === "none" || (inc.kind === "rows" && incomeTally.missing === 0),
+    complete: (inc.kind === "none" && streams.length === 0) || (streams.length > 0 && incomeTally.missing === 0),
   };
 
   const sp = h.spending;

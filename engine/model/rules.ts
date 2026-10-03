@@ -137,8 +137,25 @@ export class RuleLedger {
     return r.value;
   }
 
+  /**
+   * Reads a rule whether or not it has been verified, and remembers it was used so the
+   * result lists it with its blank verified date. The one door for a rule whose source
+   * could not be reached (build rule 9): the caller must flag every result that leans on it.
+   */
+  getUnverified<T = unknown>(id: string): { value: T; verified: boolean } {
+    const r = loadRules().get(id);
+    if (!r) throw new Error(`No rule "${id}" in data/rules-registry.json`);
+    this.used.set(id, r);
+    return { value: r.value as T, verified: isVerified(r) };
+  }
+
   refs(): RuleRef[] {
     return [...this.used.values()].map(toRef);
+  }
+
+  /** The rules used whose source has not been checked (lastVerified is null). */
+  unverified(): RuleRef[] {
+    return this.refs().filter((r) => r.lastVerified === null);
   }
 
   /** The rules used that are sunsetting or under watch: the plan leans on something that may change (tripwire 1). */
