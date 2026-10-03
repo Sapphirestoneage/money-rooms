@@ -241,3 +241,27 @@ Each sharpens a level-one field and has a default, so nothing new is required.
 4. Locking a year's conversion changes that year only, and the optimizer re-plans the others.
 5. Every rule the engine used is listed on the result's trace, with its source link and last-verified date.
 6. Changing a value in `rules-registry.json` changes results with no code change.
+
+---
+
+## 9. The results screen
+
+### The True FI reveal
+
+The True FI number is an **unlockable moment**, not a default row.
+
+**Before unlock.** The True FI slot shows a locked card: "Your True FI number unlocks after 3 more questions (about 4 minutes)." It lists the remaining drawdown inputs, each linking to its field.
+
+**Unlock condition.** Every drawdown input in section 7 is answered, marked roughly, or marked not for me. Not having an account type (no HSA, no taxable account) counts as complete.
+
+**Why it's gated.** The True FI number depends on drawdown details. Showing it on defaults alone would present a guess as an answer. The engine may compute it earlier for internal use, but it is not displayed until unlocked.
+
+**The reveal.**
+1. The number animates from the FI number to the True FI number.
+2. It lands on the difference, in years and dollars: "Doing your homework is worth 3 years and $380,000."
+3. The plan's top three strategies are listed beneath it ("Roth conversion ladder, 0% gain harvesting, ACA credits").
+4. With reduced motion turned on, the result appears without animation.
+
+**After the reveal.** It becomes a normal row with a replay button. If later changes move the True FI number significantly, a smaller "your True FI number changed" moment shows the before and after.
+
+**Share card.** Shows years gained and the strategies used. Never shows balances or dollar amounts unless the person turns them on.
