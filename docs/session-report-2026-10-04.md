@@ -20,7 +20,8 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 11 Coaching spec | Done (docs only) | `coaching-specs` | (see git log) |
 | 12 Feature register | Done (docs only) | `feature-register` | (see git log) |
 | 13 Readiness audit | Done (docs only) | `readiness` | (see git log) |
-| Review | Done (answers applied) | `review-oct4` | (see git log) |
+| Review | Done (answers applied, data verified) | `review-oct4` | (see git log) |
+| M2 tie-out | Plan A ties out; Plan B through 2045 (one workpaper issue) | `m2-tieout` | (see git log) |
 
 **The phases in plain English** (each has a self-audit or spec with the detail).
 
@@ -41,7 +42,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 
 ## 2. Maya tie-out (M1 conventions mode)
 
-After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after the data verification round on `review-oct4`. Full suite: 51 files, 530 tests, all passing.
+After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after the M2 tie-out on `m2-tieout`. Full suite: 52 files, 539 tests, all passing. M2 tie-out: Plan A 280 of 280 cells; Plan B all cells through 2045.
 
 ## 3. Proposed specs written (review first)
 
@@ -182,6 +183,8 @@ From `docs/readiness.md`, in order:
 ## 10. Handoff
 
 **Review of 2026-10-04:** your answers are applied on `review-oct4`, branched from `readiness`: registry entries for the senior deduction, RMD ages, and poverty guidelines; the spousal and survivor rule restructured and the engine with it (H9); stale-rule flags (F7); the headline label (H10); the bundle-size warning in CI; X1, X5, N15, F1, and H3 locked; `docs/features/shortlist.md` (the top quartile, 61 features, by destination). Merge `review-oct4` instead of `readiness`.
+
+**M2 tie-out (branch `m2-tieout`, batch of 2026-10-04):** `tests/m2-tie-out-conventions.md`, two workpapers, an M2 conventions test mode, and `npm run tie-out:m2`. Plan A ties out on all 280 cells with every headline exact (FI 41, $810,124, $495,667, $267,086, fails at 65). Plan B ties out through 2045 and then differs by one 2045 conversion the workpaper does not show (`docs/audits/m2-tie-out-reconciliation.md`, issue 1); its headlines are within 1%. Three engine bugs fixed with tests: retirement taxes were never drawn from the accounts (every app M2 result was too rosy), qualified Roth earnings were taxed, and conversions ignored the year's pretax draws. Dominance check under M2 conventions with the optimizer unlocked: earliest FI 40 (at or before 41), biggest estate at 41 $2,273,480 (at least $846,744) using 72(t) payments, conversions to the 250% ACA target, the Roth-layers-first order, and Roth contributions at work. Decisions T1 to T4.
 
 **Data round of 2026-10-04 (also on `review-oct4`):** the return series replaced and verified, the wage base and the 2025 poverty guidelines (with Alaska and Hawaii, read by state) verified, the spousal and survivor schedules implemented as specified and tested (32.5% at 62, 37.5% at 64, 71.5% at 60), X2 locked. Maya's M6 results on the verified series: the sturdy FI date stays 2046 (age 45) and the worst historical start stays 1958 (short at 50); the success rate moved from 72.1% to 72.5% with the 2025 row adding one more start. The from-memory series was close to the real one in the years that decide Maya's worst starts (the 1966 to 1982 stretch), so the headline risk numbers did not move.
 
