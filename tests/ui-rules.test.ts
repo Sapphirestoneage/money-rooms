@@ -43,3 +43,34 @@ describe("UI files define no colors of their own", () => {
     }
   });
 });
+
+describe("the dense entry screen keeps its accessibility and spacing rules", () => {
+  const read = (...parts: string[]) => readFileSync(join(uiRoot, ...parts), "utf8");
+
+  it("the tap target size lives only in tokens.css", () => {
+    expect(read("tokens.css")).toContain("--tap-target: 44px");
+    for (const file of walk(uiRoot).filter((f) => f.endsWith(".css") && !f.endsWith("tokens.css"))) {
+      expect(readFileSync(file, "utf8").includes("44px"), relative(uiRoot, file)).toBe(false);
+    }
+    expect(read("components.css")).toMatch(/\.dense-row \{[^}]*min-height: var\(--tap-target\)/);
+    expect(read("components.css")).toMatch(/\.section-header \{[^}]*min-height: var\(--tap-target\)/);
+  });
+
+  it("sections sit one section gap apart", () => {
+    expect(read("tokens.css")).toContain("--section-gap: var(--space-5)");
+    expect(read("components.css")).toMatch(/\.card--section \{[^}]*margin-bottom: var\(--section-gap\)/);
+  });
+
+  it("the section caret is a real button with aria-expanded, inside the heading", () => {
+    const source = read("components", "collapsible-section.ts");
+    expect(source).toMatch(/"button",\s*\{ type: "button", class: "section-header", "aria-expanded"/);
+    expect(source).toContain('"aria-controls": bodyId');
+    expect(source).toContain('el("h2", { class: "section-heading" }, button)');
+  });
+
+  it("a row is a real button, and its open editor is a labeled group", () => {
+    const source = read("components", "dense-row.ts");
+    expect(source).toMatch(/"button",\s*\{ type: "button", class: "dense-row__main", "aria-expanded": "false"/);
+    expect(source).toContain('role: "group", "aria-label": `Editing ${o.name}`');
+  });
+});
