@@ -1008,3 +1008,178 @@
 .rows > .group-header:first-child {
   padding-top: var(--space-1);
 }
+
+/* ---- Result screen: sections, True FI, plan, strategies (M2 spec section 9) ---- */
+
+.screen-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.section-order {
+  display: inline-flex;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.section-order--center {
+  justify-content: center;
+  margin-left: 0;
+}
+
+.card__subtitle {
+  font-size: var(--text-md);
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.lock-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-ink-muted);
+  border: var(--border-width) solid var(--color-rule);
+}
+
+.unlock-list {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.unlock-list li {
+  min-height: var(--tap-target);
+  display: flex;
+  align-items: center;
+}
+
+.true-fi__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.true-fi__number {
+  font-family: var(--font-numbers);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-hero);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  color: var(--color-ink);
+}
+
+.true-fi__difference {
+  font-size: var(--text-lg);
+}
+
+.plan-steps {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.plan-steps li {
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.plan-steps li:last-child {
+  border-bottom: 0;
+}
+
+.strategy-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.strategy-row:last-of-type {
+  border-bottom: 0;
+}
+
+.strategy-row__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-medium);
+}
+
+.strategy-row__state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  border: var(--border-width) solid var(--color-rule);
+}
+
+.strategy-row__state--on {
+  color: var(--color-surface);
+  background: var(--color-brand-700);
+  border-color: var(--color-brand-700);
+}
+
+.strategy-row__effect {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.stress-list,
+.rules-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stress-list li,
+.rules-list li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.stress-list li:last-child,
+.rules-list li:last-child {
+  border-bottom: 0;
+}
+
+.rules-list__meta {
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+}
+
+.share-card {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-brand-100);
+  color: var(--color-ink);
+}
+
+.share-card p {
+  margin: 0 0 var(--space-1);
+}
+
+.field__help {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+}
+
+/* Links inside result lists are full tap targets. */
+.unlock-list a,
+.rules-list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+}

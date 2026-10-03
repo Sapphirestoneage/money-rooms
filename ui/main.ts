@@ -48,7 +48,7 @@ function boot(): void {
     drawer.close();
     clear(main);
     if (route === "result") {
-      main.append(resultScreen({ household, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
+      main.append(resultScreen({ household, store, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
     } else {
       main.append(entryScreen({
         household,

@@ -33,6 +33,12 @@ export interface Snapshot {
 export interface DisplayPrefs {
   /** The cadence last chosen for each amount field, by field key. */
   cadence: Record<string, string>;
+  /** The order of the result screen's sections, by section id (M2 spec section 9). Blank means the default order. */
+  resultOrder?: string[];
+  /** True once the True FI number has been revealed, so it shows as a normal row with a replay button. */
+  trueFiRevealed?: boolean;
+  /** The optimizer objective last chosen. */
+  objective?: string;
 }
 
 export interface Store {
@@ -110,8 +116,13 @@ export function browserStore(storage: Storage | null, today: () => IsoDate = tod
     clearSnapshot: () => remove(SNAPSHOT_KEY),
     loadPrefs() {
       const parsed = read(PREFS_KEY);
-      const cadence = typeof parsed === "object" && parsed !== null && typeof (parsed as DisplayPrefs).cadence === "object" && (parsed as DisplayPrefs).cadence !== null ? (parsed as DisplayPrefs).cadence : {};
-      return { cadence: { ...cadence } };
+      const p = typeof parsed === "object" && parsed !== null ? (parsed as Partial<DisplayPrefs>) : {};
+      const cadence = typeof p.cadence === "object" && p.cadence !== null ? p.cadence : {};
+      const out: DisplayPrefs = { cadence: { ...cadence } };
+      if (Array.isArray(p.resultOrder) && p.resultOrder.every((x) => typeof x === "string")) out.resultOrder = [...p.resultOrder];
+      if (typeof p.trueFiRevealed === "boolean") out.trueFiRevealed = p.trueFiRevealed;
+      if (typeof p.objective === "string") out.objective = p.objective;
+      return out;
     },
     savePrefs: (p) => void write(PREFS_KEY, p),
   };

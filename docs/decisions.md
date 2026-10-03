@@ -171,3 +171,14 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | N15 | Health care before 65 uses one benchmark premium at every age and one Medicaid expansion answer (unknown by default). From 65, IRMAA uses the plan date's MAGI for lookback years before the plan. | Proposed | Two-way | 2026-10-04 | Placeholders until O3 is sourced; the mechanics are in and tested. |
 | N16 | Under m2, income streams with an age or date end keep paying after retirement (Barista FI). Only streams ending at retirement stop. | Proposed | Two-way | 2026-10-04 | Replaces M1 convention C27, which the M2 spec (E6) planned to replace. |
 | N17 | Required distributions not needed for spending go to the taxable account the same year. | Proposed | Two-way | 2026-10-04 | The money has to land somewhere; taxable is where a surplus already goes. |
+
+## M2 optimizer decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| N18 | The search is coordinate descent over the knobs from the default policy, two passes, then a sweep of two knob pairs (conversion target with ACA target, conversion target with harvesting). Likely band only. | Proposed | Two-way | 2026-10-04 | About a hundred projections for Maya, under a second. An exhaustive search is thousands. |
+| N19 | Objectives other than earliest FI hold the retirement year fixed at the FI year under the default policy unless the person picks one. Most spending bisects a spending scale between 0.5 and 3 times entered spending. | Proposed | Two-way | 2026-10-04 | The spec says the others become limits; the FI date is the natural one to fix. |
+| N20 | Toggle and stress effects report years from a fresh FI search and dollars from a rerun at the same retirement year, never both from one run. | Proposed | Two-way | 2026-10-04 | Mixing them made "turn off conversions" look like it saved tax because it retired later. |
+| N21 | The 72(t) knob is on or off: on means amortization at the 5% floor from the first retired year. Rule of 55 is offered only when a plan says it allows it. The contribution-type knob is offered only when a workplace contribution exists. | Proposed | Two-way | 2026-10-04 | Keeps the search small and every candidate meaningful. |
+| N22 | The result screen's default section order: FI date, True FI, net worth chart, the plan, strategies, key figures, tripwires and stress test, rules behind the plan, flags. Rearrangeable, stored with display preferences, never with the household. | Proposed | Two-way | 2026-10-04 | Spec section 9 asks for a default order and a customizable one. |
+| N23 | The True FI number is the optimizer's earliest-FI result (assets at that date); the FI number is 25 times current spending. The reveal animates only when motion is allowed. | Proposed | Two-way | 2026-10-04 | Spec section 2 and 9. |

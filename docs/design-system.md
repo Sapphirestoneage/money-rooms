@@ -174,6 +174,24 @@ Spending is a list of rows, added from a list of categories ("Add spending"). On
 ### Promo fields
 On a debt whose rate is 0% (or that already has a promo), the card shows "This rate" with two choices: "Does not end" and "Ends after a month". Choosing the second shows the month and year the promo lasts through and the rate after it. A 0% rate with no end shows a gentle flag, and so does a rate-after that is still a typical rate or blank.
 
+### True FI card
+The unlockable moment from M2 spec section 9. Locked, it says how many questions and minutes remain and lists them, each a link to its field, with a quiet "Locked" pill in the title. Unlocked, it shows the 4% rule number in muted text, the True FI number in hero type with a Computed badge, one sentence with the difference in dollars and years, the top three strategies, and two quiet buttons: "Reveal" (later "Replay the reveal") and "Share card". The number counts from the FI number to the True FI number over about a second and a half; with reduced motion on, it appears at once. The share card (in the drawer) shows years gained and the strategies, never dollar amounts unless the person turns them on.
+
+### Plan steps
+An ordered list of age ranges ("Ages 40 to 44") each followed by one to four plain sentences describing what the numbers show for those years. Divider between steps. Above it, a select for "Optimize for" with the four objectives written as the question each answers.
+
+### Strategy row
+One per strategy the optimizer can use: an On or Off pill (On is filled brand 700 with light text), the strategy's name, and under it in muted text what turning it off would do in years and dollars. "Not in this plan" when off.
+
+### Stress list and rules list
+Plain lists with a divider between items. A stress item is the case and its effect. A rules item is the rule's name linking to its official source, with source, last-verified date, and status in metadata type beneath.
+
+### Section order control
+When "Rearrange" is on (a toggle button in the screen head), every result section gets Up and Down quiet buttons in its title row, each a 44px target with an accessible label naming the section. The order is a display preference, stored separately from the plan.
+
+### Plan details card
+A collapsed details card on the entry screen holding the Level 4 drawdown inputs: cost basis per taxable account, contributions so far per Roth account, saved receipts per HSA, the first Roth year, the workplace plan's rule of 55, 457(b), and mega backdoor answers, the separation age, the heir tax rate, the number of people on the health plan, and the Medicaid expansion answer. Its title counts what is left to unlock the True FI number. Every money field carries a kind badge; every question has a "Not sure yet" answer.
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 

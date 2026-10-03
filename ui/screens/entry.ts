@@ -58,6 +58,9 @@ import {
   type StateCode,
   type Value,
   type WorkplaceAccountType,
+  type WorkplacePlan,
+  type YesNoUnknown,
+  drawdownUnlockItems,
 } from "../../engine";
 import { collapsibleSection } from "../components/collapsible-section";
 import { confirmPanel } from "../components/confirm-panel";
@@ -185,7 +188,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   const cadenceMemory = new Map<string, Cadence>(Object.entries(prefs.cadence) as [string, Cadence][]);
   const rememberCadence = (key: string, c: Cadence): void => {
     cadenceMemory.set(key, c);
-    ctx.store.savePrefs({ cadence: Object.fromEntries(cadenceMemory) });
+    ctx.store.savePrefs({ ...ctx.store.loadPrefs(), cadence: Object.fromEntries(cadenceMemory) });
   };
   /** A field to put the cursor in after the next refresh (a row that was just added). */
   let pendingFocusKey: string | null = null;
@@ -297,6 +300,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       section("accounts", "Accounts", accounts("asset")),
       section("debts", "Debts", accounts("debt")),
       sharpeners(),
+      planDetails(),
       examples(),
       templateCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
       transferCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
@@ -1137,6 +1141,93 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         field("Social Security in your plan", zero),
       ),
       el("p", { class: "notice" }, "Plan-to age. How long your plan needs to last. Running out at 88 is far worse than leaving some behind at 95, so this is set longer than average on purpose. You can change it."),
+    );
+  }
+
+  // ---- Plan details (Level 4: the drawdown inputs, M2 spec section 7) ------------
+  /** The one workplace plan the level-two questions describe (dictionary 9.2). Created on the first answer. */
+  const workplacePlan = (): WorkplacePlan => {
+    const existing = h().plans?.[0];
+    if (existing) return existing;
+    const incomeAnswer = h().self.income;
+    const employer = incomeAnswer.kind === "rows" ? incomeAnswer.rows.find((r) => r.type === "salary" || r.type === "hourly") : undefined;
+    const plan: WorkplacePlan = {
+      id: rowId("plan"),
+      employerIncomeId: employer?.id ?? "",
+      planType: "401k",
+      ruleOf55Allowed: userValue("unknown" as YesNoUnknown, asOf()),
+      megaBackdoorAllowed: userValue("unknown" as YesNoUnknown, asOf()),
+      rothOffered: userValue(true, asOf()),
+    };
+    h().plans = [plan];
+    return plan;
+  };
+  const drawdown = () => (h().drawdown ??= {});
+
+  function planDetails(): HTMLElement {
+    fieldScope = "plan";
+    const items = drawdownUnlockItems(h());
+    const accountsAnswer = h().accounts;
+    const accounts: Account[] = accountsAnswer.kind === "rows" ? accountsAnswer.rows : [];
+    const incomeRows: IncomeStream[] = h().self.income.kind === "rows" ? (h().self.income as { kind: "rows"; rows: IncomeStream[] }).rows : [];
+    const fields: HTMLElement[] = [];
+    const yesNo: { value: YesNoUnknown; label: string }[] = [{ value: "unknown", label: "Not sure yet" }, { value: "yes", label: "Yes" }, { value: "no", label: "No" }];
+
+    for (const a of accounts) {
+      if (a.side !== "asset") continue;
+      const name = a.name?.value ?? getAccountPreset(a.preset).label;
+      if (a.taxBucket.value === "taxable") {
+        const badge = badgeSlot(() => a.costBasis, (v) => { a.costBasis = v; });
+        fields.push(field(`Cost basis of ${name}`, money({ label: `Cost basis of ${name}`, annual: a.costBasis?.value ?? null, cadences: ["year"], onChange: (v) => { if (v === null) delete a.costBasis; else a.costBasis = userValue(v, asOf(), a.costBasis?.confidence === "known" ? "known" : "roughly"); ctx.save(); badge.refresh(); }, placeholder: "What you paid in" }), badge.node, el("p", { class: "field__help" }, "What you put in, as against what it is worth now. On your brokerage statement, often as \"cost basis\". Blank means 70% of the balance, roughly.")));
+      }
+      if (a.taxBucket.value === "roth") {
+        const badge = badgeSlot(() => a.rothBasis, (v) => { a.rothBasis = v; });
+        fields.push(field(`Contributions so far to ${name}`, money({ label: `Contributions so far to ${name}`, annual: a.rothBasis?.value ?? null, cadences: ["year"], onChange: (v) => { if (v === null) delete a.rothBasis; else a.rothBasis = userValue(v, asOf(), a.rothBasis?.confidence === "known" ? "known" : "roughly"); ctx.save(); badge.refresh(); }, placeholder: "Total put in" }), badge.node, el("p", { class: "field__help" }, "Regular contributions come out first, tax and penalty free. Blank means half the balance, roughly.")));
+      }
+      if (a.taxBucket.value === "hsa") {
+        const badge = badgeSlot(() => a.savedReceipts, (v) => { a.savedReceipts = v; });
+        fields.push(field(`Saved medical receipts for ${name}`, money({ label: `Saved medical receipts for ${name}`, annual: a.savedReceipts?.value ?? null, cadences: ["year"], onChange: (v) => { if (v === null) delete a.savedReceipts; else a.savedReceipts = userValue(v, asOf()); ctx.save(); badge.refresh(); }, placeholder: "0" }), badge.node, el("p", { class: "field__help" }, "Medical costs you paid out of pocket and kept the receipts for. They can be reimbursed from the HSA later, tax free.")));
+      }
+    }
+
+    const hasRoth = accounts.some((a) => a.side === "asset" && a.taxBucket.value === "roth");
+    if (hasRoth) {
+      const thisYear = parseYearMonth(asOf().slice(0, 7)).year;
+      const years = [{ value: "", label: "Not sure (five years ago)" }, ...Array.from({ length: 40 }, (_, i) => thisYear - i).map((y) => ({ value: String(y), label: String(y) }))];
+      fields.push(field("Year of your first Roth contribution", select(years, drawdown().firstRothYear ? String(drawdown().firstRothYear!.value) : "", (v) => { if (v === "") delete drawdown().firstRothYear; else drawdown().firstRothYear = userValue(Number(v), asOf()); ctx.save(); })));
+    }
+
+    const hasWorkplace = accounts.some((a) => a.side === "asset" && (a.preset === "trad401k" || a.preset === "roth401k")) || incomeRows.some((s) => s.preTaxDeductions?.some(isWorkplaceContribution));
+    if (hasWorkplace) {
+      const plan = h().plans?.[0];
+      fields.push(field("Does your workplace plan allow the rule of 55?", select(yesNo, plan?.ruleOf55Allowed.value ?? "unknown", (v) => { workplacePlan().ruleOf55Allowed = userValue(v, asOf()); ctx.save(); }), null, el("p", { class: "field__help" }, "Leaving an employer in or after the year you turn 55 can allow penalty-free withdrawals from that employer's plan. Your plan's summary says whether it allows them.")));
+      fields.push(field("Is it a governmental 457(b)?", select([{ value: "401k", label: "No, a 401(k) or 403(b)" }, { value: "457bGovernmental", label: "Yes, a governmental 457(b)" }], plan?.planType === "457bGovernmental" ? "457bGovernmental" : "401k", (v) => { workplacePlan().planType = v === "457bGovernmental" ? "457bGovernmental" : "401k"; ctx.save(); })));
+      fields.push(field("Does it allow after-tax contributions you can convert (mega backdoor)?", select(yesNo, plan?.megaBackdoorAllowed.value ?? "unknown", (v) => { workplacePlan().megaBackdoorAllowed = userValue(v, asOf()); ctx.save(); })));
+      const sep = el("input", { class: "input", type: "number", min: 18, max: 80, step: 1, value: plan?.separationAge?.value ?? "", placeholder: "At retirement" });
+      sep.addEventListener("input", () => { const v = Number(sep.value); const pl = workplacePlan(); if (sep.value === "" || !(v >= 18 && v <= 80)) delete pl.separationAge; else pl.separationAge = userValue(v, asOf()); ctx.save(); });
+      fields.push(field("Age you expect to leave this employer", sep, null, el("p", { class: "field__help" }, "Blank means when you stop working.")));
+    }
+
+    const heir = el("input", { class: "input", type: "number", min: 0, max: 60, step: 1, value: drawdown().heirTaxRatePercent?.value ?? "", placeholder: "22" });
+    const heirBadge = badgeSlot(() => drawdown().heirTaxRatePercent, (v) => { drawdown().heirTaxRatePercent = v; });
+    heir.addEventListener("input", () => { const v = Number(heir.value); if (heir.value === "" || !(v >= 0 && v <= 60)) delete drawdown().heirTaxRatePercent; else drawdown().heirTaxRatePercent = userValue(v, asOf(), "roughly"); ctx.save(); heirBadge.refresh(); });
+    fields.push(field("Expected heir tax rate (percent)", heir, heirBadge.node, el("p", { class: "field__help" }, "Pretax money left behind is taxed at your heirs' rate, usually within ten years. Blank means 22%, roughly.")));
+
+    const size = el("input", { class: "input", type: "number", min: 1, max: 12, step: 1, value: drawdown().acaHouseholdSize?.value ?? "", placeholder: "1" });
+    const sizeBadge = badgeSlot(() => drawdown().acaHouseholdSize, (v) => { drawdown().acaHouseholdSize = v; });
+    size.addEventListener("input", () => { const v = Number(size.value); if (size.value === "" || !(v >= 1 && v <= 12)) delete drawdown().acaHouseholdSize; else drawdown().acaHouseholdSize = userValue(v, asOf()); ctx.save(); sizeBadge.refresh(); });
+    fields.push(field("People on your health plan", size, sizeBadge.node, el("p", { class: "field__help" }, "Sets the poverty line the marketplace credit is measured against. Blank means 1.")));
+
+    const medicaid = drawdown().medicaidExpansionState;
+    fields.push(field("Is your state a Medicaid expansion state?", select([{ value: "unknown", label: "Not sure yet" }, { value: "yes", label: "Yes" }, { value: "no", label: "No" }], medicaid ? (medicaid.value ? "yes" : "no") : "unknown", (v) => { if (v === "unknown") delete drawdown().medicaidExpansionState; else drawdown().medicaidExpansionState = userValue(v === "yes", asOf(), "roughly"); ctx.save(); }), null, el("p", { class: "field__help" }, "In an expansion state, income under 138% of the poverty line means Medicaid instead of a marketplace credit. Most states have expanded; HealthCare.gov lists them.")));
+
+    const left = items.length;
+    return el(
+      "details",
+      { class: "card", id: "plan-details" },
+      el("summary", { class: "card__summary" }, el("h2", {}, left ? `Plan details (${left} to go for your True FI number)` : "Plan details")),
+      el("p", { class: "muted card__details-body" }, "How your money comes out matters as much as how it goes in. These unlock the True FI number on the result screen. Roughly is fine; not having an account type counts as done."),
+      el("div", { class: "field-grid card__details-body" }, ...fields),
     );
   }
 

@@ -8,7 +8,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 |---|---|---|---|
 | 0 Prep | Done | `prep-oct4` | cd5e061 |
 | 1 M2 engine | Done | `m2-engine` | (see git log) |
-| 2 M2 optimizer and results | Not started | `m2-optimizer` | |
+| 2 M2 optimizer and results | Done | `m2-optimizer` | (see git log) |
 | 3 M3 flow | Not started | `m3-flow` | |
 | 4 Level content | Not started | `levels` | |
 | 5 M5 what-ifs | Not started | `m5-whatifs` | |
@@ -20,6 +20,8 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 11 Coaching spec | Not started | `coaching-specs` | |
 | 12 Feature register | Not started | `feature-register` | |
 | 13 Readiness audit | Not started | `readiness` | |
+
+**Phase 2 in plain English.** The optimizer searches the policy knobs (conversion target, gain harvesting, ACA target, withdrawal order, 72(t), rule of 55, claiming age, contribution type) for one of four objectives, with the optional limits, in about a hundred projections. It returns the best plan, the baseline, and the plan in words ("Ages 40 to 44: Live on taxable savings. Convert about $16,100 a year..."). Year locks are honored and planned around. Strategy toggles report what turning each one off costs in years and dollars; the stress test reruns the plan with the sunsets gone, Social Security at its floor, and the worst band; tripwire flags name the rules the plan leans on. The result screen now has nine sections in a default order that can be rearranged (stored as a display preference), the True FI card (locked until the drawdown inputs are in, then revealed with a count-up unless motion is reduced, with a replay and a share card that hides dollars by default), the plan, the strategies, and the rules behind the plan with links and verified dates. The entry screen gained a Plan details card for the Level 4 inputs. Self-audit: `docs/audits/m2-self-audit.md`.
 
 **Phase 1 in plain English.** The engine now has two modes. `m1` is the tied-out skeleton and does not change. `m2` reads every rule from the registry (and refuses unverified ones), taxes capital gains with cost basis, applies the Roth ordering rules with five-year conversion clocks, prices health care through the ACA credit (with the 2026 cliff) and IRMAA (two-year lookback), takes required distributions and 72(t) payments, honors the rule of 55 and governmental 457(b), sizes Roth conversions and 0% gain harvests under a MAGI budget, keeps part-time income after retirement, and adds the traditional IRA, 457(b), and mega backdoor steps to the waterfall. All of it is driven by a drawdown policy with per-year locks, ready for the optimizer. 25 new M2 tests plus 48 unit tests on the pieces. Engine spec section 10 documents the method; decisions N10 to N17 are Proposed.
 
@@ -37,6 +39,7 @@ None yet (Phase 0 wrote dictionary additions, not a spec).
 
 | # | Where | Decision |
 |---|---|---|
+| N18 to N23 | `decisions.md` | Optimizer: coordinate search with a pair sweep, fixed retirement year for the other objectives, toggle effects measured at a fixed year, the knob set, the result screen's default order, and the True FI definition |
 | N10 to N17 | `decisions.md` | M2 engine: the m1/m2 switch, level-two defaults (70% basis, 50% Roth basis, first Roth year five years back), no HSA draws before 65 beyond receipts, 72(t) annuitization approximated, conversions sized after sales, health care placeholders, Barista income under m2, RMD surplus to taxable |
 | X1 to X6 | `decisions.md` | Workplace plan entity, business entity, account owner, scenario blocks as layered changes, contribution-to-plan links, Roth conversion records (dictionary section 9) |
 | (engine) | commit 250e776 | The Social Security earnings record is back-filled from this year's entered income even when the FI search tests stopping work this year. Before, anyone who could retire now was shown a $0 benefit. Two-way; Maya unaffected |
@@ -66,7 +69,7 @@ No page fetched during this session contained instructions aimed at the build.
 
 ## 7. Self-audit scorecards
 
-None yet.
+**M2** (`docs/audits/m2-self-audit.md`): acceptance tests 2 to 6 pass; test 1 is partial because the hand-checked Gross and Net FI values for the three households do not exist yet (only you can produce them). Weak spots named: health care placeholders, state tax on retirement income, the 72(t) annuitization approximation, the coordinate search, and no M2 workpaper yet. A suggested second Maya workpaper at M2 depth is described.
 
 ## 8. Feature register
 
@@ -78,6 +81,6 @@ Not started.
 
 ## 10. Handoff
 
-**Where I am:** Phases 0 and 1 complete and pushed. **Next:** branch `m2-optimizer` from `m2-engine` and build the policy-knob search (coordinate descent over the knobs, objective on the likely band), the plan text, FI number vs True FI number, strategy toggles, the stress test, then the results screen and the True FI reveal.
+**Where I am:** Phases 0, 1, and 2 complete and pushed. **Next:** branch `m3-flow` from `m2-optimizer` and build the materiality engine (plausible ranges by kind, FI-number sensitivity per input, the three lines), then the next card, the Refresh card, the Rough numbers card, levels and tiers with `data/items.json`, entry modes, Small wins with `data/small-wins.json`, and the Sky with its outline alternative.
 
 **Edge-case verdicts (Phase 0d).** Sensible: no income with savings (date is now), no income and no savings (never funded, shortfall named from the first year), only debt (card paid off, high-interest step fires), age 16 (80-year horizon), spending above income (never funded, gap negative every year), 0% promo ending next month (one month of interest in the stub year, full rate after), all-dontknow import (reads clean, lists every unknown, household stays incomplete so no date shows). Confusing: age 70 still working showed a $0 Social Security benefit in the retire-now case (fixed, commit 250e776); and a person over 73 with a pretax balance sees no required distributions in M1 (expected, M2 strategy B5). Age 100 gives an empty timeline rather than a message; the entry screen's validation (16 to 100) should stop it first.
