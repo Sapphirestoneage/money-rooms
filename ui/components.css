@@ -318,7 +318,7 @@
 .kind-badge__pill--known { background: var(--color-known); }
 .kind-badge__pill--lookUp { background: var(--color-lookup); }
 .kind-badge__pill--roughly { background: var(--color-roughly); }
-.kind-badge__pill--computed { background: var(--color-computed); color: var(--color-ink); }
+.kind-badge__pill--computed { background: var(--color-computed); color: var(--color-computed-text); }
 .kind-badge__pill--notForMe { background: var(--color-notforme); }
 
 .badge-slot {
@@ -552,7 +552,7 @@
 
 .gentle-flag__label {
   font-weight: var(--weight-medium);
-  color: var(--color-attention);
+  color: var(--color-attention-ink);
 }
 
 /* ---- Misc ---- */

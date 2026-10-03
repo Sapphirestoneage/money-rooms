@@ -26,14 +26,16 @@ The tokens live in [`ui/tokens.css`](../ui/tokens.css). This document explains h
 | `--color-ink-muted` | Labels and secondary text |
 | `--color-rule` | Borders and dividers |
 | `--color-brand-*` | Brand accents, charts, primary buttons (900 darkest, 100 lightest) |
-| `--color-attention` | "Needs a look": rough numbers, stale numbers, gentle flags |
+| `--color-attention` | "Needs a look": rough numbers, stale numbers, gentle flags (as a border or fill) |
+| `--color-attention-ink` | Attention used as text, or as a pill behind light text. Darker than `--color-attention` in light so it meets 4.5:1 |
+| `--color-computed-text` | The text on a Computed pill: ink on the light pill, ink on the dark pill (the pill itself changes) |
 | `--color-band-best / likely / worst` | The three projection bands |
 
 **Rules**
 
 - Red is not in the palette. Shortfalls and flags use attention (ochre) with clear words.
 - Color never carries meaning alone. Every colored state also has a label or icon.
-- Text meets WCAG AA contrast (4.5:1 for body text) in both light and dark themes.
+- Text meets WCAG AA contrast (4.5:1 for body text) in both light and dark themes. The dark theme overrides `--color-brand-700`, `--color-brand-500`, and every kind color so pills and quiet buttons keep that ratio on dark surfaces (audited with axe on 2026-10-04, see `docs/accessibility-audit-2026-10.md`).
 
 ---
 

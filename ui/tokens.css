@@ -22,12 +22,14 @@
   /* Attention: used for "needs a look," never for judgment */
   --color-attention: #B9820C;
   --color-attention-soft: #F4E6C4;
+  --color-attention-ink: #7F5A07;  /* attention used as text, or as a pill behind light text (WCAG AA on paper and surface) */
 
   /* Number kinds (data dictionary section 2.1) */
   --color-known: var(--color-brand-700);
   --color-lookup: var(--color-brand-500);
-  --color-roughly: var(--color-attention);
+  --color-roughly: var(--color-attention-ink);
   --color-computed: var(--color-brand-300);
+  --color-computed-text: var(--color-ink); /* the computed pill's text: dark on a light pill, light on a dark one */
   --color-notforme: var(--color-ink-muted);
 
   /* Bands */
@@ -86,8 +88,16 @@
     --color-ink-muted: #96A6A9;
     --color-rule: #2C3B41;
     --color-brand-100: #22343C;
+    --color-brand-700: #7FA8B9;   /* lighter on dark so text and pills keep 4.5:1 */
+    --color-brand-500: #6F97A8;
     --color-attention: #E3B23F;
     --color-attention-soft: #3A3018;
+    --color-attention-ink: #E3B23F;
+    --color-known: #7FA8B9;
+    --color-lookup: #9FC0C1;
+    --color-computed: #2F4F5B;
+    --color-computed-text: var(--color-ink);
+    --color-notforme: #96A6A9;
   }
 }
 
@@ -98,8 +108,16 @@
   --color-ink-muted: #96A6A9;
   --color-rule: #2C3B41;
   --color-brand-100: #22343C;
+  --color-brand-700: #7FA8B9;
+  --color-brand-500: #6F97A8;
   --color-attention: #E3B23F;
   --color-attention-soft: #3A3018;
+  --color-attention-ink: #E3B23F;
+  --color-known: #7FA8B9;
+  --color-lookup: #9FC0C1;
+  --color-computed: #2F4F5B;
+  --color-computed-text: var(--color-ink);
+  --color-notforme: #96A6A9;
 }
 
 @media (prefers-reduced-motion: reduce) {
