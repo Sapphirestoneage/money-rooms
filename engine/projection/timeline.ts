@@ -23,7 +23,7 @@ import type {
   TaxTables,
   YearMonth,
 } from "../model";
-import { getAccountPreset, isAnswered, parseYearMonth, stubFraction } from "../model";
+import { amountFromPercentOfPay, getAccountPreset, isAnswered, isWorkplaceContribution, parseYearMonth, stubFraction } from "../model";
 import {
   annualBenefit,
   averageIndexedMonthlyEarnings,
@@ -277,7 +277,8 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   const hasWages = hh.income.some((s) => s.type === "salary" || s.type === "hourly");
   const enteredHsa = hh.income.some((s) => s.preTaxDeductions?.some((d) => d.type === "hsa"));
   const hsaEligible = hh.hsaEligible || enteredHsa;
-  const workplaceDeductions = hh.income.some((s) => s.preTaxDeductions?.some((d) => d.type === "401k" || d.type === "403b"));
+  const workplaceDeductions = hh.income.some((s) => s.preTaxDeductions?.some((d) => isWorkplaceContribution(d) && d.accountType.value === "traditional"));
+  const rothWorkplaceDeductions = hh.income.some((s) => s.preTaxDeductions?.some((d) => isWorkplaceContribution(d) && d.accountType.value === "roth"));
   const anyMatch = hh.income.some((s) => s.employerMatch);
 
   const workplacePretax = (): AssetState =>
@@ -293,7 +294,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   if (hsaEligible) hsaAccount();
   rothIra();
   taxable();
-  if (hh.savingsStrategy === "maxTaxFreeGrowth" && hasWages) workplaceRoth();
+  if (rothWorkplaceDeductions || (hh.savingsStrategy === "maxTaxFreeGrowth" && hasWages)) workplaceRoth();
 
   // ---- Pass 1: income by year, for the Social Security earnings record ----
   const ctxFor = (year: number): YearContext => ({ year, t: year - year0, age: year - birth.year, retirementYear });
@@ -342,27 +343,42 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 
     // Step 3: entered pre-tax deductions, capped at the legal limits.
     let enteredWorkplace = 0;
+    let enteredRothWorkplace = 0;
     let enteredHsaAmt = 0;
     let premiumsAndOther = 0;
-    const matchers: { gross: number; cap: number; pct: number; employee: number }[] = [];
+    const matchers: { gross: number; cap: number; pct: number; employee: number; accountType: "traditional" | "roth" | null }[] = [];
     if (!retired) {
       for (const s of hh.income) {
         const active = inc.streams.find((x) => x.id === s.id);
         if (!active) continue;
-        let employee = 0;
+        // Workplace contributions are a percent of this stream's pay, in the account type the person chose.
+        let employeeTraditional = 0;
+        let employeeRoth = 0;
         for (const d of s.preTaxDeductions ?? []) {
-          if (d.type === "401k" || d.type === "403b") employee += d.annual.value;
-          else if (d.type === "hsa") enteredHsaAmt += d.annual.value;
+          if (isWorkplaceContribution(d)) {
+            const amount = amountFromPercentOfPay(d.percentOfPay.value, active.gross);
+            if (d.accountType.value === "roth") employeeRoth += amount;
+            else employeeTraditional += amount;
+          } else if (d.type === "hsa") enteredHsaAmt += d.annual.value;
           else premiumsAndOther += d.annual.value;
         }
-        enteredWorkplace += employee;
+        const employee = employeeTraditional + employeeRoth;
+        enteredWorkplace += employeeTraditional;
+        enteredRothWorkplace += employeeRoth;
         if (s.employerMatch) {
-          matchers.push({ gross: active.gross, cap: (s.employerMatch.capPercentOfPay.value / 100) * active.gross, pct: s.employerMatch.matchPercent.value / 100, employee });
+          matchers.push({
+            gross: active.gross,
+            cap: (s.employerMatch.capPercentOfPay.value / 100) * active.gross,
+            pct: s.employerMatch.matchPercent.value / 100,
+            employee,
+            accountType: employee === 0 ? null : employeeTraditional >= employeeRoth ? "traditional" : "roth",
+          });
         }
       }
-      if (enteredWorkplace > limits.workplace) {
+      if (enteredWorkplace + enteredRothWorkplace > limits.workplace) {
         rowFlags.push(`Workplace contributions were capped at the ${y} limit.`);
-        enteredWorkplace = limits.workplace;
+        enteredWorkplace = Math.min(enteredWorkplace, limits.workplace);
+        enteredRothWorkplace = Math.min(enteredRothWorkplace, limits.workplace - enteredWorkplace);
       }
       if (enteredHsaAmt > limits.hsa) enteredHsaAmt = limits.hsa;
     }
@@ -405,7 +421,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       return { fedR, stR, total: fedR.total + stR.tax, marginal: (fedR.marginalRate + stR.marginalRate) / 100 };
     };
     const cashIn = (pretaxExtra: number, hsaExtra: number, pretaxWithdrawal: number) =>
-      inc.netTotal - enteredWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal).total + ss;
+      inc.netTotal - enteredWorkplace - enteredRothWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal).total + ss;
 
     // Step 8: surplus or shortfall.
     let pretaxExtra = 0;
@@ -424,7 +440,16 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 
     if (gap0 >= 0 && !retired) {
       let remaining = gap0;
-      const matchRoom = matchers.reduce((s, m) => s + Math.max(0, m.cap - m.employee), 0);
+      // The top-up applies only where the elected percent is below the match cap, and it goes to the
+      // same account type as the existing contribution. With no contribution yet, the strategy decides.
+      const fallbackType = hh.savingsStrategy === "maxTaxFreeGrowth" ? "roth" : "traditional";
+      let matchRoomTraditional = 0;
+      let matchRoomRoth = 0;
+      for (const m of matchers) {
+        const room = Math.max(0, m.cap - m.employee);
+        if ((m.accountType ?? fallbackType) === "roth") matchRoomRoth += room;
+        else matchRoomTraditional += room;
+      }
 
       /** A pre-tax step with the tax-savings loop and the exact final step (E10). */
       const pretaxStep = (room: number, into: "workplace" | "hsa", name: string) => {
@@ -459,10 +484,9 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       };
 
       // Step 1: capture the full employer match.
-      if (matchRoom > 0) {
-        if (hh.savingsStrategy === "maxTaxFreeGrowth") rothWorkplace += afterTaxStep(Math.min(matchRoom, limits.workplace - enteredWorkplace), "1. Employer match (Roth 401(k))");
-        else pretaxStep(Math.min(matchRoom, limits.workplace - enteredWorkplace), "workplace", "1. Employer match (traditional)");
-      }
+      const enteredTotal = enteredWorkplace + enteredRothWorkplace;
+      if (matchRoomTraditional > 0) pretaxStep(Math.min(matchRoomTraditional, limits.workplace - enteredTotal), "workplace", "1. Employer match (traditional)");
+      if (matchRoomRoth > 0) rothWorkplace += afterTaxStep(Math.min(matchRoomRoth, limits.workplace - enteredTotal - pretaxExtra), "1. Employer match (Roth 401(k))");
       // Step 2: debts above the high-interest threshold, to payoff.
       for (const x of debtPreview) {
         if (x.d.balance <= 0 || nominalRateFor(x.d.account, y) <= DEFAULTS.highInterest) continue;
@@ -471,7 +495,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         if (extra > 0) debtExtra.set(x.d.id, extra);
       }
       // Steps 3 to 8 by strategy.
-      const workplaceRoom = () => Math.max(0, limits.workplace - enteredWorkplace - pretaxExtra - rothWorkplace);
+      const workplaceRoom = () => Math.max(0, limits.workplace - enteredWorkplace - enteredRothWorkplace - pretaxExtra - rothWorkplace);
       const hsaRoom = () => (hsaEligible ? Math.max(0, limits.hsa - enteredHsaAmt - hsaExtra) : 0);
       switch (hh.savingsStrategy) {
         case "maxTaxSavingsNow":
@@ -560,7 +584,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 
     // Final taxes and take-home for the year (annualized).
     const tx = taxesFor(pretaxExtra, hsaExtra, pretaxWithdrawal);
-    const takeHome = inc.netTotal - enteredWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - tx.total;
+    const takeHome = inc.netTotal - enteredWorkplace - enteredRothWorkplace - enteredHsaAmt - premiumsAndOther - pretaxExtra - hsaExtra - tx.total;
     const gap = takeHome + ss - spendTotal - scheduledDebt;
 
     // Employer match on total employee workplace contributions (pretax plus Roth), attributed to the first matcher.
@@ -576,7 +600,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     const contributions = new Map<string, number>();
     const add = (a: AssetState, amt: number) => { if (amt > 0) contributions.set(a.id, (contributions.get(a.id) ?? 0) + amt); };
     if (enteredWorkplace + pretaxExtra + match > 0) add(workplacePretax(), enteredWorkplace + pretaxExtra + match);
-    if (rothWorkplace > 0) add(workplaceRoth(), rothWorkplace);
+    if (enteredRothWorkplace + rothWorkplace > 0) add(workplaceRoth(), enteredRothWorkplace + rothWorkplace);
     if (enteredHsaAmt + hsaExtra > 0) add(hsaAccount(), enteredHsaAmt + hsaExtra);
     if (rothIraAmt > 0) add(rothIra(), rothIraAmt);
     if (taxableAmt > 0) add(taxable(), taxableAmt);
@@ -637,7 +661,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       retired,
       phaseId: spend.phaseId,
       income: { wages: inc.wages * f, selfEmploymentNet: inc.selfEmploymentNet * f, otherTaxable: inc.otherTaxable * f, nonTaxable: inc.nonTaxable * f, gross: inc.grossTotal * f },
-      deductions: { workplacePretax: (enteredWorkplace + pretaxExtra) * f, workplaceRoth: rothWorkplace * f, hsa: (enteredHsaAmt + hsaExtra) * f, premiumsAndOther: premiumsAndOther * f },
+      deductions: { workplacePretax: (enteredWorkplace + pretaxExtra) * f, workplaceRoth: (enteredRothWorkplace + rothWorkplace) * f, hsa: (enteredHsaAmt + hsaExtra) * f, premiumsAndOther: premiumsAndOther * f },
       employerMatch: match * f,
       taxes: {
         federalIncome: tx.fedR.incomeTax * f,

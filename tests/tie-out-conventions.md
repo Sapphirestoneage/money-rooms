@@ -1,22 +1,21 @@
 # Tie-out conventions
 
-How the hand-calculated spreadsheets and the engine agree on method, so a mismatch means a real difference and not a convention gap.
+How the hand-calculated workpaper and the engine agree on method, so a mismatch means a real difference and not a convention gap. The Maya tie-out (tests/workpapers/) passed under these on 2026-10-03.
 
-Items 1 to 5 were not received by Claude Code when this file was created (2026-10-02). Eli: paste them in from the tie-out notes.
+Items 6, 12, and 13 are Eli's wording. Items 1 to 5 and 7 to 11 were written by Claude Code from the conventions the passing tie-out actually applies, because the original wording never reached the repo. Eli: replace any item whose wording differs from yours.
 
-1. (pending)
-2. (pending)
-3. (pending)
-4. (pending)
-5. (pending)
+Settings marked "test-only" are imposed in `tests/tie-out/maya-tie-out.ts` and are never used by the app.
+
+1. The tie-out uses Maya's household from `tests/households/maya.json`, the likely band of the historical assumption set, and today's dollars throughout. There is one row per calendar year, the first row is the full year 2026 (test-only: the plan date is January, so there is no stub period), and age is the calendar year minus the birth year.
+2. Salary grows 1.5% a year in real terms starting in 2027. Her traditional 401(k) contribution is 4% of pay and stays traditional in every strategy, and her employer matches 100% of it up to 4% of pay into the traditional 401(k).
+3. While working, federal income tax uses the 2026 single brackets and the $16,100 standard deduction on wages minus pretax contributions, held constant in today's dollars. FICA is 7.65% of wages. New York is a flat 5% of wages minus pretax contributions with no state standard deduction (test-only: the app uses the state's brackets and standard deduction).
+4. Social Security is a fixed $20,000 a year from age 67 and is not taxed (test-only: the app computes the benefit from the earnings record).
+5. Real returns are 6.5% for stocks, 2% for bonds, and 0.5% for cash. Invested accounts hold 90% stocks and 10% bonds, less fees: 0.2% for the traditional and Roth 401(k), which gives 5.85%, and 0.1% for the Roth IRA and brokerage, which gives 5.95%. Checking and savings earn 0.5%. An account's opening balance earns the full annual rate, and its net flow during the year earns half the annual rate (flow x rate / 2).
 6. Savings waterfall per docs/engine-spec.md section 4, with the strategy chosen per household. Pretax tax savings are looped until settled, with an exact final step. HSA and traditional IRA steps don't apply to Maya (not HSA-eligible; IRA income limits not yet verified).
-
-Items 7 to 11 were not received as text by Claude Code. Their content, as applied on 2026-10-03 from Eli's messages: the cash reserve (6 months of that year's spending, cash above it drawn first, the reserve last), mid-year growth (net flows earn half the annual rate), Social Security as a fixed $20,000 a year from 67 for the tie-out, healthcare in retirement ($7,200 a year before 65, $3,600 from 65), and New York as a flat 5% on wages minus pretax contributions. Eli: paste the exact wording in.
-
-7. (pending)
-8. (pending)
-9. (pending)
-10. (pending)
-11. (pending)
+7. The cash reserve is 6 months of that year's spending: working spending in working years and retirement spending in retired years. A shortfall is drawn in this order: cash above the reserve, then taxable, then the traditional 401(k), then Roth money, and the reserve itself last.
+8. The student loan's $260 monthly payment is fixed in nominal terms, so in today's dollars it shrinks by 3% inflation each year. The loan's real rate is 1.055 divided by 1.03, minus 1, which is 2.427%. The payment lands mid-year, so it saves half a year of interest, and the last payment is capped at the payoff amount.
+9. A withdrawal from the traditional 401(k) is grossed up iteratively until the amount left after federal tax, the 5% state tax, and the 10% penalty equals the need to the dollar. The penalty applies in any year her age at year end is below 59 and a half, so the year she turns 59 is penalized and the year she turns 60 is not. A withdrawal is capped at the account's opening balance, which leaves that year's half-rate growth in the account.
+10. Retirement spending is the entered categories adjusted by life phase: the discretionary category (everything else, $9,600) is kept at 100% through age 74, 85% from 75 to 84, and 70% from 85. A healthcare line is added on top: $7,200 a year before 65 and $3,600 a year from 65 (test-only placeholders until open question O3 is settled).
+11. Every placeholder value in the workpaper must match the data files: returns, fees, life-phase ages and multipliers, tax brackets, and contribution limits come from `data/`, and when a data file changes the workpaper is updated to match. The only values allowed to differ are the test-only settings named in items 1, 3, 4, and 10.
 12. Roth 401(k) contributions go to their own account at the Roth 401(k) preset's fee. When drawing from Roth money, the Roth 401(k) is drawn before the Roth IRA (higher fee first).
 13. M1 limitation (flagged): Roth withdrawals are treated as tax- and penalty-free at any age. In reality only contributions are; earnings withdrawn before 59 and a half are taxed and penalized. M2 applies the ordering rules using contribution basis. Until then, early-retirement results that lean on Roth money are optimistic, and the result screen says so when a plan draws Roth money before 59 and a half.

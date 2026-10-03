@@ -33,6 +33,8 @@
     "estateAtPlanTo": { "enteredOnly": 1557889 },
     "takeHomeYear1": 53780,
     "year1ExtraTraditional401k": 16532,
-    "status": "Likely band hand-checked 2026-10-02 (maya-tie-out.xlsx). Tolerance: FI age exact; dollars within 1%."
+    "status": "Tied out 2026-10-03 against maya-checkpoints.csv and maya-checkpoints-taxfree.csv",
+    "tolerance": "FI age exact; dollars within 1%. Checkpoint rows: flows within $10, balances within 0.5%.",
+    "conventions": "tests/tie-out-conventions.md"
   }
 }

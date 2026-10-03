@@ -123,6 +123,7 @@ describe("Jordan: HSA contributions and limits, and a no-income-tax state", () =
     const h = householdFromExample(jordan as ExampleHouseholdFile, asOf);
     if (h.self.income.kind !== "rows") throw new Error("rows expected");
     const hsa = h.self.income.rows[0]!.preTaxDeductions!.find((d) => d.type === "hsa")!;
+    if (hsa.type !== "hsa") throw new Error("hsa deduction expected");
     hsa.annual = userValue(6000, asOf);
     const capped = run(h).rows[0]!;
     expect(capped.deductions.hsa / capped.fraction).toBe(4400);

@@ -143,8 +143,10 @@ One row per source of income. Total income is computed.
 | Field | Stored as | Default |
 |---|---|---|
 | Pay frequency | `weekly`, `biweekly`, `semimonthly`, `monthly` | `biweekly`, `roughly` |
-| Pre-tax deductions | List: type (`401k`, `403b`, `hsa`, `healthPremium`, `other`) and annual amount | None, or inferred from the gross and take-home reconciliation |
+| Pre-tax deductions | List. Workplace plan contributions (`401k`, `403b`): a percent of that stream's pay, plus the account type (`traditional` or `roth`). Others (`hsa`, `healthPremium`, `other`): an annual amount | None, or inferred from the gross and take-home reconciliation |
 | Employer match | Percent matched, and cap as percent of pay | None |
+
+**Workplace contributions are a percent of pay.** A contribution can be typed as a percent or as a dollar amount. Either way it is stored as a percent of that income stream's pay, so it scales automatically with raises. It stays in the account type the person chose (traditional or Roth) in every savings strategy. The savings waterfall only tops it up when the elected percent is below the employer's match cap, and the top-up goes to the same account type.
 
 ### 3.5 Spending (list)
 

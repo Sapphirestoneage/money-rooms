@@ -52,3 +52,13 @@ export function fromAnnual(annual: number, cadence: Cadence, context: CadenceCon
 export function annualFromMonthly(monthly: number): number {
   return monthly * MONTHS_PER_YEAR;
 }
+
+/** A dollar contribution as a percent of pay (4 means 4%). Zero pay gives zero. */
+export function percentOfPay(annualAmount: number, grossAnnual: number): number {
+  return grossAnnual > 0 ? (annualAmount / grossAnnual) * 100 : 0;
+}
+
+/** The annual dollars a percent of pay comes to. */
+export function amountFromPercentOfPay(percent: number, grossAnnual: number): number {
+  return (percent / 100) * grossAnnual;
+}

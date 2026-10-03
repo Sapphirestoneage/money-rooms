@@ -9,7 +9,9 @@ import jordan from "../../tests/households/jordan.json";
 import maya from "../../tests/households/maya.json";
 import {
   STATE_CODES,
+  amountFromPercentOfPay,
   annualFromMonthly,
+  isWorkplaceContribution,
   assetFromPreset,
   debtFromPreset,
   getAccountPreset,
@@ -25,6 +27,9 @@ import {
   userValue,
   type Account,
   type AccountPresetKey,
+  type AnnualDeduction,
+  type PreTaxDeduction,
+  type WorkplaceAccountType,
   type Confidence,
   type ExampleHouseholdFile,
   type FilingStatus,
@@ -261,25 +266,59 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       fields.push(labelFor(uid("mpct"), "Employer match, percent matched", matchPct));
       fields.push(labelFor(uid("mcap"), "Match cap, percent of pay", matchCap));
 
-      const ded = (type: "401k" | "hsa", label: string) => {
-        const existing = s.preTaxDeductions?.find((d) => d.type === type);
-        return moneyInput({
-          label,
-          annual: existing?.annual.value ?? null,
+      const setDeductions = (list: PreTaxDeduction[]) => {
+        if (list.length) s.preTaxDeductions = list;
+        else delete s.preTaxDeductions;
+        ctx.save();
+      };
+
+      // Workplace plan: stored as a percent of pay, in the account type the person chooses (data dictionary 3.4).
+      const workplace = s.preTaxDeductions?.find(isWorkplaceContribution);
+      const percentInput = el("input", { class: "input", type: "number", min: 0, max: 100, step: 0.5, value: workplace?.percentOfPay.value ?? "" });
+      const percentHelp = el("div", { class: "money-input__normalized", "aria-live": "polite" });
+      const showPercentHelp = (p: number | null) => {
+        percentHelp.textContent = p === null || !(s.grossAnnual.value > 0) ? "" : `${dollars(amountFromPercentOfPay(p, s.grossAnnual.value))} a year at your current pay`;
+      };
+      showPercentHelp(workplace?.percentOfPay.value ?? null);
+      const accountType = select<WorkplaceAccountType>(
+        [{ value: "traditional", label: "Traditional (pre-tax)" }, { value: "roth", label: "Roth (after tax)" }],
+        workplace?.accountType.value ?? "traditional",
+        (v) => {
+          const current = s.preTaxDeductions?.find(isWorkplaceContribution);
+          if (!current) return;
+          current.accountType = userValue(v, asOf());
+          ctx.save();
+        },
+      );
+      percentInput.addEventListener("input", () => {
+        const p = percentInput.value === "" ? null : Number(percentInput.value);
+        const others: PreTaxDeduction[] = (s.preTaxDeductions ?? []).filter((d) => !isWorkplaceContribution(d));
+        if (p !== null && p > 0 && p <= 100) {
+          others.push({ id: `${s.id}-401k`, type: "401k", percentOfPay: userValue(p, asOf()), accountType: userValue(accountType.value as WorkplaceAccountType, asOf()) });
+          showPercentHelp(p);
+        } else showPercentHelp(null);
+        setDeductions(others);
+      });
+      const percentId = uid("k401pct");
+      percentInput.id = percentId;
+      fields.push(el("div", { class: "field" }, el("label", { for: percentId }, "Your 401(k) or 403(b) contribution, percent of pay"), percentInput, percentHelp));
+      fields.push(labelFor(uid("k401type"), "Contribution type", accountType));
+
+      const hsa = s.preTaxDeductions?.find((d): d is AnnualDeduction => d.type === "hsa");
+      fields.push(
+        moneyInput({
+          label: "Your HSA contribution",
+          annual: hsa?.annual.value ?? null,
           cadences: ["paycheck", "month", "year"],
           initialCadence: "year",
           payFrequency: () => s.payFrequency?.value ?? "biweekly",
           onChange: (annual) => {
-            const list = (s.preTaxDeductions ?? []).filter((d) => d.type !== type);
-            if (annual !== null && annual > 0) list.push({ id: `${s.id}-${type}`, type, annual: userValue(annual, asOf()) });
-            if (list.length) s.preTaxDeductions = list;
-            else delete s.preTaxDeductions;
-            ctx.save();
+            const list: PreTaxDeduction[] = (s.preTaxDeductions ?? []).filter((d) => d.type !== "hsa");
+            if (annual !== null && annual > 0) list.push({ id: `${s.id}-hsa`, type: "hsa", annual: userValue(annual, asOf()) });
+            setDeductions(list);
           },
-        });
-      };
-      fields.push(ded("401k", "Your 401(k) or 403(b) contribution"));
-      fields.push(ded("hsa", "Your HSA contribution"));
+        }),
+      );
     }
 
     const endSelect = select(

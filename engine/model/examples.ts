@@ -13,14 +13,16 @@ import type {
   IncomeType,
   IsoDate,
   PayFrequency,
+  PreTaxDeduction,
   PreTaxDeductionType,
   SavingsStrategy,
   SpendingRow,
   StateCode,
+  WorkplaceAccountType,
 } from "./types";
 import { isYearMonth } from "./dates";
 import { emptyHousehold } from "./household";
-import { annualFromMonthly } from "./normalize";
+import { annualFromMonthly, percentOfPay } from "./normalize";
 import { assetFromPreset, debtFromPreset, getAccountPreset, isAccountPresetKey } from "./presets";
 import { userValue } from "./values";
 
@@ -31,7 +33,8 @@ export interface ExampleIncome {
   payFrequency?: PayFrequency;
   end?: string;
   employerMatch?: { matchPercent: number; capPercentOfPay: number };
-  preTaxDeductions?: { type: PreTaxDeductionType; annual: number }[];
+  /** For 401(k) and 403(b), `annual` is converted to a percent of pay. `accountType` defaults to traditional. */
+  preTaxDeductions?: { type: PreTaxDeductionType; annual: number; accountType?: WorkplaceAccountType }[];
   businessExpensesAnnual?: number;
 }
 
@@ -93,7 +96,13 @@ export function householdFromExample(file: ExampleHouseholdFile, asOf: IsoDate):
       stream.employerMatch = { matchPercent: userValue(s.employerMatch.matchPercent, asOf), capPercentOfPay: userValue(s.employerMatch.capPercentOfPay, asOf) };
     }
     if (s.preTaxDeductions) {
-      stream.preTaxDeductions = s.preTaxDeductions.map((d, n) => ({ id: `${s.id}-ded-${n}`, type: d.type, annual: userValue(d.annual, asOf) }));
+      stream.preTaxDeductions = s.preTaxDeductions.map((d, n): PreTaxDeduction => {
+        const id = `${s.id}-ded-${n}`;
+        if (d.type === "401k" || d.type === "403b") {
+          return { id, type: d.type, percentOfPay: userValue(percentOfPay(d.annual, s.grossAnnual), asOf), accountType: userValue(d.accountType ?? "traditional", asOf) };
+        }
+        return { id, type: d.type, annual: userValue(d.annual, asOf) };
+      });
     }
     if (s.businessExpensesAnnual !== undefined) stream.businessExpensesAnnual = userValue(s.businessExpensesAnnual, asOf, "roughly");
     return stream;

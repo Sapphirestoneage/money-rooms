@@ -1,19 +1,18 @@
 /**
- * The audit tie-outs (tests/README.md). Each example household is loaded,
- * projected in all three bands, and compared with its hand-checked expected
- * values where they are filled in. A mismatch is reported, never "fixed" here.
+ * The audit tie-outs (tests/README.md).
  *
- * Maya's tie-out is OPEN as of 2026-10-02: the engine and the spreadsheet
- * disagree on method (see tests/tie-out/README.md). Those checks are marked
- * `it.fails`, which means "known to fail until resolved". When one of them
- * starts passing, vitest will report it, and the mark must be removed.
+ * 1. Every example household runs in every band under the app's own defaults.
+ * 2. Maya is tied out against Eli's hand-calculated workpaper, under the
+ *    conventions in tests/tie-out-conventions.md. Tied out 2026-10-03.
+ *    A mismatch here is reported, never "fixed" by editing an expected value.
  */
 
 import { describe, expect, it } from "vitest";
-import { householdFromExample, project, userValue, type ExampleHouseholdFile, type SavingsStrategy } from "../engine";
+import { householdFromExample, project, type ExampleHouseholdFile, type SavingsStrategy } from "../engine";
 import dev from "./households/dev.json";
 import jordan from "./households/jordan.json";
 import maya from "./households/maya.json";
+import { CHECKPOINT_FILES, compareToCheckpoints, mayaFi, mayaTimelineAt42 } from "./tie-out/maya-tie-out";
 
 const asOf = "2026-10-02";
 const files = [maya, jordan, dev] as ExampleHouseholdFile[];
@@ -31,57 +30,65 @@ describe.each(files)("$label: the engine runs in every band", (file) => {
 
 interface MayaExpected {
   byStrategy: Record<SavingsStrategy, { fiAgeLikely: number; assetsAtRetirement: number; lifetimeTaxes: number; oneYearEarlierFailsAt: number }>;
+  estateAtPlanTo: { enteredOnly: number };
   takeHomeYear1: number;
   year1ExtraTraditional401k: number;
   status: string;
 }
 
+/** The tolerance stated in maya.json: FI age exact; dollars within 1%. */
 const within1Percent = (actual: number, expected: number) => Math.abs(actual - expected) <= Math.abs(expected) * 0.01;
 
-/** Known open mismatch: expected to fail until the method differences are resolved. */
-const open = it.fails;
-
-describe("Maya tie-out (hand-checked, likely band) [OPEN, see tests/tie-out/README.md]", () => {
+describe("Maya tie-out (hand-checked, likely band, tie-out conventions)", () => {
   const expected = (maya as unknown as { expected: MayaExpected }).expected;
   const strategies = Object.keys(expected.byStrategy) as SavingsStrategy[];
 
   describe.each(strategies)("%s", (strategy) => {
-    const h = householdFromExample(maya as ExampleHouseholdFile, asOf);
-    h.savingsStrategy = userValue(strategy, asOf);
-    const likely = project(h).bands.likely;
+    const likely = mayaFi(strategy);
     const e = expected.byStrategy[strategy];
 
-    open(`FI age is exactly ${e.fiAgeLikely} (engine: ${likely.fiAge})`, () => {
+    it(`FI age is exactly ${e.fiAgeLikely}`, () => {
       expect(likely.fiAge).toBe(e.fiAgeLikely);
     });
 
-    open(`assets at retirement within 1% of ${e.assetsAtRetirement} (engine: ${Math.round(likely.timeline.assetsAtRetirement ?? 0)})`, () => {
+    it(`assets at retirement within 1% of ${e.assetsAtRetirement}`, () => {
       expect(likely.timeline.assetsAtRetirement).not.toBeNull();
       expect(within1Percent(likely.timeline.assetsAtRetirement!, e.assetsAtRetirement)).toBe(true);
     });
 
-    open(`lifetime taxes within 1% of ${e.lifetimeTaxes} (engine: ${Math.round(likely.timeline.lifetimeTaxes)})`, () => {
+    it(`lifetime taxes within 1% of ${e.lifetimeTaxes}`, () => {
       expect(within1Percent(likely.timeline.lifetimeTaxes, e.lifetimeTaxes)).toBe(true);
     });
 
-    open(`retiring one year earlier first falls short at ${e.oneYearEarlierFailsAt} (engine: ${likely.oneYearEarlier?.age})`, () => {
+    it(`retiring one year earlier first falls short at ${e.oneYearEarlierFailsAt}`, () => {
       expect(likely.oneYearEarlier?.age).toBe(e.oneYearEarlierFailsAt);
     });
   });
 
-  const enteredOnlyRows = project(householdFromExample(maya as ExampleHouseholdFile, asOf)).bands.likely.timeline.rows;
-  const year0 = enteredOnlyRows[0]!;
-
-  it(`take-home in year 1 within 1% of ${expected.takeHomeYear1} (engine 2026 annualized: ${Math.round(year0.takeHome / year0.fraction)})`, () => {
-    expect(within1Percent(year0.takeHome / year0.fraction, expected.takeHomeYear1)).toBe(true);
+  it(`estate at plan-to age (entered only) within 1% of ${expected.estateAtPlanTo.enteredOnly}`, () => {
+    expect(within1Percent(mayaFi("enteredOnly").timeline.estate, expected.estateAtPlanTo.enteredOnly)).toBe(true);
   });
 
-  const maxTax = householdFromExample(maya as ExampleHouseholdFile, asOf);
-  maxTax.savingsStrategy = userValue("maxTaxSavingsNow", asOf);
-  const maxTaxYear0 = project(maxTax).bands.likely.timeline.rows[0]!;
-  const extra = maxTaxYear0.deductions.workplacePretax / maxTaxYear0.fraction - 2880;
+  it(`take-home in year 1 within $10 of ${expected.takeHomeYear1}`, () => {
+    const year1 = mayaTimelineAt42("enteredOnly").rows[0]!;
+    expect(Math.abs(year1.takeHome - expected.takeHomeYear1)).toBeLessThanOrEqual(10);
+  });
 
-  open(`extra traditional 401(k) in year 1 (max tax savings now) within 1% of ${expected.year1ExtraTraditional401k} (engine 2026 annualized: ${Math.round(extra)})`, () => {
+  it(`extra traditional 401(k) in year 1 (max tax savings now) within 1% of ${expected.year1ExtraTraditional401k}`, () => {
+    const year1 = mayaTimelineAt42("maxTaxSavingsNow").rows[0]!;
+    const extra = year1.deductions.workplacePretax - 2880;
     expect(within1Percent(extra, expected.year1ExtraTraditional401k)).toBe(true);
+  });
+
+  describe.each(CHECKPOINT_FILES)("checkpoint rows: $file ($strategy, retire at 42)", ({ file, strategy }) => {
+    const { checked, differences } = compareToCheckpoints(file, mayaTimelineAt42(strategy));
+
+    it("checks every cell of every checkpoint row", () => {
+      expect(checked).toBe(20 * 29);
+    });
+
+    it("matches the workpaper in every column: flows within $10, balances within 0.5%", () => {
+      expect(differences.map((d) => `${d.year} ${d.column}: workpaper ${d.expected}, engine ${Math.round(d.actual)}`)).toEqual([]);
+    });
   });
 });

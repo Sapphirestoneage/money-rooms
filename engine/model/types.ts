@@ -114,11 +114,33 @@ export type PayFrequency = "weekly" | "biweekly" | "semimonthly" | "monthly";
 
 export type PreTaxDeductionType = "401k" | "403b" | "hsa" | "healthPremium" | "other";
 
-export interface PreTaxDeduction {
+export type WorkplaceAccountType = "traditional" | "roth";
+
+/**
+ * A workplace plan contribution (401(k) or 403(b)). Stored as a percent of that
+ * stream's pay, so it scales with raises, and it stays in the account type the
+ * person chose in every savings strategy (data dictionary 3.4).
+ */
+export interface WorkplaceContribution {
   id: string;
-  type: PreTaxDeductionType;
+  type: "401k" | "403b";
+  /** Percent of the stream's gross pay (4 means 4%). */
+  percentOfPay: Value<number>;
+  accountType: Value<WorkplaceAccountType>;
+}
+
+/** Other payroll deductions, stored as annual dollars. */
+export interface AnnualDeduction {
+  id: string;
+  type: "hsa" | "healthPremium" | "other";
   /** Annual dollars. */
   annual: Value<number>;
+}
+
+export type PreTaxDeduction = WorkplaceContribution | AnnualDeduction;
+
+export function isWorkplaceContribution(d: PreTaxDeduction): d is WorkplaceContribution {
+  return d.type === "401k" || d.type === "403b";
 }
 
 export interface EmployerMatch {
