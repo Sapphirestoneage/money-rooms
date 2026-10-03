@@ -53,6 +53,7 @@ function boot(): void {
     } else {
       main.append(entryScreen({
         household,
+        store,
         save,
         replace: (h) => { household = h; save(); render(); },
         goToResult: () => { window.location.hash = "#/result"; },

@@ -42,9 +42,12 @@ import { moneyInput } from "../components/money-input";
 import { presetPicker } from "../components/preset-picker";
 import { clear, el, uid } from "../dom";
 import { dollars, parseMoney, percent } from "../format";
+import type { Store } from "../store";
+import { transferCard } from "./transfer-card";
 
 export interface EntryContext {
   household: Household;
+  store: Store;
   save(): void;
   replace(h: Household): void;
   goToResult(): void;
@@ -116,6 +119,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       accounts(),
       sharpeners(),
       examples(),
+      transferCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
       footer(),
     );
   }
