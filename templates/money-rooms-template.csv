@@ -18,10 +18,18 @@ income,Tutoring side gig,hours_per_week,5,,roughly,2026-10,1 to 80
 income,Tutoring side gig,business_expenses,300,year,roughly,2026-10,Self-employed and side gig only
 income,Tutoring side gig,start,2027-01,,roughly,2026-10,Leave this row out if the income has already started
 income,Tutoring side gig,end,age:30,,roughly,2026-10,
-spending,accommodation,amount,1600,month,roughly,2026-10,Rent
-spending,food,amount,500,month,roughly,2026-10,
-spending,transportation,amount,200,month,roughly,2026-10,
-spending,everythingElse,amount,800,month,roughly,2026-10,"Everything not listed above. Consumption only: no debt payments, no saving"
+spending,Rent,category,accommodation,,known,2026-10,accommodation | utilities | food | transportation | insurance | healthcare | therapy | phone | subscriptions | personal | fun | travel | giving | pets | education | workCosts | everythingElse
+spending,Rent,amount,1600,month,roughly,2026-10,
+spending,Groceries and eating out,category,food,,known,2026-10,
+spending,Groceries and eating out,amount,500,month,roughly,2026-10,
+spending,Getting around,category,transportation,,known,2026-10,
+spending,Getting around,amount,200,month,roughly,2026-10,
+spending,The rest,category,everythingElse,,known,2026-10,
+spending,The rest,amount,800,month,roughly,2026-10,"Everything not listed above. Consumption only: no debt payments, no saving"
+spending,Health insurance after 26,category,healthcare,,known,2026-10,Several rows can share a category when an amount changes on a date
+spending,Health insurance after 26,amount,,month,dontknow,,Not known yet: this spending is left out and listed to look up later
+spending,Health insurance after 26,start,2027-04,,roughly,2026-10,YYYY-MM. Leave this row out if the spending already counts
+spending,Health insurance after 26,end,retirement,,roughly,2026-10,YYYY-MM | age:NN | retirement. Leave this row out if it does not end
 account,Checking,type,checking,,known,2026-10,checking | savings | brokerage | trad_401k | roth_401k | trad_ira | roth_ira | hsa | other
 account,Checking,balance,3500,,known,2026-10,No cadence on a balance
 account,High-yield savings,type,savings,,known,2026-10,

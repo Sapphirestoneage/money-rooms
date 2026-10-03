@@ -183,8 +183,10 @@ export type SpendingWhy = "planned" | "unavoidable" | "mistake";
 
 export interface SpendingRow {
   id: string;
-  /** A category id from data/spending-categories.json. */
+  /** A category id from data/spending-categories.json. Several rows can share one. */
   category: string;
+  /** The person's own name for the row ("Rent", "Health insurance after 26"). Optional. */
+  label?: string;
   /** Annual dollars, smoothed (D7). */
   annual: Value<number>;
   /** Blank means the category default. */

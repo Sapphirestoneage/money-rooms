@@ -146,6 +146,9 @@ A dashed box for bringing a file into the app. It says what to drop, and holds a
 ### Import preview
 Shown under the drop zone after a template is read and before anything changes. It names the file, says plainly that nothing has changed yet, then lists: how many things each section holds, the rows that need a look (each with its row number, its name, and a plain reason; a row that could not be read is not imported, and a row that was imported but looks wrong, like a 0% rate with no end, says so), and the rows marked as not known ("to look up later"). It ends with one sentence saying what Apply does and two buttons: "Apply" and a way out ("Keep what I have"). Focus moves to Apply when the preview appears. Lists are plain text, not color alone.
 
+### Dated spending
+Under each spending amount, a text-style button ("Starts or ends on a date", underlined, still a 44px target) shows that row's start and end choices, the same wording income uses, plus "Add another amount" and "Remove". A row that has a start or an end always shows them, and its amount line says when it counts ("starting July 2027"). A second amount in a category is its own row, labeled with its name or "amount 2".
+
 ### Promo fields
 On a debt whose rate is 0% (or that already has a promo), the card shows "This rate" with two choices: "Does not end" and "Ends after a month". Choosing the second shows the month and year the promo lasts through and the rate after it. A 0% rate with no end shows a gentle flag, and so does a rate-after that is still a typical rate or blank.
 

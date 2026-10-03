@@ -16,6 +16,8 @@ import {
   TEMPLATE_HEADER,
   exportTemplate,
   findFiDate,
+  loadLifePhases,
+  spendingForYear,
   nominalRateFor,
   parseCsv,
   readTemplate,
@@ -93,7 +95,7 @@ describe("rows that can't be read", () => {
 
   it("names every other problem and still loads the rest", () => {
     const reasons = preview.needsALook.map((n) => `${n.label}: ${n.reason}`);
-    expect(reasons).toContainEqual(expect.stringContaining('rent: "rent" isn\'t a spending category'));
+    expect(reasons).toContainEqual(expect.stringContaining("rent: has no category row, so this spending was left out"));
     expect(reasons).toContain("food: amount needs a cadence: week, paycheck, month, or year");
     expect(reasons).toContain("Job: has no type row, so this income was left out");
     expect(reasons).toContain('Card: kind "sure" isn\'t known, roughly, lookup, or dontknow');
@@ -113,7 +115,11 @@ describe("rows that can't be read", () => {
 describe("rows marked dontknow", () => {
   it("are skipped and listed to look up later", () => {
     const preview = readTemplate(exampleTemplate, TIE_OUT_AS_OF);
-    expect(preview.toLookUp).toEqual([{ line: 16, label: "Tutoring side gig", reason: "gross amount" }]);
+    expect(preview.toLookUp.map((n) => `${n.label}: ${n.reason}`)).toEqual(["Tutoring side gig: gross amount", "Health insurance after 26: amount"]);
+    // The spending row with no known amount is left out, with nothing flagged.
+    if (preview.household.spending.kind !== "rows") throw new Error("no spending");
+    expect(preview.household.spending.rows.some((r) => r.category === "healthcare")).toBe(false);
+    expect(preview.needsALook).toEqual([]);
     if (preview.household.self.income.kind !== "rows") throw new Error("no income");
     const gig = preview.household.self.income.rows.find((s) => s.label === "Tutoring side gig");
     expect(gig?.grossAnnual).toMatchObject({ value: 0, confidence: "lookUp" });
@@ -197,5 +203,51 @@ describe("debt promo rates", () => {
     if (preview.household.accounts.kind !== "rows") throw new Error("no accounts");
     const debt = preview.household.accounts.rows[0];
     expect(debt?.side === "debt" && debt.promo).toBeUndefined();
+  });
+});
+
+describe("spending that changes on a date", () => {
+  const preview = readTemplate(
+    file(
+      "spending,Healthcare on a parent's plan,category,healthcare,,,,",
+      "spending,Healthcare on a parent's plan,amount,0,month,known,,",
+      "spending,Healthcare on a parent's plan,end,2027-06,,,,",
+      "spending,Healthcare on my own,category,healthcare,,,,",
+      "spending,Healthcare on my own,amount,800,month,roughly,,",
+      "spending,Healthcare on my own,start,2027-07,,,,",
+      "spending,Tuition,category,education,,,,",
+      "spending,Tuition,amount,1200,year,,,",
+      "spending,Tuition,end,age:30,,,,",
+      "spending,food,amount,400,month,,,",
+    ),
+    "2026-10-03",
+  );
+
+  it("imports several rows in one category, each with its own name and dates", () => {
+    expect(preview.needsALook).toEqual([]);
+    expect(preview.counts.spending).toBe(4);
+    if (preview.household.spending.kind !== "rows") throw new Error("no spending");
+    const [before, after, tuition, food] = preview.household.spending.rows;
+    expect(before).toMatchObject({ category: "healthcare", label: "Healthcare on a parent's plan", end: { kind: "date", date: "2027-06" } });
+    expect(before?.annual.value).toBe(0);
+    expect(after).toMatchObject({ category: "healthcare", label: "Healthcare on my own", start: "2027-07" });
+    expect(after?.annual.value).toBe(9600);
+    expect(tuition?.end).toEqual({ kind: "age", age: 30 });
+    // A file made before the category field existed: the item is the category id.
+    expect(food).toMatchObject({ id: "cat-food", category: "food" });
+    expect(food?.label).toBeUndefined();
+  });
+
+  it("the engine adds up the rows active in each year", () => {
+    if (preview.household.spending.kind !== "rows") throw new Error("no spending");
+    const healthcare = preview.household.spending.rows.filter((r) => r.category === "healthcare");
+    const year = (y: number) => spendingForYear(healthcare, { year: y, t: y - 2026, age: y - 2001, retirementYear: 2060 }, false, loadLifePhases()).total;
+    expect(year(2026)).toBe(0);
+    expect(year(2027)).toBeCloseTo(4800, 8);
+    expect(year(2028)).toBeCloseTo(9600, 8);
+  });
+
+  it("round-trips through export", () => {
+    expect(readTemplate(exportTemplate(preview.household), "2026-10-03").household).toEqual(preview.household);
   });
 });

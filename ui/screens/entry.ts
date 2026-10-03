@@ -556,12 +556,13 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   // ---- Spending --------------------------------------------------------------
   let spendingMode: "total" | "categories" = (() => {
     const a = h().spending;
-    if (a.kind === "rows" && a.rows.some((r) => r.category !== "everythingElse")) return "categories";
+    if (a.kind === "rows" && a.rows.some((r) => r.id !== "total")) return "categories";
     return "total";
   })();
+  /** Spending rows whose start and end fields are showing. */
+  const openDates = new Set<string>();
 
   function spending(): HTMLElement {
-    fieldScope = "spending";
     const currentRows = (): SpendingRow[] => {
       const sp = h().spending;
       return sp.kind === "rows" ? sp.rows : [];
@@ -584,58 +585,193 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       ctx.save();
     };
 
-    const rowInput = (label: string, find: () => SpendingRow | undefined, make: (annual: number) => SpendingRow, keep: (r: SpendingRow) => boolean): HTMLElement => {
+    const planMonth = asOf().slice(0, 7);
+    const planYear = parseYearMonth(planMonth).year;
+    const two = (n: number) => String(n).padStart(2, "0");
+    const monthOptions = MONTH_NAMES.map((name, i) => ({ value: two(i + 1), label: name }));
+    const yearOptions = (from: number) => {
+      const out: { value: string; label: string }[] = [];
+      for (let y = Math.min(from, planYear); y <= planYear + 60; y++) out.push({ value: String(y), label: String(y) });
+      return out;
+    };
+
+    /** When a row counts, in words: "starting July 2027, through June 2030". */
+    const when = (r: SpendingRow | undefined): string => {
+      if (!r) return "";
+      const parts: string[] = [];
+      if (r.start) {
+        const from = parseYearMonth(r.start);
+        parts.push(`starting ${MONTH_NAMES[from.month - 1]} ${from.year}`);
+      }
+      if (r.end?.kind === "date") {
+        const through = parseYearMonth(r.end.date);
+        parts.push(`through ${MONTH_NAMES[through.month - 1]} ${through.year}`);
+      } else if (r.end?.kind === "age") parts.push(`until age ${r.end.age}`);
+      else if (r.end?.kind === "retirement") parts.push("until you retire");
+      return parts.join(", ");
+    };
+
+    interface BlockOptions {
+      /** Entering a category amount replaces a single total. */
+      dropTotal: boolean;
+      /** The category another amount would be added to, or null when adding is not offered. */
+      addTo: string | null;
+    }
+
+    /** One spending row: its amount, and (on request) when it starts and ends. */
+    const rowBlock = (label: string, id: string, make: (annual: number) => SpendingRow, o: BlockOptions): HTMLElement => {
+      fieldScope = `spending:${id}`;
+      const find = () => currentRows().find((r) => r.id === id);
       const badge = badgeSlot(() => find()?.annual, (v) => { const r = find(); if (r) r.annual = v; });
-      return money({
+      const amount = money({
         label,
         annual: find()?.annual.value ?? null,
         cadences: ["month", "year"],
         initialCadence: "month",
         badge: badge.node,
         rough: () => isRough(find()?.annual.confidence),
-        note: () => {
-          const start = find()?.start;
-          if (!start) return "";
-          const from = parseYearMonth(start);
-          return `starting ${MONTH_NAMES[from.month - 1]} ${from.year}`;
-        },
+        note: () => when(find()),
         onChange: (annual) => {
           const existing = find();
-          const others = currentRows().filter(keep);
-          if (annual !== null && annual > 0) {
-            const row = make(annual);
-            // Editing the amount keeps when the row starts and ends.
-            if (existing?.start) row.start = existing.start;
-            if (existing?.end) row.end = existing.end;
-            others.push(row);
-          }
-          setRows(others);
+          let rows = o.dropTotal ? currentRows().filter((r) => r.id !== "total") : currentRows();
+          if (existing) {
+            const dated = existing.start !== undefined || existing.end !== undefined;
+            // A dated row may be $0 (nothing until a month, then an amount). An undated $0 row is just blank.
+            if ((annual === null || annual <= 0) && !dated) rows = rows.filter((r) => r.id !== id);
+            else existing.annual = userValue(annual ?? 0, asOf(), existing.annual.confidence === "known" ? "known" : "roughly");
+          } else if (annual !== null && annual > 0) rows.push(make(annual));
+          setRows(rows);
           badge.refresh();
         },
       });
+
+      const parts: (HTMLElement | null)[] = [amount];
+      const row = find();
+      const dated = row !== undefined && (row.start !== undefined || row.end !== undefined);
+      const open = row !== undefined && (dated || openDates.has(id));
+
+      if (!dated) {
+        const hint = el("div", { class: "muted", "aria-live": "polite" });
+        const toggle = el("button", { type: "button", class: "button button--text", "aria-expanded": String(open) }, open ? "Hide dates" : "Starts or ends on a date");
+        toggle.addEventListener("click", () => {
+          if (!find()) {
+            hint.textContent = "Enter an amount first.";
+            return;
+          }
+          if (openDates.has(id)) openDates.delete(id);
+          else openDates.add(id);
+          schedule();
+        });
+        parts.push(el("div", {}, toggle, hint));
+      }
+
+      if (open && row) {
+        const changed = () => {
+          openDates.add(id);
+          ctx.save();
+          schedule();
+        };
+        const fields: HTMLElement[] = [];
+
+        const startSelect = select(
+          [{ value: "now", label: "Already counts" }, { value: "later", label: "Starts in a coming month" }],
+          row.start ? "later" : "now",
+          (v) => {
+            if (v === "later") row.start = addMonths(planMonth, 1);
+            else delete row.start;
+            changed();
+          },
+        );
+        fields.push(field("This spending starts", startSelect));
+        if (row.start) {
+          const from = parseYearMonth(row.start);
+          const setStart = () => {
+            row.start = `${startYear.value}-${startMonth.value}`;
+            changed();
+          };
+          const startMonth = select(monthOptions, two(from.month), setStart);
+          const startYear = select(yearOptions(from.year), String(from.year), setStart);
+          fields.push(field("Starts in", startMonth), field("Start year", startYear));
+        }
+
+        const endSelect = select(
+          [{ value: "none", label: "Does not end" }, { value: "date", label: "Through a month" }, { value: "age", label: "Until an age" }, { value: "retirement", label: "Until I retire" }],
+          row.end?.kind ?? "none",
+          (v) => {
+            if (v === "none") delete row.end;
+            else row.end = v === "date" ? { kind: "date", date: addMonths(row.start ?? planMonth, 11) } : v === "age" ? { kind: "age", age: 65 } : { kind: "retirement" };
+            changed();
+          },
+        );
+        fields.push(field("This spending ends", endSelect));
+        if (row.end?.kind === "date") {
+          const through = parseYearMonth(row.end.date);
+          const setEnd = () => {
+            row.end = { kind: "date", date: `${endYear.value}-${endMonth.value}` };
+            changed();
+          };
+          const endMonth = select(monthOptions, two(through.month), setEnd);
+          const endYear = select(yearOptions(through.year), String(through.year), setEnd);
+          fields.push(field("Counts through", endMonth), field("End year", endYear));
+        }
+        if (row.end?.kind === "age") {
+          const endAge = el("input", { class: "input", type: "number", min: 16, max: 100, step: 1, value: row.end.age });
+          endAge.addEventListener("input", () => {
+            const v = Number(endAge.value);
+            if (v >= 16 && v <= 100) {
+              row.end = { kind: "age", age: v };
+              ctx.save();
+            }
+          });
+          endAge.addEventListener("change", () => schedule());
+          fields.push(field("Ends at age", endAge));
+        }
+        parts.push(...fields);
+
+        const actions: HTMLElement[] = [];
+        const category = o.addTo;
+        if (category !== null) {
+          actions.push(el("button", { type: "button", class: "button button--quiet button--small", onClick: () => {
+            const last = find();
+            const next: SpendingRow = {
+              id: rowId("sp"),
+              category,
+              annual: userValue(0, asOf(), "roughly"),
+              start: last?.end?.kind === "date" ? addMonths(last.end.date, 1) : addMonths(planMonth, 1),
+            };
+            setRows([...currentRows(), next]);
+            openDates.add(next.id);
+            schedule();
+          } }, "Add another amount"));
+        }
+        actions.push(el("button", { type: "button", class: "button button--quiet button--small", onClick: () => {
+          setRows(currentRows().filter((r) => r.id !== id));
+          openDates.delete(id);
+          schedule();
+        } }, "Remove"));
+        parts.push(el("div", { class: "row-actions" }, ...actions));
+        if (category !== null) parts.push(el("p", { class: "muted" }, "Amounts in the same category add together. End the old amount where the new one starts."));
+      }
+
+      return el("div", { class: "stack" }, ...parts);
     };
 
     if (spendingMode === "total") {
       body.append(
-        rowInput(
-          "Everything you spend",
-          () => currentRows().find((r) => r.id === "total"),
-          (annual) => ({ id: "total", category: "everythingElse", annual: userValue(annual, asOf(), "roughly") }),
-          (r) => r.id !== "total",
-        ),
+        rowBlock("Everything you spend", "total", (annual) => ({ id: "total", category: "everythingElse", annual: userValue(annual, asOf(), "roughly") }), { dropTotal: false, addTo: null }),
         el("p", { class: "muted" }, "Spending means consumption only. Debt payments and saving are counted elsewhere, so they are not double counted."),
       );
     } else {
       const grid = el("div", { class: "field-grid" });
       for (const c of loadSpendingCategories()) {
-        grid.append(
-          rowInput(
-            c.label,
-            () => currentRows().find((r) => r.category === c.id && r.id !== "total"),
-            (annual) => ({ id: `cat-${c.id}`, category: c.id, annual: userValue(annual, asOf(), "roughly") }),
-            (r) => !(r.category === c.id && r.id !== "total") && r.id !== "total",
-          ),
-        );
+        const rows = currentRows().filter((r) => r.category === c.id && r.id !== "total");
+        const firstId = rows[0]?.id ?? `cat-${c.id}`;
+        const make = (id: string) => (annual: number): SpendingRow => ({ id, category: c.id, annual: userValue(annual, asOf(), "roughly") });
+        if (rows.length === 0) grid.append(rowBlock(c.label, firstId, make(firstId), { dropTotal: true, addTo: c.id }));
+        for (const [i, r] of rows.entries()) {
+          const label = r.label && r.label.toLowerCase() !== c.label.toLowerCase() ? `${c.label}: ${r.label}` : i === 0 ? c.label : `${c.label}, amount ${i + 1}`;
+          grid.append(rowBlock(label, r.id, make(r.id), { dropTotal: true, addTo: c.id }));
+        }
       }
       body.append(grid);
     }

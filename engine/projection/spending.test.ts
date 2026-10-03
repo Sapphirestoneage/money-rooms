@@ -68,3 +68,27 @@ describe("spendingForYear", () => {
     expect(spendingForYear(r, ctx(2031, 30), false, phases).total).toBe(0);
   });
 });
+
+describe("spending that changes on a date", () => {
+  // Healthcare: $0 through June 2027, then $800 a month from July 2027.
+  const dated: SpendingRow[] = [
+    { id: "h1", category: "healthcare", annual: userValue(0, asOf), end: { kind: "date", date: "2027-06" } },
+    { id: "h2", category: "healthcare", annual: userValue(9600, asOf), start: "2027-07" },
+  ];
+
+  it("sums every row active in the year, by the months each one counts", () => {
+    expect(spendingForYear(dated, ctx(2026, 25), false, phases).total).toBe(0);
+    expect(spendingForYear(dated, ctx(2027, 26), false, phases).total).toBeCloseTo(4800, 8);
+    expect(spendingForYear(dated, ctx(2028, 27), false, phases).total).toBeCloseTo(9600, 8);
+  });
+
+  it("adds dated rows to the rows with no dates", () => {
+    expect(spendingForYear([...rows, ...dated], ctx(2027, 26), false, phases).total).toBeCloseTo(37200 + 4800, 8);
+  });
+
+  it("a row that ends at an age stops counting that year", () => {
+    const untilThirty: SpendingRow[] = [{ id: "e", category: "education", annual: userValue(1200, asOf), end: { kind: "age", age: 30 } }];
+    expect(spendingForYear(untilThirty, ctx(2030, 29), false, phases).total).toBe(1200);
+    expect(spendingForYear(untilThirty, ctx(2031, 30), false, phases).total).toBe(0);
+  });
+});

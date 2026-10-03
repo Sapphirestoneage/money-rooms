@@ -17,7 +17,7 @@ section,item,field,value,cadence,kind,as_of,notes
 | Column | Meaning |
 |---|---|
 | `section` | `profile`, `income`, `spending`, `account`, `debt`, or `optional` |
-| `item` | A name grouping rows that belong together (for example "Day job", "Ally savings"). For `profile` and `optional`, leave blank. For `spending`, use the category id |
+| `item` | A name grouping rows that belong together (for example "Day job", "Ally savings"). For `profile` and `optional`, leave blank |
 | `field` | One of the allowed fields for that section (section 2) |
 | `value` | The number or choice. Numbers without $ or commas. Percents as plain numbers (4 means 4%). Dates as YYYY-MM |
 | `cadence` | For dollar amounts only: `week`, `paycheck`, `month`, or `year`. Blank otherwise |
@@ -66,11 +66,18 @@ section,item,field,value,cadence,kind,as_of,notes
 
 An income needs its `type` row. Everything else is optional. Match needs both `match_percent` and `match_cap_percent`.
 
-### spending (the item is the category id)
+### spending (one item per amount; the item is the person's own name for it)
 
 | Field | Value | Data dictionary |
 |---|---|---|
-| `amount` | Dollars, with a cadence | 3.5 Annual amount per category |
+| `category` | A category id from `data/spending-categories.json` | 3.5 Row, category |
+| `amount` | Dollars, with a cadence | 3.5 Annual amount |
+| `start` | YYYY-MM. Leave the row out if the spending already counts | 2.6 and 3.5 Cadence, `start` |
+| `end` | YYYY-MM, `age:NN`, or `retirement`. Leave the row out if it does not end | 2.6 and 3.5 Cadence, `end` |
+
+A spending item needs its `category` and `amount` rows. Several items can share a category with different dates, for a cost that changes on a date: healthcare at $0 with `end` 2027-06, and healthcare at $800 a month with `start` 2027-07. The engine adds up every row active in a year, counting the months each one covers, so dates in one category should not overlap. An item whose amount is marked `dontknow` is left out and listed to look up later.
+
+A file made before the `category` field existed (the item is the category id, with only an `amount` row) still imports.
 
 Category ids come from `data/spending-categories.json`: `accommodation`, `utilities`, `food`, `transportation`, `insurance`, `healthcare`, `therapy`, `phone`, `subscriptions`, `personal`, `fun`, `travel`, `giving`, `pets`, `education`, `workCosts`, `everythingElse`. To give one total, use `everythingElse`. Spending is consumption only: no debt payments, no saving.
 
@@ -134,7 +141,7 @@ Birth month is always stored as Known (data dictionary 3.1).
 
 - Recurring amounts are written per year.
 - A value that is still the app's own default (a preset's rate, an estimated payment, the default filing status) is left out, so it stays a default after re-import.
-- Importing an exported template gives back the same household.
+- Importing an exported template gives back the same household. One exception: a second unnamed amount in the same spending category comes back with a name ("Food 2").
 
 **What the template does not carry.** Savings strategy, assumption set and overrides, the Social Security zero override, edited fees, and custom allocations. The full export ("Export my numbers", a JSON file) carries everything and is the one to use as a backup.
 

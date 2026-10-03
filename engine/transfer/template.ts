@@ -161,7 +161,12 @@ const FIELDS: Readonly<Record<TemplateSection, Readonly<Record<string, FieldSpec
     start: { kind: "yearMonth" },
     end: { kind: "end" },
   },
-  spending: { amount: { kind: "money" } },
+  spending: {
+    category: { kind: "choice", choices: Object.fromEntries(loadSpendingCategories().map((c) => [c.id.toLowerCase(), c.id])) },
+    amount: { kind: "money" },
+    start: { kind: "yearMonth" },
+    end: { kind: "end" },
+  },
   account: {
     type: { kind: "choice", choices: ACCOUNT_TYPES },
     balance: { kind: "balance" },
@@ -238,6 +243,7 @@ export function readTemplate(text: string, asOf: IsoDate): TemplatePreview {
   const optional: Group = new Map();
   const groups: Record<"income" | "spending" | "account" | "debt", Map<string, Group>> = { income: new Map(), spending: new Map(), account: new Map(), debt: new Map() };
   /** Fields marked dontknow, so an item can tell "blank on purpose" from "never mentioned". */
+  const unknown = new Set<string>();
   const skip = (line: number, label: string, reason: string) => preview.needsALook.push({ line, label, reason });
 
   for (let i = headerIndex + 1; i < table.length; i++) {
@@ -272,6 +278,7 @@ export function readTemplate(text: string, asOf: IsoDate): TemplatePreview {
     }
     if (kind === "dontknow") {
       preview.toLookUp.push({ line, label, reason: words(field) });
+      unknown.add(`${section}|${item}|${field}`);
       continue;
     }
     if (asOfRaw !== "" && !isYearMonth(asOfRaw)) {
@@ -351,10 +358,9 @@ export function readTemplate(text: string, asOf: IsoDate): TemplatePreview {
     if (section === "profile") target = profile;
     else if (section === "optional") target = optional;
     else {
-      const key = section === "spending" ? item.toLowerCase() : item;
       const bySection = groups[section];
-      target = bySection.get(key) ?? new Map<string, Cell>();
-      bySection.set(key, target);
+      target = bySection.get(item) ?? new Map<string, Cell>();
+      bySection.set(item, target);
     }
     if (target.has(field)) {
       skip(line, label, `${words(field)} appears twice. The first one was used`);
@@ -451,17 +457,35 @@ export function readTemplate(text: string, asOf: IsoDate): TemplatePreview {
   preview.counts.income = streams.length;
 
   // Spending
-  const categoryIds = new Map(loadSpendingCategories().map((c) => [c.id.toLowerCase(), c.id]));
+  // Spending: the item is the person's own name for the row, and the category is a field.
+  // Several rows can share a category, each with its own dates. The engine adds up the rows active in a year.
+  const categories = loadSpendingCategories();
+  const categoryIds = new Map(categories.map((c) => [c.id.toLowerCase(), c]));
   const spending: SpendingRow[] = [];
-  for (const [key, g] of groups.spending) {
-    const amount = g.get("amount");
-    if (!amount) continue;
-    const category = categoryIds.get(key);
+  for (const [item, g] of groups.spending) {
+    const categoryCell = g.get("category");
+    // Files made before the category field existed used the category id as the item.
+    const category = categoryCell ? categoryIds.get(String(categoryCell.parsed).toLowerCase()) : categoryIds.get(item.toLowerCase());
     if (!category) {
-      skip(amount.line, key, `"${key}" isn't a spending category. Use one of: ${[...categoryIds.values()].join(", ")}`);
+      if (!unknown.has(`spending|${item}|category`)) skip(0, item, `has no category row, so this spending was left out. Add a category row with one of: ${categories.map((c) => c.id).join(", ")}`);
       continue;
     }
-    spending.push({ id: `cat-${category}`, category, annual: val(amount, annualFrom(amount.parsed as number, amount.cadence ?? "year", { payFrequency: "biweekly" })) });
+    const amount = g.get("amount");
+    if (!amount) {
+      if (!unknown.has(`spending|${item}|amount`)) skip(0, item, "has no amount row, so this spending was left out");
+      continue;
+    }
+    const named = item.toLowerCase() !== category.id.toLowerCase() && item.toLowerCase() !== category.label.toLowerCase();
+    let id = named ? uniqueId(`sp-${item}`) : `cat-${category.id}`;
+    for (let n = 2; !named && ids.has(id); n++) id = `cat-${category.id}-${n}`;
+    ids.add(id);
+    const row: SpendingRow = { id, category: category.id, annual: val(amount, annualFrom(amount.parsed as number, amount.cadence ?? "year", { payFrequency: "biweekly" })) };
+    if (named) row.label = item;
+    const start = g.get("start");
+    if (start) row.start = String(start.parsed);
+    const end = g.get("end");
+    if (end) row.end = parseEndRule(String(end.parsed));
+    spending.push(row);
   }
   if (spending.length) h.spending = { kind: "rows", rows: spending };
   preview.counts.spending = spending.length;
@@ -625,7 +649,15 @@ export function exportTemplate(h: Household): string {
 
   // Spending
   if (h.spending.kind === "rows") {
-    for (const r of h.spending.rows) row("spending", r.category, "amount", r.annual.value, "year", r.annual);
+    const name = namer();
+    const labels = new Map(loadSpendingCategories().map((c) => [c.id, c.label]));
+    for (const r of h.spending.rows) {
+      const item = name(r.label ?? labels.get(r.category) ?? r.category);
+      row("spending", item, "category", r.category, "", known(r.annual.asOf));
+      row("spending", item, "amount", r.annual.value, "year", r.annual);
+      if (r.start) row("spending", item, "start", r.start, "", known(r.annual.asOf));
+      if (r.end) row("spending", item, "end", r.end.kind === "retirement" ? "retirement" : r.end.kind === "age" ? `age:${r.end.age}` : r.end.date, "", known(r.annual.asOf));
+    }
   }
 
   // Accounts, then debts

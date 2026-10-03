@@ -123,6 +123,23 @@
   background: var(--color-brand-100);
 }
 
+/* A button that reads as a line of text: for small, optional choices under a field. Still a 44px target. */
+.button--text {
+  justify-content: flex-start;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-brand-700);
+  font-size: var(--text-sm);
+  text-decoration: underline;
+}
+
+.button--text:hover {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-brand-900);
+}
+
 .button--small {
   padding: 0 var(--space-3);
   font-size: var(--text-sm);

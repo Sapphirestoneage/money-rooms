@@ -25,7 +25,7 @@ RULES
    income    type, gross_amount, hours_per_week, pay_frequency, match_percent,
              match_cap_percent, contribution_percent, contribution_type,
              hsa_contribution, business_expenses, start, end
-   spending  amount
+   spending  category, amount, start, end
    account   type, balance, mix
    debt      type, balance, rate, promo_end, rate_after, min_payment,
              actual_payment
@@ -33,13 +33,21 @@ RULES
 
 6. item groups rows that belong together.
    - profile and optional: leave item blank.
-   - income, account, debt: a short plain name, the same on every row for that
-     thing ("Day job", "Ally savings", "Car loan"). Add as many as I have.
-   - spending: the category id, one of: accommodation, utilities, food,
-     transportation, insurance, healthcare, therapy, phone, subscriptions,
-     personal, fun, travel, giving, pets, education, workCosts, everythingElse.
-     If you only know my total spending, use everythingElse.
+   - income, spending, account, debt: a short plain name, the same on every
+     row for that thing ("Day job", "Rent", "Ally savings", "Car loan"). Add as
+     many as I have.
+   - Every spending item needs a category row. The category is one of:
+     accommodation, utilities, food, transportation, insurance, healthcare,
+     therapy, phone, subscriptions, personal, fun, travel, giving, pets,
+     education, workCosts, everythingElse.
+     If you only know my total spending, use one item with category
+     everythingElse.
      Spending is consumption only: no debt payments, no saving or investing.
+   - If a spending amount changes on a date, write two items in the same
+     category: the old amount with an end row (its last month), and the new
+     amount with a start row (its first month). Amounts in the same category
+     add together, so the dates must not overlap. A start or end row is only
+     needed when the spending starts later or stops.
 
 7. value formats:
    - Numbers: digits only. No $ sign, no commas, no "k". 72000, not $72,000.

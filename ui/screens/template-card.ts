@@ -17,7 +17,7 @@ import type { TransferContext } from "./transfer-card";
 const SECTION_LABELS: readonly (readonly [TemplateSection, string, string, string])[] = [
   ["profile", "About you", "answer", "answers"],
   ["income", "Income", "source", "sources"],
-  ["spending", "Spending", "category", "categories"],
+  ["spending", "Spending", "amount", "amounts"],
   ["account", "Accounts", "account", "accounts"],
   ["debt", "Debts", "debt", "debts"],
   ["optional", "Sharpeners", "answer", "answers"],
