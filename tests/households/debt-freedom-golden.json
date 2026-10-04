@@ -1,0 +1,31 @@
+{
+  "id": "debt-freedom-golden",
+  "label": "Debt freedom golden household: three debts, one 0% promo ending within a year",
+  "story": "Fictional. A salaried worker with a store card on a 0% promo that ends in twelve months, a credit card at 22%, and a car loan at 6%. The numbers are round so the payoff dates can be checked by hand (tests/modules/debt-freedom.test.ts).",
+  "inputs": {
+    "birthDate": "1994-05",
+    "state": "OH",
+    "filingStatus": "single",
+    "income": [
+      { "id": "job", "type": "salary", "grossAnnual": 58000, "payFrequency": "biweekly", "end": "retirement" }
+    ],
+    "spending": [
+      { "category": "accommodation", "annual": 14400 },
+      { "category": "food", "annual": 4800 },
+      { "category": "transportation", "annual": 3000 },
+      { "category": "everythingElse", "annual": 7200 }
+    ],
+    "accounts": [
+      { "id": "chk", "preset": "checking", "balance": 2000 },
+      { "id": "promo", "preset": "creditCard", "name": "Store card", "balance": 3000, "rate": 24.99, "promo": { "rate": 0, "endDate": "2027-09", "rateAfter": 24.99 }, "minPaymentMonthly": 100, "stress": 5 },
+      { "id": "card", "preset": "creditCard", "name": "Credit card", "balance": 6000, "rate": 22, "minPaymentMonthly": 150, "stress": 2 },
+      { "id": "car", "preset": "auto", "name": "Car loan", "balance": 4000, "rate": 6, "minPaymentMonthly": 200, "stress": 4 }
+    ]
+  },
+  "expected": {
+    "asOf": "2026-10-01",
+    "extraMonthly": 250,
+    "budgetMonthly": 700,
+    "note": "Expected payoff months are hand-checked in tests/modules/debt-freedom.test.ts and never changed to make the test pass."
+  }
+}

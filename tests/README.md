@@ -33,3 +33,7 @@ Each file in `households/` uses a short entry format: plain numbers, `"end": "re
 | `tie-out/print-maya.ts` | Prints Maya under the app's own defaults: `npm run tie-out` |
 | `households.test.ts` | Runs every household in every band, and Maya against both workpaper files |
 | `ui-rules.test.ts` | Fails if any UI file defines a color outside `ui/tokens.css` |
+
+## M2 tie-out (added 2026-10-04)
+
+`tests/m2-tie-out-conventions.md` adds to the M1 conventions; `tests/workpapers/maya-m2-planA.csv` and `maya-m2-planB.csv` are Eli's hand-calculated rows; `npm run tie-out:m2` prints the comparison; `tests/m2-tie-out.test.ts` asserts it. The reconciliation log, with the engine fixes it found and the workpaper issues for review, is `docs/audits/m2-tie-out-reconciliation.md`.

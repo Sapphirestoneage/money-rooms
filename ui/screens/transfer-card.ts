@@ -27,6 +27,7 @@ export function transferCard(ctx: TransferContext): HTMLElement {
   const download = () => {
     const today = todayIso();
     saveTextFile(exportFileName(today), exportToJson(ctx.household(), today), "application/json");
+    ctx.store.savePrefs({ ...ctx.store.loadPrefs(), lastExportAt: today });
   };
 
   /** Imports a full export, the same way whether it was dropped anywhere or chosen. */

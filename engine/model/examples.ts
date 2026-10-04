@@ -46,6 +46,10 @@ export interface ExampleAccount {
   minPaymentMonthly?: number;
   actualPaymentMonthly?: number;
   stress?: number;
+  /** A promo rate on a debt: the rate now, the last month it applies (YYYY-MM), and the rate after. */
+  promo?: { rate: number; endDate: string; rateAfter: number };
+  /** A display name for the account. */
+  name?: string;
 }
 
 export interface ExampleHouseholdFile {
@@ -124,6 +128,11 @@ export function householdFromExample(file: ExampleHouseholdFile, asOf: IsoDate):
       ...(a.actualPaymentMonthly !== undefined ? { actualPaymentAnnual: userValue(annualFromMonthly(a.actualPaymentMonthly), asOf) } : {}),
     }, asOf);
     if (a.stress !== undefined) debt.stress = userValue(a.stress, asOf);
+    if (a.promo) {
+      if (!isYearMonth(a.promo.endDate)) throw new Error(`Debt "${a.id}" promo endDate must be YYYY-MM`);
+      debt.promo = { rate: userValue(a.promo.rate, asOf), endDate: userValue(a.promo.endDate, asOf), rateAfter: userValue(a.promo.rateAfter, asOf) };
+    }
+    if (a.name) debt.name = userValue(a.name, asOf);
     return debt;
   });
   h.accounts = accounts.length ? { kind: "rows", rows: accounts } : { kind: "none", asOf };

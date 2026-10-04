@@ -97,4 +97,13 @@ describe("keeping things from visit to visit", () => {
     expect(ids.size).toBe(500);
     for (const id of ids) expect(id).toMatch(/^income-[a-z0-9]+-[a-z0-9]+$/);
   });
+
+  it("keeps the beta switch with the display preferences and drops it when it is not a boolean", () => {
+    const storage = fakeStorage();
+    const store = browserStore(storage, sameDay);
+    store.savePrefs({ cadence: {}, beta: true });
+    expect(store.loadPrefs().beta).toBe(true);
+    storage.setItem(PREFS_KEY, JSON.stringify({ cadence: {}, beta: "yes" }));
+    expect(store.loadPrefs().beta).toBeUndefined();
+  });
 });

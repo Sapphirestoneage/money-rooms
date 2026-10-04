@@ -1,0 +1,185 @@
+{
+  "id": "core",
+  "name": "Core",
+  "job": "answers: when my savings could carry me without work income, and what moves that date",
+  "core": true,
+  "reads": [
+    "asOf",
+    "self",
+    "partner",
+    "spending",
+    "accounts",
+    "assumptions",
+    "savingsStrategy",
+    "goals",
+    "plans",
+    "businesses",
+    "drawdown",
+    "resilience",
+    "milestones",
+    "legacy",
+    "blocks",
+    "risk",
+    "history"
+  ],
+  "adds": {
+    "fields": [],
+    "cards": [
+      {
+        "id": "next.card",
+        "level": 1,
+        "screen": "#/next"
+      },
+      {
+        "id": "levels.resilience",
+        "level": 2,
+        "screen": "#/levels"
+      },
+      {
+        "id": "levels.milestones",
+        "level": 3,
+        "screen": "#/levels"
+      },
+      {
+        "id": "result.trueFi",
+        "level": 4,
+        "screen": "#/result"
+      },
+      {
+        "id": "levels.legacy",
+        "level": 5,
+        "screen": "#/levels"
+      }
+    ],
+    "lenses": [
+      "fourPercent",
+      "hours",
+      "taxes"
+    ],
+    "metrics": [
+      "fiDate",
+      "trueFiNumber",
+      "lifetimeTaxes",
+      "estate"
+    ],
+    "items": [
+      "q.birthDate",
+      "q.state",
+      "q.filingStatus",
+      "q.income",
+      "q.spending",
+      "q.accounts",
+      "q.hsaEligible",
+      "q.resilience",
+      "q.dreams",
+      "q.ssRecord",
+      "q.drawdown",
+      "q.legacy",
+      "m.savingsStrategy",
+      "m.claimingAge",
+      "m.optimizer"
+    ],
+    "screens": [
+      "#/entry",
+      "#/result",
+      "#/next",
+      "#/next/sky",
+      "#/levels",
+      "#/whatifs",
+      "#/meaning",
+      "#/risk",
+      "#/about",
+      "#/privacy"
+    ],
+    "concepts": [
+      {
+        "screen": "#/entry",
+        "concept": "every number carries a date and how sure you are"
+      },
+      {
+        "screen": "#/result",
+        "concept": "the FI date as three bands"
+      },
+      {
+        "screen": "#/next",
+        "concept": "the next card, ranked by value per minute"
+      },
+      {
+        "screen": "#/levels",
+        "concept": "levels as new ground, never locked"
+      },
+      {
+        "screen": "#/whatifs",
+        "concept": "a scenario block layered on the plan"
+      },
+      {
+        "screen": "#/meaning",
+        "concept": "a lens on the same numbers"
+      },
+      {
+        "screen": "#/risk",
+        "concept": "the plan replayed from every start year"
+      }
+    ]
+  },
+  "placement": {
+    "level": 1,
+    "tier": "easy",
+    "screen": "#/entry"
+  },
+  "unlock": {
+    "kind": "always",
+    "text": "Always."
+  },
+  "engine": {
+    "capabilities": [
+      "timeline",
+      "fiSearch",
+      "taxes",
+      "socialSecurity",
+      "optimizer",
+      "materiality",
+      "backtests"
+    ],
+    "coreChanges": []
+  },
+  "flag": "on",
+  "killCriteria": null,
+  "tests": {
+    "goldenHousehold": "tests/households/maya.json",
+    "acceptance": [
+      "tests/households.test.ts",
+      "tests/m2-tie-out.test.ts"
+    ]
+  },
+  "files": [],
+  "copy": [
+    "data/items.json",
+    "data/ratios.json"
+  ],
+  "checklist": {
+    "spec": "docs/engine-spec.md",
+    "decision": "X1",
+    "axe": {
+      "date": "2026-10-04",
+      "routes": [
+        "#/entry",
+        "#/result",
+        "#/next",
+        "#/next/sky",
+        "#/levels",
+        "#/whatifs",
+        "#/meaning",
+        "#/risk",
+        "#/about",
+        "#/privacy"
+      ]
+    },
+    "docs": [
+      "docs/module-contract.md",
+      "docs/complexity-budget.md",
+      "docs/module-checklist.md"
+    ]
+  },
+  "replaces": []
+}

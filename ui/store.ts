@@ -33,6 +33,24 @@ export interface Snapshot {
 export interface DisplayPrefs {
   /** The cadence last chosen for each amount field, by field key. */
   cadence: Record<string, string>;
+  /** The order of the result screen's sections, by section id (M2 spec section 9). Blank means the default order. */
+  resultOrder?: string[];
+  /** True once the True FI number has been revealed, so it shows as a normal row with a replay button. */
+  trueFiRevealed?: boolean;
+  /** The optimizer objective last chosen. */
+  objective?: string;
+  /** The entry mode last chosen: guided, dump, or express (M3 spec section 12). */
+  entryMode?: string;
+  /** The material line as a share of the FI number (M3 spec section 4). Blank means the default. */
+  materialShare?: number;
+  /** The FI date (year and months into the year) when the Refresh card was last cleared, for "since last time". */
+  lastRefreshFiYear?: number;
+  /** The date the numbers were last exported from this browser, for the backup nudge. */
+  lastExportAt?: string;
+  /** The backup nudge stays quiet until this date after "Not now". */
+  backupSnoozedUntil?: string;
+  /** True when modules flagged beta show (docs/module-contract.md section 4). */
+  beta?: boolean;
 }
 
 export interface Store {
@@ -110,8 +128,19 @@ export function browserStore(storage: Storage | null, today: () => IsoDate = tod
     clearSnapshot: () => remove(SNAPSHOT_KEY),
     loadPrefs() {
       const parsed = read(PREFS_KEY);
-      const cadence = typeof parsed === "object" && parsed !== null && typeof (parsed as DisplayPrefs).cadence === "object" && (parsed as DisplayPrefs).cadence !== null ? (parsed as DisplayPrefs).cadence : {};
-      return { cadence: { ...cadence } };
+      const p = typeof parsed === "object" && parsed !== null ? (parsed as Partial<DisplayPrefs>) : {};
+      const cadence = typeof p.cadence === "object" && p.cadence !== null ? p.cadence : {};
+      const out: DisplayPrefs = { cadence: { ...cadence } };
+      if (Array.isArray(p.resultOrder) && p.resultOrder.every((x) => typeof x === "string")) out.resultOrder = [...p.resultOrder];
+      if (typeof p.trueFiRevealed === "boolean") out.trueFiRevealed = p.trueFiRevealed;
+      if (typeof p.objective === "string") out.objective = p.objective;
+      if (typeof p.entryMode === "string") out.entryMode = p.entryMode;
+      if (typeof p.materialShare === "number") out.materialShare = p.materialShare;
+      if (typeof p.lastRefreshFiYear === "number") out.lastRefreshFiYear = p.lastRefreshFiYear;
+      if (typeof p.lastExportAt === "string") out.lastExportAt = p.lastExportAt;
+      if (typeof p.backupSnoozedUntil === "string") out.backupSnoozedUntil = p.backupSnoozedUntil;
+      if (typeof p.beta === "boolean") out.beta = p.beta;
+      return out;
     },
     savePrefs: (p) => void write(PREFS_KEY, p),
   };
