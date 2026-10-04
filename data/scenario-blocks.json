@@ -1,0 +1,29 @@
+{
+  "_meta": {
+    "description": "Scenario block types (docs/levels/level-3-life-plans.md section 2, dictionary 9.5): the three or four questions each type asks and the national defaults that expand them into changes. Defaults are starting points marked roughly; state defaults and real quotes replace them. The engine reads these numbers only from here.",
+    "version": 1,
+    "updated": "2026-10-04",
+    "status": "Proposed placeholders. Every default below is unsourced until its note names a verified source; Eli to check before release."
+  },
+  "types": [
+    { "id": "home", "label": "Buy a home", "questions": [{ "id": "price", "label": "Price", "default": 350000, "note": "Placeholder near the national median; a listing or a lender's letter replaces it." }, { "id": "downPercent", "label": "Down payment (percent)", "default": 10 }, { "id": "ratePercent", "label": "Mortgage rate (percent)", "default": 6.5 }, { "id": "rentReplaced", "label": "Rent it replaces (a month)", "default": 1600 }], "ownershipCostPercentOfPrice": 1.5 },
+    { "id": "car", "label": "Buy a car", "questions": [{ "id": "price", "label": "Price", "default": 30000 }, { "id": "downPayment", "label": "Down payment", "default": 5000 }, { "id": "ratePercent", "label": "Loan rate (percent)", "default": 7 }, { "id": "years", "label": "Loan years", "default": 5 }], "runningCostAnnual": 2400 },
+    { "id": "kid", "label": "A kid", "questions": [{ "id": "annualCost", "label": "Cost a year", "default": 15000, "note": "Placeholder; the USDA cost-of-raising-a-child series is the source to check (https://www.usda.gov)." }, { "id": "years", "label": "Years of support", "default": 18 }, { "id": "childcareAnnual", "label": "Childcare a year (first five years)", "default": 12000 }] },
+    { "id": "jobChange", "label": "Change jobs", "questions": [{ "id": "newGrossAnnual", "label": "New pay (a year)", "default": 80000 }, { "id": "gapMonths", "label": "Months between jobs", "default": 1 }] },
+    { "id": "sabbatical", "label": "A sabbatical", "questions": [{ "id": "months", "label": "Months away", "default": 6 }, { "id": "costTotal", "label": "Cost of the time away", "default": 12000 }] },
+    { "id": "geoArbitrage", "label": "Move somewhere cheaper (or pricier)", "questions": [{ "id": "spendingFactor", "label": "Spending as a share of today's (1 = the same)", "default": 0.7 }, { "id": "incomeFactor", "label": "Income as a share of today's", "default": 1 }, { "id": "movingCost", "label": "Moving cost", "default": 5000 }] },
+    { "id": "sideHustle", "label": "A side hustle", "questions": [{ "id": "grossAnnual", "label": "Income a year", "default": 12000 }, { "id": "years", "label": "Years it runs (blank for always)", "default": 5 }] },
+    { "id": "inheritance", "label": "An inheritance or windfall", "questions": [{ "id": "amount", "label": "Amount", "default": 50000 }] },
+    { "id": "marriage", "label": "Marriage or moving in together", "questions": [{ "id": "partnerIncome", "label": "Partner's income (a year)", "default": 50000 }, { "id": "sharedSpendingFactor", "label": "Household spending as a share of yours alone", "default": 1.6 }] },
+    { "id": "custom", "label": "Something else", "questions": [{ "id": "annualCost", "label": "Cost a year", "default": 0 }, { "id": "oneOff", "label": "One-off cost", "default": 0 }, { "id": "years", "label": "Years", "default": 1 }] }
+  ],
+  "dreams": {
+    "trueAmountAge": 65,
+    "trueAmountNote": "What the money would become if invested instead, at the likely return, in today's dollars, by this age (the spec's example uses 65)."
+  },
+  "payoff": {
+    "methods": ["avalanche", "snowball", "peaceFirst"],
+    "stressDefault": 3,
+    "note": "Stress is the 1 to 5 rating on each debt (decision D10). Peace-first minimizes stress-months: each debt's stress times the months it is still owed."
+  }
+}

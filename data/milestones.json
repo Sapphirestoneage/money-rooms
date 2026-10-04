@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "description": "Level 3 milestone defaults (docs/levels/level-3-life-plans.md section 9, decision G5) and Level 5 legacy defaults (level-5-legacy.md section 9, decision Y5). The engine reads these numbers only from here. All Proposed placeholders, editable per person.",
+    "version": 1,
+    "updated": "2026-10-04"
+  },
+  "level3": {
+    "coastAge": 65,
+    "baristaIncomeAnnual": 20000,
+    "fatFiMultiplier": 1.5,
+    "flexFiTrimPercent": 10,
+    "slowFiYearsAfterFi": 5,
+    "walkAwayMonths": 12,
+    "businessRunwayMonths": 12,
+    "businessRunwayStep": "draftt",
+    "leanFiStep": "fat"
+  },
+  "level5": {
+    "breathingRoomPercent": 10,
+    "heirTaxRatePercent": 22,
+    "freeHoursPerWeekAfterFi": 45,
+    "givingCategory": "giving"
+  }
+}

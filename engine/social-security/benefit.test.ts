@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadSocialSecurityParams } from "../model";
+import { spousalFactor, survivorFactor } from "./benefit";
 import {
   annualBenefit,
   averageIndexedMonthlyEarnings,
@@ -87,5 +88,45 @@ describe("annual benefit and the earnings record estimate", () => {
       startAge: 22,
     });
     expect(record).toEqual([72000, 72000, 72000, 72000, 73080]);
+  });
+});
+
+describe("spousal and survivor factors (decision H9; schedules unverified until Eli confirms them)", () => {
+  const spousal = { firstMonths: 36, ratePerMonthFirst: 25 / 36, ratePerMonthBeyond: 5 / 12 };
+  const fra = (years: number, months: number) => ({ years, months });
+  const survivor = {
+    earliestAge: 60,
+    shareAtEarliestAgePct: 71.5,
+    fullRetirementAgeTable: { bornThrough1939: fra(65, 0), "1940": fra(65, 2), "1941": fra(65, 4), "1942": fra(65, 6), "1943": fra(65, 8), "1944": fra(65, 10), "1945to1956": fra(66, 0), "1957": fra(66, 2), "1958": fra(66, 4), "1959": fra(66, 6), "1960": fra(66, 8), "1961": fra(66, 10), "1962orLater": fra(67, 0) },
+  };
+
+  it("pays the full spousal share at full retirement age and never adds delayed credits", () => {
+    expect(spousalFactor(1970, { years: 67, months: 0 }, spousal, p)).toBe(1);
+    expect(spousalFactor(1970, { years: 70, months: 0 }, spousal, p)).toBe(1);
+  });
+
+  it("reduces the spousal share on its own schedule, not the retirement one", () => {
+    // 36 months early: 36 x 25/36 of 1% = 25%.
+    expect(spousalFactor(1970, { years: 64, months: 0 }, spousal, p)).toBeCloseTo(0.75, 6);
+    // 60 months early (claiming at 62): 25% plus 24 x 5/12 of 1% = 35%.
+    expect(spousalFactor(1970, { years: 62, months: 0 }, spousal, p)).toBeCloseTo(0.65, 6);
+    // The retirement reduction at 62 for a 1970 birth is 30%, so the two schedules differ.
+    expect(spousalFactor(1970, { years: 62, months: 0 }, spousal, p)).not.toBeCloseTo(0.7, 6);
+  });
+
+  it("pays the spousal shares Eli specified: 32.5% of the worker's PIA at 62 and 37.5% at 64, with full retirement age 67", () => {
+    expect(0.5 * spousalFactor(1970, { years: 62, months: 0 }, spousal, p)).toBeCloseTo(0.325, 6);
+    expect(0.5 * spousalFactor(1970, { years: 64, months: 0 }, spousal, p)).toBeCloseTo(0.375, 6);
+  });
+
+  it("reduces the survivor share evenly by month from 100% at the survivor's full retirement age to 71.5% at 60", () => {
+    expect(survivorFactor(1970, { years: 67, months: 0 }, survivor, p)).toBe(1);
+    expect(survivorFactor(1970, { years: 60, months: 0 }, survivor, p)).toBeCloseTo(0.715, 6);
+    expect(survivorFactor(1970, { years: 63, months: 6 }, survivor, p)).toBeCloseTo(1 - 0.285 * 0.5, 6);
+    // Claiming before 60 is treated as 60.
+    expect(survivorFactor(1970, { years: 58, months: 0 }, survivor, p)).toBeCloseTo(0.715, 6);
+    // The survivor table: full retirement age 66 for a 1950 birth, so 66 pays 100% and 63 is halfway.
+    expect(survivorFactor(1950, { years: 66, months: 0 }, survivor, p)).toBe(1);
+    expect(survivorFactor(1950, { years: 63, months: 0 }, survivor, p)).toBeCloseTo(1 - 0.285 * 0.5, 6);
   });
 });

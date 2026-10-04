@@ -1,0 +1,32 @@
+{
+  "_meta": {
+    "description": "The three materiality lines, the plausible range tested for each kind of value, and the staleness clocks (docs/m3-spec.md sections 4 and 8). The engine reads these numbers only from here.",
+    "version": 1,
+    "updated": "2026-10-04",
+    "status": "Proposed defaults from the M3 spec; the material line is adjustable by the person."
+  },
+  "lines": {
+    "clearlyTrivialAnnual": { "value": 100, "meaning": "Items worth under this a year never appear on the main path; they live in Small wins.", "adjustable": false },
+    "materialShareOfFiNumber": { "default": 0.05, "min": 0.01, "max": 0.2, "warnAbove": 0.05, "meaning": "A question is material if its plausible range moves the FI number by at least this share." },
+    "worthIt": { "meaning": "A move or question is worth asking only if its value is at least the person's real hourly wage for each hour of effort.", "defaultHourlyWageWhenUnknown": 25 }
+  },
+  "plausibleRangeByKind": {
+    "known": 0.02,
+    "lookUp": 0.05,
+    "roughly": 0.25,
+    "default": 0.5,
+    "computed": 0,
+    "notForMe": 0
+  },
+  "staleness": {
+    "balances": { "nextCheckMonths": 3, "widensToRoughlyMonths": 12 },
+    "debts": { "nextCheckMonths": 3, "widensToRoughlyMonths": 12 },
+    "income": { "nextCheckMonths": 12, "widensToRoughlyMonths": 24 },
+    "spending": { "nextCheckMonths": 12, "widensToRoughlyMonths": 24 },
+    "facts": { "nextCheckMonths": null, "widensToRoughlyMonths": null }
+  },
+  "nextCard": {
+    "laterLevelJumpsAheadAtMultiple": 3,
+    "smallCards": 2
+  }
+}

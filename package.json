@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "tie-out": "vite-node tests/tie-out/print-maya.ts",
-    "tie-out:compare": "vite-node tests/tie-out/compare-maya.ts"
+    "tie-out:compare": "vite-node tests/tie-out/compare-maya.ts",
+    "tie-out:m2": "vite-node tests/tie-out/compare-maya-m2.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
