@@ -46,7 +46,7 @@ export interface LumpSumComparison {
   sentences: string[];
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+const money = (n: number) => `${n < 0 ? "-" : ""}$${Math.abs(Math.round(n)).toLocaleString("en-US")}`;
 
 /** This year's return as the household is set up: the inputs the lump-sum stacks on. */
 function baseReturn(h: Household, year: number): { input: FederalTaxM2Input; workplaceDeferrals: number; halfSeShare: boolean; state: StateCode } {

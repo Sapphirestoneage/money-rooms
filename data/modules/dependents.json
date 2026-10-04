@@ -1,0 +1,86 @@
+{
+  "id": "dependents",
+  "name": "Dependents",
+  "job": "answers: what a child changes on my return, my filing status, and my plan's dates",
+  "reads": [
+    "self.filingStatus",
+    "self.income",
+    "dependents",
+    "spending[].category",
+    "spending[].end",
+    "asOf"
+  ],
+  "adds": {
+    "fields": [
+      "dependents",
+      "spending[].end (dependentAge)"
+    ],
+    "cards": [],
+    "lenses": [],
+    "metrics": [
+      "childTaxCredit",
+      "dependentCareCredit",
+      "headOfHouseholdByYear"
+    ],
+    "items": [],
+    "screens": [],
+    "concepts": [
+      {
+        "screen": "#/entry",
+        "concept": "a child changes the return and the filing status, and both change on dates"
+      }
+    ]
+  },
+  "placement": {
+    "level": 1,
+    "tier": "easy",
+    "pack": "family",
+    "screen": "#/entry"
+  },
+  "unlock": {
+    "kind": "always",
+    "text": "Always; the credits apply once a dependent is entered."
+  },
+  "engine": {
+    "capabilities": [
+      "childTaxCredit",
+      "dependentCareCredit",
+      "qbiDeduction",
+      "headOfHouseholdByYear",
+      "dependentAgeEndRule",
+      "termLifeFromDependents"
+    ],
+    "coreChanges": [
+      "core change: the federal M2 return takes the child tax credit, the dependent care credit, and the QBI deduction (engine/tax/federal-m2.ts, decision A9)",
+      "core change: the timeline files head of household only while a qualifying child remains and ends a spending row on a dependent's age (engine/projection/timeline.ts, engine/projection/income.ts)",
+      "core change: the Rule of 5 counts the household's dependents for term life (engine/levels/resilience.ts)"
+    ]
+  },
+  "flag": "beta",
+  "killCriteria": {
+    "measure": "share of households with a dependent entered that see a different FI date or take-home because of it",
+    "threshold": "under 50% after 90 days of beta (the credits should move nearly every such plan)",
+    "action": "fold the fields into Level 1's About you section and drop the module"
+  },
+  "tests": {
+    "goldenHousehold": "tests/households/rosa.json",
+    "acceptance": [
+      "tests/rosa.test.ts"
+    ]
+  },
+  "files": [],
+  "copy": [],
+  "checklist": {
+    "spec": "docs/packs/family.md",
+    "decision": "A9",
+    "axe": {
+      "date": "2026-10-04",
+      "routes": []
+    },
+    "docs": [
+      "docs/data-dictionary.md",
+      "docs/decisions.md"
+    ]
+  },
+  "replaces": []
+}

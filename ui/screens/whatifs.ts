@@ -27,7 +27,7 @@ import { kindBadge } from "../components/kind-badge";
 import type { Drawer } from "../components/trace-drawer";
 import { clear, el, rowId } from "../dom";
 import { dollars, dollarsShort, yearWord } from "../format";
-import { activeModule } from "../modules/index";
+import { activeModule, moduleCards } from "../modules/index";
 import type { Store } from "../store";
 
 export interface WhatIfsContext {
@@ -86,7 +86,7 @@ export function whatIfsScreen(ctx: WhatIfsContext): HTMLElement {
       root.append(gentleFlag("A few answers are still needed before what-ifs have numbers to work with.", { label: "Go to your numbers", onClick: ctx.goToEntry }));
       return;
     }
-    root.append(blocksCard(), dreamsCard(), payoffCard());
+    root.append(blocksCard(), dreamsCard(), payoffCard(), ...moduleCards("#/whatifs", ctx));
   }
 
   // ---- Scenario blocks ------------------------------------------------------------

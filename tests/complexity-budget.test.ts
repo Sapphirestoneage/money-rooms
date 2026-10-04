@@ -74,10 +74,11 @@ describe("rule 4: at most 3 cards shown at once per level", () => {
   it("the next card shows at most three items", () => {
     expect(materiality.nextCard.smallCards + 1).toBeLessThanOrEqual(3);
   });
-  it("each level's cards, the core's plus every module's that is on or beta", () => {
+  it("each level's cards on any one screen, the core's plus every module's that is on or beta", () => {
     for (const level of [1, 2, 3, 4, 5]) {
-      const cards = counted.flatMap((m) => m.adds.cards.filter((c) => c.level === level).map((c) => `${m.id}:${c.id}`));
-      expect(cards.length, `level ${level}: ${cards.join(", ")}`).toBeLessThanOrEqual(3);
+      const byScreen = new Map<string, string[]>();
+      for (const m of counted) for (const c of m.adds.cards) if (c.level === level) byScreen.set(c.screen, [...(byScreen.get(c.screen) ?? []), `${m.id}:${c.id}`]);
+      for (const [screen, cards] of byScreen) expect(cards.length, `level ${level} on ${screen}: ${cards.join(", ")}`).toBeLessThanOrEqual(3);
     }
   });
 });
@@ -89,8 +90,9 @@ describe("rule 5: a new module fits the budget or names what it replaces", () =>
       for (const level of [1, 2, 3, 4, 5]) {
         const mine = m.adds.cards.filter((c) => c.level === level);
         if (!mine.length) continue;
-        const others = counted.filter((x) => x.id !== m.id).flatMap((x) => x.adds.cards.filter((c) => c.level === level));
-        const over = others.length + mine.length > 3;
+        const screens = new Set(mine.map((c) => c.screen));
+        const others = counted.filter((x) => x.id !== m.id).flatMap((x) => x.adds.cards.filter((c) => c.level === level && screens.has(c.screen)));
+        const over = [...screens].some((screen) => others.filter((c) => c.screen === screen).length + mine.filter((c) => c.screen === screen).length > 3);
         if (over) {
           const replaced = others.filter((c) => m.replaces.includes(c.id));
           expect(replaced.length, `${m.id} takes level ${level} past 3 cards and names nothing it replaces there`).toBeGreaterThan(0);

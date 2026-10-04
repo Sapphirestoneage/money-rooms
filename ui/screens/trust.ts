@@ -14,6 +14,8 @@ export interface TrustContext {
   /** Clears everything stored in this browser and starts an empty household. */
   reset(): void;
   goToEntry(): void;
+  /** Module cards for this screen (the safety features card, when its module is active). */
+  moduleCards?: () => HTMLElement[];
 }
 
 export interface AboutContext {
@@ -83,6 +85,7 @@ export function privacyScreen(ctx: TrustContext): HTMLElement {
         el("p", {}, el("strong", {}, "You can delete everything."), " The button below removes every number, the saved copy from before your last import, and your display choices from this browser. Clearing the browser's site data does the same."),
         el("p", { class: "muted" }, "This browser ", ctx.store.isPersistent() ? "keeps what you enter between visits." : "is not keeping what you enter (a private window or blocked storage). Export a file to keep your numbers."),
       ),
+      ...(ctx.moduleCards ? ctx.moduleCards() : []),
       el(
         "section",
         { class: "card stack" },

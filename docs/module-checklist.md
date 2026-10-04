@@ -22,6 +22,12 @@ Before a module's flag moves to `on`, every row holds. The manifest carries the 
 |---|---|---|---|---|---|---|---|---|
 | core | on | yes | yes | yes | yes | yes (2026-10-04 audit) | yes | yes |
 | small-wins | on | yes | yes | yes | yes | yes (2026-10-04 audit) | yes | yes |
-| debt-freedom | beta | yes | yes | yes | yes | see manifest | yes | yes |
+| debt-freedom | beta | yes | yes | yes | yes | yes (2026-10-04) | yes | yes |
+| dependents | beta | yes (family pack) | yes | yes (Rosa) | engine sentences | yes (no screen of its own) | yes | yes |
+| home | beta | yes (home pack) | yes | yes (Rosa) | engine sentences | yes | yes | yes |
+| family-loans | beta | yes (debt pack) | yes | yes (Rosa) | engine sentences | yes | yes | yes |
+| lump-sum | beta | yes (debt pack) | yes | yes (Rosa) | engine sentences | yes (What-ifs) | yes | yes |
+| hard-season | beta | yes (divorce pack, kindness rules) | yes | yes (Rosa) | engine sentences | yes (What's next) | yes | yes |
+| safety | beta | yes (divorce pack) | yes | none needed | its own copy | yes (Privacy, the curtain) | yes | yes |
 
 The gate is the test, not this table; the table is a reading of it on the day it was written.

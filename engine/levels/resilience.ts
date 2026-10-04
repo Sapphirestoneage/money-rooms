@@ -10,7 +10,7 @@ import healthcare from "../../data/healthcare.json";
 import type { Household, IncomeStability, SpendingRow } from "../model";
 import { RuleLedger, ageInYears, resolveAssumptions, yearMonthOf, homeReserveAnnual } from "../model";
 import { resolveBand } from "../projection/bands";
-import { defaultDeps, findFiDate, type Deps } from "../projection/fi";
+import { defaultDeps, findFiDate, runFor, type Deps } from "../projection/fi";
 import { acaPremiumCredit } from "../projection/healthcare";
 import { requireComplete } from "../projection/timeline";
 
@@ -279,6 +279,14 @@ export function termLifeRange(h: Household): { low: number; high: number; applie
   const debts = h.accounts.kind === "rows" ? h.accounts.rows.filter((a) => a.side === "debt").reduce((s, a) => s + (a.balance.value ?? 0), 0) : 0;
   const [lo, hi] = resilience.disability.termLifeYearsOfSupport;
   return { low: annual * lo! + debts, high: annual * hi! + debts, applies: true };
+}
+
+/** This year's gap before any saving, annualized: take-home plus benefits less spending and the scheduled debt payments (the plan's first row). Negative means the year runs short. */
+export function firstYearGapAnnual(h: Household, deps: Deps = defaultDeps()): number {
+  const hh = requireComplete(h);
+  const band = resolveBand(resolveAssumptions(h.assumptions), "likely");
+  const row = runFor(hh, band, deps, Infinity).rows[0]!;
+  return row.gap / (row.fraction || 1);
 }
 
 // ---------------------------------------------------------------------------

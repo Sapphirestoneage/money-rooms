@@ -1,6 +1,6 @@
 # Home pack
 
-**Status: Proposed, not reviewed by Eli.** Drafted 2026-10-04. Docs only.
+**Status: Proposed, not reviewed by Eli.** Drafted 2026-10-04. **Partly built 2026-10-04 as the `home` module (beta, decision A10):** the home's value as a rough fact, kept out of the FI number and the net worth chart, with its upkeep reserve (1% of value when blank) as spending every year. Not built: the property tax bucket and preset, appreciation, the sale event, rent versus buy.
 
 ---
 

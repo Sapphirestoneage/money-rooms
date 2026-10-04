@@ -66,7 +66,7 @@ export interface DebtFreedomView {
   sentences: string[];
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+const money = (n: number) => `${n < 0 ? "-" : ""}$${Math.abs(Math.round(n)).toLocaleString("en-US")}`;
 
 /** The calendar month for a simulation month (1 = the as-of month). */
 export function simulationMonthToDate(asOf: string, month: number): YearMonth | null {

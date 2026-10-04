@@ -63,6 +63,9 @@ import {
   type WorkplacePlan,
   type YesNoUnknown,
   drawdownUnlockItems,
+  familyLoans,
+  type PaymentFlexibility,
+  type PossibleForgiveness,
 } from "../../engine";
 import { collapsibleSection } from "../components/collapsible-section";
 import { confirmPanel } from "../components/confirm-panel";
@@ -75,6 +78,7 @@ import { moneyInput, type MoneyInputOptions } from "../components/money-input";
 import { presetPicker } from "../components/preset-picker";
 import { clear, el, rowId, uid } from "../dom";
 import { MONTH_NAMES, amountForInput, dollars, parseMoney, percent } from "../format";
+import { activeModule } from "../modules/index";
 import type { Store } from "../store";
 import { templateCard } from "./template-card";
 import { transferCard } from "./transfer-card";
@@ -417,7 +421,73 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         field("Filing status", filing, kindBadge(h().self.filingStatus.confidence)),
       ),
       ...partnerBlock(years),
+      ...householdExtras(),
     ];
+  }
+
+  /** Dependents (dictionary 9.14), the home (9.15), and the local tax rate, each while its module is active (beta). */
+  function householdExtras(): HTMLElement[] {
+    const out: HTMLElement[] = [];
+    const thisYear = parseYearMonth(asOf().slice(0, 7)).year;
+    const childYears: { value: string; label: string }[] = [];
+    for (let y = thisYear; y >= thisYear - 25; y--) childYears.push({ value: String(y), label: String(y) });
+    if (activeModule("dependents", ctx)) {
+      const rows = (h().dependents ?? []).map((d, n) => {
+        fieldScope = `dep-${d.id}`;
+        const born = parseYearMonth(d.birthDate.value);
+        const setBirth = () => { d.birthDate = userValue(`${year.value}-${month.value}`, asOf()); ctx.save(); schedule(); };
+        const month = select(MONTH_NAMES.map((name, i) => ({ value: String(i + 1).padStart(2, "0"), label: name })), String(born.month).padStart(2, "0"), setBirth, "Month");
+        const year = select(childYears, String(born.year), setBirth, "Year");
+        const lives = select([{ value: "yes", label: "Lives with me more than half the year" }, { value: "no", label: "Lives elsewhere most of the year" }], d.livesWithYou.value ? "yes" : "no", (v: "yes" | "no") => { d.livesWithYou = userValue(v === "yes", asOf()); ctx.save(); schedule(); });
+        const age = thisYear - born.year;
+        return el(
+          "div",
+          { class: "field-grid", "data-editor": `dep-${d.id}` },
+          field(`Child ${n + 1}: birth month`, month),
+          field("Birth year", year, kindBadge(d.birthDate.confidence)),
+          field("Where they live", lives),
+          el("p", { class: "muted" }, `About ${age} this year. ${age < 17 ? "Counts for the child tax credit until the year they turn 17." : "Past the child tax credit."} ${age < 13 ? "Childcare counts for the dependent care credit until 13." : ""}`),
+          el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet button--small", onClick: () => { h().dependents = (h().dependents ?? []).filter((x) => x.id !== d.id); ctx.save(); schedule(); } }, "Remove")),
+        );
+      });
+      out.push(
+        el(
+          "details",
+          { class: "card", open: (h().dependents?.length ?? 0) > 0 },
+          el("summary", { class: "card__summary" }, el("h3", {}, "Children and dependents"), el("span", { class: "lock-badge" }, "Beta")),
+          el("div", { class: "stack card__details-body" }, el("p", { class: "muted" }, "A child under 17 changes your return by the child tax credit; childcare for a child under 13 by the dependent care credit; a child living with you by head of household. Each ends on the child's age, and the plan shows the year."), ...rows, el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: () => { const id = rowId("dep"); (h().dependents ??= []).push({ id, birthDate: userValue(`${thisYear - 8}-01`, asOf(), "roughly"), livesWithYou: userValue(true, asOf()) }); pendingEditor = `dep-${id}`; ctx.save(); schedule(); } }, "Add a child"))),
+        ),
+      );
+    }
+    if (activeModule("home", ctx)) {
+      fieldScope = "home";
+      const home = h().home;
+      const value = el("input", { class: "input input--money", type: "text", inputmode: "decimal", placeholder: "0", autocomplete: "off", value: home ? amountForInput(home.value.value) : "" });
+      value.addEventListener("change", () => {
+        const v = parseMoney(value.value);
+        if (v === null || v <= 0) delete h().home;
+        else h().home = { ...(h().home ?? {}), value: { value: v, asOf: asOf(), source: "user", confidence: "roughly" } };
+        ctx.save();
+        schedule();
+      });
+      const reserve = el("input", { class: "input", type: "number", min: 0, max: 5, step: 0.25, value: home?.maintenanceReservePercent?.value ?? 1, disabled: !home });
+      reserve.addEventListener("change", () => { if (h().home) { h().home!.maintenanceReservePercent = userValue(Number(reserve.value), asOf()); ctx.save(); schedule(); } });
+      out.push(
+        el(
+          "details",
+          { class: "card", open: !!home },
+          el("summary", { class: "card__summary" }, el("h3", {}, "Your home"), el("span", { class: "lock-badge" }, "Beta")),
+          el("div", { class: "stack card__details-body" }, el("p", { class: "muted" }, "A home you own. It is kept out of your FI number and the net worth chart; its upkeep, a percent of its value a year, is counted as spending. Property tax and insurance stay in your spending rows."), el("div", { class: "field-grid" }, field("Value today, roughly", value, home ? kindBadge(home.value.confidence) : null), field("Upkeep reserve (% of value a year)", reserve))),
+        ),
+      );
+    }
+    if (activeModule("dependents", ctx) || activeModule("home", ctx)) {
+      fieldScope = "local";
+      const local = el("input", { class: "input", type: "number", min: 0, max: 5, step: 0.05, value: h().self.localTaxPercent?.value ?? "", placeholder: h().self.state?.value === "PA" ? "1 (the common rate)" : "0" });
+      local.addEventListener("change", () => { if (local.value === "") delete h().self.localTaxPercent; else h().self.localTaxPercent = userValue(Number(local.value), asOf()); ctx.save(); schedule(); });
+      out.push(el("div", { class: "field-grid" }, field("Local earned income tax (% of wages and net profit)", local, null, el("p", { class: "field__help" }, "Pennsylvania municipalities levy one (1% is common; Philadelphia is higher). Blank means the state's default."))));
+    }
+    return out;
   }
 
   /** Households of two (docs/household-two-spec.md 2.7): add a partner, their birth month, HSA, and claiming age; remove asks first. */
@@ -1132,6 +1202,16 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       rate.addEventListener("change", () => schedule());
       fields.push(field("Interest rate (% a year)", rate, rateBadge.node));
       if (needsRate) flags.push(gentleFlag("This debt needs its interest rate before a plan can run. It is on your statement or in your lender's app."));
+
+      // Family loans (dictionary 9.16, module family-loans, beta): what a loan from family carries that a bank loan does not.
+      if (a.preset === "family" && activeModule("family-loans", ctx)) {
+        const flex = select([{ value: "fixed", label: "Fixed, like a bank's" }, { value: "flexible", label: "Flexible: can come down when needed" }, { value: "pausable", label: "Can pause without penalty" }], a.paymentFlexibility?.value ?? "fixed", (v: PaymentFlexibility) => { a.paymentFlexibility = userValue(v, asOf()); ctx.save(); schedule(); });
+        const forgive = select([{ value: "unknown", label: "Unknown" }, { value: "none", label: "No, it will be repaid in full" }, { value: "possible", label: "Possibly, some or all" }], a.possibleForgiveness?.value ?? "unknown", (v: PossibleForgiveness) => { a.possibleForgiveness = userValue(v, asOf()); ctx.save(); schedule(); });
+        const lenders = select([1, 2, 3, 4].map((n) => ({ value: String(n), label: n === 1 ? "One person" : `${n} people` })), String(a.lenders?.value ?? 1), (v: string) => { a.lenders = userValue(Number(v), asOf()); ctx.save(); schedule(); });
+        const stress = select([1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: n === 1 ? "1, barely on my mind" : n === 5 ? "5, it weighs on me" : String(n) })), String(a.stress?.value ?? 3), (v: string) => { a.stress = userValue(Number(v), asOf()); ctx.save(); schedule(); });
+        fields.push(field("The payment is", flex), field("Might it be forgiven?", forgive), field("Who lent it", lenders), field("How much it weighs on you", stress));
+        for (const view of familyLoans(h()).filter((v) => v.accountId === a.id)) for (const f of view.flags) flags.push(gentleFlag(f));
+      }
 
       // A 0% rate is usually a promo: ask when it ends and what the rate is after.
       if ((!needsRate && a.rate.value === 0) || a.promo) {

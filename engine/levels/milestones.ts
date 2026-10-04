@@ -49,7 +49,7 @@ function settings(h: Household) {
   };
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+const money = (n: number) => `${n < 0 ? "-" : ""}$${Math.abs(Math.round(n)).toLocaleString("en-US")}`;
 
 /** The year a running plan's assets first reach a dollar target, working on. */
 function firstYearAssetsReach(target: number, working: ReturnType<typeof runFor>): number | null {

@@ -33,7 +33,7 @@ import { toggleButton } from "../components/toggle-button";
 import type { Drawer } from "../components/trace-drawer";
 import { clear, el, svg } from "../dom";
 import { dollars, dollarsShort, monthWord } from "../format";
-import { activeModule } from "../modules/index";
+import { activeModule, moduleCards } from "../modules/index";
 import type { Store } from "../store";
 
 export interface NextContext {
@@ -127,6 +127,14 @@ export function nextScreen(ctx: NextContext): HTMLElement {
     const card = nextCard(h(), report);
     const aged = agedValues(h(), h().asOf);
     out.push(levelProgress(report));
+    // Hard season (decision A15): the stability card comes first; while the mode is on nothing else nudges.
+    const hardSeasonCards = moduleCards("#/next", ctx);
+    out.push(...hardSeasonCards);
+    if (activeModule("hard-season", ctx) && h().hardSeason?.value === true) {
+      if (aged.length) out.push(refreshCard(aged));
+      out.push(settingsCard());
+      return out;
+    }
     if (sinceLastTime) out.push(gentleFlag(sinceLastTime));
     if (report.lines.roughResults) out.push(gentleFlag(`Calculated at ${Math.round(report.lines.materialShare * 100)}% materiality. Results are rougher than usual.`));
     out.push(bigCard(card.big), ...card.small.map(smallCard));

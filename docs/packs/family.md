@@ -1,6 +1,6 @@
 # Family pack
 
-**Status: Proposed, not reviewed by Eli.** Drafted 2026-10-04. Docs only.
+**Status: Proposed, not reviewed by Eli.** Drafted 2026-10-04. **Partly built 2026-10-04 as the `dependents` module (beta, decision A9):** dependents as facts with birth month and where they live; the child tax credit, the dependent care credit (unverified, flagged), and head of household by year on the return; a spending row that ends on a child's age; term life from the household's dependents. Not built: the 529 account (needs a new tax bucket, a core change), the dependent care FSA as an optimizer option, the kid block link, the ACA household size from dependents.
 
 ---
 

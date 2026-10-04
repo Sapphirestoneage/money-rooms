@@ -54,7 +54,7 @@ export function levelsPassed(h: Household, report: MaterialityReport | null): nu
   return passed;
 }
 
-const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+const money = (n: number) => `${n < 0 ? "-" : ""}$${Math.abs(Math.round(n)).toLocaleString("en-US")}`;
 const months = (n: number | null) => (n === null ? "" : ` (about ${Math.max(1, Math.round(n))} ${Math.round(n) === 1 ? "month" : "months"})`);
 
 /** Every item valued for this person. `report` can be null before the materiality engine has run. */

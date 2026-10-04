@@ -32,6 +32,7 @@ import {
   type IncomeStability,
   type LegacyProject,
   type Milestone,
+  firstYearGapAnnual,
 } from "../../engine";
 import { gentleFlag } from "../components/gentle-flag";
 import { kindBadge } from "../components/kind-badge";
@@ -60,7 +61,12 @@ export function levelsScreen(ctx: LevelsContext): HTMLElement {
   let shocks: ReturnType<typeof shockTests> | null = null;
   let legacy: ReturnType<typeof legacyFi> | null = null;
   let estate: ReturnType<typeof estateView> | null = null;
+  let gapAnnual: number | null = null;
   let working = false;
+  const hasFlexibleLoan = () => {
+    const accounts = h().accounts;
+    return accounts.kind === "rows" && accounts.rows.some((a) => a.side === "debt" && a.paymentFlexibility !== undefined && a.paymentFlexibility.value !== "fixed");
+  };
 
   const compute = () => {
     if (working || !complete()) return;
@@ -71,6 +77,7 @@ export function levelsScreen(ctx: LevelsContext): HTMLElement {
         shocks = shockTests(h());
         legacy = legacyFi(h());
         estate = estateView(h());
+        gapAnnual = firstYearGapAnnual(h());
       } catch {
         milestoneList = null;
       }
@@ -136,7 +143,8 @@ export function levelsScreen(ctx: LevelsContext): HTMLElement {
       el("div", { class: "card__title" }, el("h2", {}, "Level 2: Resilience")),
       el("p", { class: "true-fi__difference" }, s.headline, " ", kindBadge("computed")),
       el("h3", { class: "card__subtitle" }, "The Rule of 5"),
-      el("p", {}, `You're ${r.ageYears}, and you spend ${dollars(r.monthlySpending)} a month (debt payments included). Target: ${r.targetMonths.toFixed(1)} months, or ${dollars(r.targetDollars)}. You have ${dollars(r.cashNow)}.`),
+      el("p", {}, `You're ${r.ageYears}, and you spend ${dollars(r.monthlySpending)} a month (payments that cannot pause included). Target: ${r.targetMonths.toFixed(1)} months, or ${dollars(r.targetDollars)}. You have ${dollars(r.cashNow)}.`),
+      gapAnnual !== null && gapAnnual < -1 ? gentleFlag(`This year the plan runs about ${dollars(-gapAnnual)} short before any saving, so the target waits. What's next puts stability first${hasFlexibleLoan() ? ", starting with the loan payment that can flex" : ""}.`) : null,
       el("p", {}, r.gap > 0 ? `Closing the gap over ${r.monthsToClose} months: ${dollars(r.closeMonthly)} a month, plus ${dollars(r.growthMonthly)} a month to keep pace as you age. ` : "The target is met. To keep pace as you age: ", el("strong", {}, `Save ${dollars(r.saveMonthly)} a month.`)),
       el("h3", { class: "card__subtitle" }, "The spending staircase"),
       el("p", {}, stairs.map((st, i) => (i === 0 ? `${st.label}: ${months(st.months)}.` : ` ${st.label}: +${Math.round(st.added)}.`)).join(""), ` Total: ${months(s.staircaseTotalMonths)}.`),

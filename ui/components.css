@@ -1557,3 +1557,27 @@
 .history-table td:first-child {
   text-align: left;
 }
+
+/* Safety features (decision A16): the quick-exit button and the passcode curtain */
+.quick-exit {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 50;
+  min-height: var(--tap-target);
+  box-shadow: var(--shadow-card, none);
+}
+
+.curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--color-surface);
+}
+
+.curtain__card {
+  width: min(100%, 28rem);
+}

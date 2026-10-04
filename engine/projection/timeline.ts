@@ -515,7 +515,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   /** Head of household needs a qualifying child (under 19 here; students to 24 are not modeled); the year none remains, the return is single. */
   const filingStatusFor = (year: number): FilingStatus => (hh.filingStatus === "headOfHousehold" && childrenUnder(19, year) === 0 ? "single" : hh.filingStatus);
   if (hh.filingStatus === "headOfHousehold" && childrenUnder(19, year0) === 0) flags.add("The filing status is head of household but no qualifying child lives with you, so the plan files single until one does.");
-  if (hh.home) flags.add(`Your home (${Math.round(hh.home.value.value).toLocaleString("en-US")}) is not counted in the FI number or the net worth chart; its upkeep reserve is counted as spending.`);
+  if (hh.home) flags.add(`Your home ($${Math.round(hh.home.value.value).toLocaleString("en-US")}) is not counted in the FI number or the net worth chart; its upkeep reserve is counted as spending.`);
   const ctxFor = (year: number): YearContext => ({
     year,
     t: year - year0,

@@ -12,8 +12,9 @@ import ratios from "../data/ratios.json";
 import wins from "../data/small-wins.json";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { adviceTranslator, debtFreedomView, defaultDeps, defaultPolicy, findFiDate, householdFromExample, loadModules, optimize, planText, requireComplete, resolveAssumptions, resolveBand, type ExampleHouseholdFile } from "../engine";
+import { adviceTranslator, debtFreedomView, defaultDeps, defaultPolicy, familyLoans, findFiDate, hardSeasonView, householdFromExample, loadModules, lumpSumComparison, optimize, planText, requireComplete, resolveAssumptions, resolveBand, type ExampleHouseholdFile } from "../engine";
 import golden from "./households/debt-freedom-golden.json";
+import rosa from "./households/rosa.json";
 import maya from "./households/maya.json";
 
 /** Modal instructions anywhere, and imperative verbs at the start of a sentence or title. */
@@ -76,6 +77,12 @@ describe("content files describe, never instruct", () => {
     const g = householdFromExample(golden as ExampleHouseholdFile, "2026-10-01");
     const sentences = [...debtFreedomView(g, { extraMonthly: 250 }).sentences, ...debtFreedomView(g).sentences];
     expect(sentences.length).toBeGreaterThan(5);
+    expect(offenders(sentences)).toEqual([]);
+  });
+  it("the messy-financials modules' sentences on Rosa: hard season, family loans, the lump-sum card", () => {
+    const r = householdFromExample(rosa as ExampleHouseholdFile, "2026-10-04");
+    const sentences = [...hardSeasonView(r).sentences, ...familyLoans(r).flatMap((v) => v.sentences), ...lumpSumComparison(r, 230000, { liquidateAll: true }).sentences];
+    expect(sentences.length).toBeGreaterThan(8);
     expect(offenders(sentences)).toEqual([]);
   });
   it("the Advice Translator's own sentences (its quoted statements are the advice under examination and are exempt)", () => {

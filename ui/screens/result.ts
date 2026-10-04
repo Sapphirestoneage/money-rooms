@@ -49,6 +49,7 @@ import { dollars, dollarsShort, percent, yearWord } from "../format";
 import pkg from "../../package.json";
 import MATERIALITY from "../../data/materiality.json";
 import type { Store } from "../store";
+import { activeModule } from "../modules/index";
 import { nextJobId, runInEngineWorker } from "../workers/client";
 import type { EngineMessage, EngineStage } from "../workers/engine.worker";
 
@@ -376,7 +377,11 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
   }
 
   // ---- True FI (spec section 9) ------------------------------------------------
+  const hardSeasonPaused = () => activeModule("hard-season", ctx) && ctx.household.hardSeason?.value === true;
+  const pausedNote = (id: SectionId) => sectionCard_(id, [el("p", { class: "muted" }, "Paused while hard season is on. Stability comes first on What's next; this comes back when the season is over.")]);
+
   function trueFiSection(): HTMLElement {
+    if (hardSeasonPaused()) return pausedNote("trueFi");
     const items = drawdownUnlockItems(ctx.household);
     const revealed = prefs().trueFiRevealed === true;
     const body: (HTMLElement | null)[] = [];
@@ -477,6 +482,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
   }
 
   function planSection(): HTMLElement {
+    if (hardSeasonPaused()) return pausedNote("plan");
     const body: (HTMLElement | null)[] = [el("div", { class: "field" }, el("label", {}, "Optimize for"), objectivePicker())];
     if (!optimized) {
       if (!working) optimize_();
@@ -532,6 +538,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
   }
 
   function strategiesSection(): HTMLElement {
+    if (hardSeasonPaused()) return pausedNote("strategies");
     const body: (HTMLElement | null)[] = [];
     if (!optimized || !toggles) {
       if (!working) optimize_();

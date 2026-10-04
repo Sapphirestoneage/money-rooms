@@ -57,3 +57,16 @@
 - Medicaid expansion states (for the 138% lower bound). Source: Medicaid.gov or KFF; not entered.
 - State treatment of retirement income and Social Security (strategy B10). Not entered.
 - The federal mid-term rate for 72(t) (changes monthly). The engine will take it as an input with a default.
+
+## Added 2026-10-04 (answers batch, Part 3: Rosa)
+
+| Rule | Status | What was confirmed |
+|---|---|---|
+| `fed.childTaxCredit.2026` | Verified at irs.gov | $2,200 per child under 17, $1,700 refundable, full credit to $200,000 ($400,000 joint). The $50 per $1,000 phase-out rate is from IRC 24(b)(2), not on the page. |
+| `fed.qbiDeduction.2026` | Verified at irs.gov | 20% of QBI net of the deductible half of SE tax, limited to 20% of taxable income less net capital gain. Thresholds not modeled. |
+| `fed.giftExclusion.2026` | Verified at irs.gov | $19,000 per donee in 2026. |
+| `fed.dependentCareCredit.2026` | Unverified, flagged | Only the under-13 rule is on the IRS page. The 50% maximum, the phase-down to 35% above $15,000 and to 20% above $75,000, the $3,000 and $6,000 caps, and the $7,500 FSA cap are from the 2025 amendment and the 2026 Form 2441 instructions; confirm there. |
+| `fed.belowMarketLoans` | Unverified, flagged | The statute host is blocked from the build session. $10,000 and $100,000 from IRC 7872 as known. Informational only. |
+| `state.PA.compensation` | Unverified, flagged | pa.gov is blocked from the build session. 3.07% matches the Tax Foundation table; the 401(k) treatment, no half-SE deduction, and the 1% local default are from the PA PIT Guide as known. |
+
+Rosa's figures tie to Eli's sheet within $5 on every line that uses a verified rule; the two lines that use the unverified dependent care credit (the $1,050 credit; the $450 and $90 it loses in the liquidation comparison) tie to his figures where he used the same 35% rate.

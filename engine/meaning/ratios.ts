@@ -50,7 +50,7 @@ export function formatRatio(value: number, unit: RatioUnit): string {
     case "percent": return `${Math.round(value)}%`;
     case "years": return `${value.toFixed(1)} ${Math.abs(value - 1) < 0.05 ? "year" : "years"}`;
     case "months": return `${Math.round(value)} ${Math.round(value) === 1 ? "month" : "months"}`;
-    case "dollars": return `$${Math.round(value).toLocaleString("en-US")}`;
+    case "dollars": return `${value < 0 ? "-" : ""}$${Math.abs(Math.round(value)).toLocaleString("en-US")}`;
     case "hours": return `${Math.round(value)} hours`;
     case "ratio": return value.toFixed(2);
   }

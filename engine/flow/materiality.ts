@@ -12,7 +12,7 @@
 
 import materiality from "../../data/materiality.json";
 import type { Confidence, Household } from "../model";
-import { resolveAssumptions } from "../model";
+import { INCOME_TYPE_NAMES, resolveAssumptions } from "../model";
 import { resolveBand, type BandNumbers } from "../projection/bands";
 import { defaultDeps, findFiDate, runFor, type Deps } from "../projection/fi";
 import { requireComplete, type CompleteHousehold } from "../projection/timeline";
@@ -94,7 +94,7 @@ export function materialInputs(h: Household, today: string = h.asOf): Nudge[] {
     for (const s of h.self.income.rows) {
       out.push({
         inputId: `income.${s.id}.grossAnnual`,
-        label: `${s.label ?? s.type} income`,
+        label: `${s.label ?? INCOME_TYPE_NAMES[s.type]} income`,
         kind: widen(`income.${s.id}.grossAnnual`, kindOf(s.grossAnnual.confidence, false)),
         apply: (c, f) => {
           if (c.self.income.kind !== "rows") return;

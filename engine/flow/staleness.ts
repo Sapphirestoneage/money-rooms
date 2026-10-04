@@ -6,7 +6,7 @@
 
 import materiality from "../../data/materiality.json";
 import type { Household, IsoDate, YearMonth } from "../model";
-import { monthsBetween, yearMonthOf } from "../model";
+import { INCOME_TYPE_NAMES, monthsBetween, yearMonthOf } from "../model";
 
 export type StalenessClass = "balances" | "debts" | "income" | "spending" | "facts";
 
@@ -72,7 +72,7 @@ export function datedValues(h: Household, today: IsoDate = h.asOf): AgedValue[] 
   }
   if (h.self.income.kind === "rows") {
     for (const s of h.self.income.rows) {
-      push(`income.${s.id}.grossAnnual`, `${s.label ?? s.type} income`, "income", s.grossAnnual.value, s.grossAnnual.asOf, (c, t, v) => {
+      push(`income.${s.id}.grossAnnual`, `${s.label ?? INCOME_TYPE_NAMES[s.type]} income`, "income", s.grossAnnual.value, s.grossAnnual.asOf, (c, t, v) => {
         if (c.self.income.kind !== "rows") return;
         const row = c.self.income.rows.find((x) => x.id === s.id);
         if (row) row.grossAnnual = { ...row.grossAnnual, value: v ?? row.grossAnnual.value, asOf: t, source: "user" };

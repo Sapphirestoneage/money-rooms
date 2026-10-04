@@ -1,0 +1,87 @@
+{
+  "id": "family-loans",
+  "name": "Family loans",
+  "job": "answers: what a loan from family carries that a bank loan does not, and what forgiveness would mean",
+  "reads": [
+    "accounts[].preset",
+    "accounts[].balance",
+    "accounts[].rate",
+    "accounts[].actualPaymentAnnual",
+    "accounts[].paymentFlexibility",
+    "accounts[].possibleForgiveness",
+    "accounts[].lenders",
+    "accounts[].stress",
+    "accounts[].name"
+  ],
+  "adds": {
+    "fields": [
+      "accounts[].paymentFlexibility",
+      "accounts[].possibleForgiveness",
+      "accounts[].lenders"
+    ],
+    "cards": [],
+    "lenses": [],
+    "metrics": [
+      "forgivableAYear",
+      "belowMarket"
+    ],
+    "items": [],
+    "screens": [],
+    "concepts": [
+      {
+        "screen": "#/m/debt-freedom",
+        "concept": "forgiveness as a gift, year by year"
+      }
+    ]
+  },
+  "placement": {
+    "level": 2,
+    "tier": "easy",
+    "pack": "debt-freedom",
+    "screen": "#/m/debt-freedom"
+  },
+  "unlock": {
+    "kind": "hasDebt",
+    "text": "A loan from family or friends exists."
+  },
+  "engine": {
+    "capabilities": [
+      "giftExclusion",
+      "belowMarketLoanFlag",
+      "flexiblePayments"
+    ],
+    "coreChanges": [
+      "core change: the Rule of 5 leaves out a flexible or pausable payment (engine/levels/resilience.ts, decision A11)"
+    ]
+  },
+  "flag": "beta",
+  "killCriteria": {
+    "measure": "share of family loans entered that set flexibility or forgiveness",
+    "threshold": "under 25% after 90 days of beta",
+    "action": "keep the fields, drop the flags"
+  },
+  "tests": {
+    "goldenHousehold": "tests/households/rosa.json",
+    "acceptance": [
+      "tests/rosa.test.ts",
+      "tests/modules/messy.test.ts"
+    ]
+  },
+  "files": [
+    "engine/modules/family-loans.ts"
+  ],
+  "copy": [],
+  "checklist": {
+    "spec": "docs/packs/debt-freedom.md",
+    "decision": "A12",
+    "axe": {
+      "date": "2026-10-04",
+      "routes": []
+    },
+    "docs": [
+      "docs/data-dictionary.md",
+      "docs/decisions.md"
+    ]
+  },
+  "replaces": []
+}

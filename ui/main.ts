@@ -10,7 +10,7 @@ import { emptyHousehold, type Household } from "../engine";
 import { backupNudge } from "./components/backup-nudge";
 import { sharedDrawer } from "./components/trace-drawer";
 import { clear, el } from "./dom";
-import { moduleForRoute } from "./modules/index";
+import { applyModuleShell, moduleCards, moduleCurtain, moduleForRoute } from "./modules/index";
 import { CORE_ROUTES, routeForHash } from "./routes";
 import { entryScreen } from "./screens/entry";
 import { levelsScreen } from "./screens/levels";
@@ -89,7 +89,7 @@ function boot(): void {
     } else if (route.route === "#/about") {
       main.append(aboutScreen({ store, onChange: render }));
     } else if (route.route === "#/privacy") {
-      main.append(privacyScreen({ store, reset, goToEntry: () => { goToEntry(); render(); } }));
+      main.append(privacyScreen({ store, reset, goToEntry: () => { goToEntry(); render(); }, moduleCards: () => moduleCards("#/privacy", ctx) }));
     } else if (route.route === "#/result") {
       main.append(resultScreen({ household, store, goToEntry, drawer }));
     } else if (route.route === "#/risk") {
@@ -114,8 +114,14 @@ function boot(): void {
     window.scrollTo(0, 0);
   }
 
-  window.addEventListener("hashchange", render);
-  render();
+  // Module shell effects (docs/module-contract.md section 5): applied after every render; a curtain, when a module wants one, shows first.
+  const shellCtx = () => ({ household, store, save, goToEntry, drawer });
+  const renderAll = () => { render(); applyModuleShell(shellCtx()); };
+
+  window.addEventListener("hashchange", renderAll);
+  const curtain = moduleCurtain(shellCtx(), () => { curtain?.remove(); renderAll(); });
+  if (curtain) document.body.append(curtain);
+  else renderAll();
 }
 
 boot();

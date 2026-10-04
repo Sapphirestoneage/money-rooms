@@ -1,0 +1,81 @@
+{
+  "id": "lump-sum",
+  "name": "The lump-sum decision",
+  "job": "answers: where a large amount could come from, and what each source costs in taxes, penalties, time, and peace",
+  "reads": [
+    "asOf",
+    "self",
+    "accounts",
+    "dependents",
+    "spending[].category"
+  ],
+  "adds": {
+    "fields": [],
+    "cards": [
+      {
+        "id": "whatifs.lumpSum",
+        "level": 3,
+        "screen": "#/whatifs"
+      }
+    ],
+    "lenses": [],
+    "metrics": [
+      "lumpSumNet",
+      "lostToTaxesAndPenalties"
+    ],
+    "items": [],
+    "screens": [],
+    "concepts": [
+      {
+        "screen": "#/whatifs",
+        "concept": "the same dollars from three places cost different amounts"
+      }
+    ]
+  },
+  "placement": {
+    "level": 3,
+    "tier": "intermediate",
+    "screen": "#/whatifs"
+  },
+  "unlock": {
+    "kind": "hasAccounts",
+    "text": "An account exists."
+  },
+  "engine": {
+    "capabilities": [
+      "federalM2Return",
+      "stateTax",
+      "fiSearch"
+    ],
+    "coreChanges": []
+  },
+  "flag": "beta",
+  "killCriteria": {
+    "measure": "share of people who open the card and change the amount at least once",
+    "threshold": "under 15% after 90 days of beta",
+    "action": "remove the card"
+  },
+  "tests": {
+    "goldenHousehold": "tests/households/rosa.json",
+    "acceptance": [
+      "tests/rosa.test.ts"
+    ]
+  },
+  "files": [
+    "engine/modules/lump-sum.ts",
+    "ui/modules/lump-sum.ts"
+  ],
+  "copy": [],
+  "checklist": {
+    "spec": "docs/packs/debt-freedom.md",
+    "decision": "A13",
+    "axe": {
+      "date": "2026-10-04",
+      "routes": []
+    },
+    "docs": [
+      "docs/decisions.md"
+    ]
+  },
+  "replaces": []
+}

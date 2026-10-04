@@ -51,6 +51,10 @@ export interface DisplayPrefs {
   backupSnoozedUntil?: string;
   /** True when modules flagged beta show (docs/module-contract.md section 4). */
   beta?: boolean;
+  /** Safety features (decision A16): a neutral tab title and icon; a quick-exit button; a passcode curtain, kept as a SHA-256 hash. */
+  discreet?: boolean;
+  quickExit?: boolean;
+  passcodeHash?: string;
 }
 
 export interface Store {
@@ -140,6 +144,9 @@ export function browserStore(storage: Storage | null, today: () => IsoDate = tod
       if (typeof p.lastExportAt === "string") out.lastExportAt = p.lastExportAt;
       if (typeof p.backupSnoozedUntil === "string") out.backupSnoozedUntil = p.backupSnoozedUntil;
       if (typeof p.beta === "boolean") out.beta = p.beta;
+      if (typeof p.discreet === "boolean") out.discreet = p.discreet;
+      if (typeof p.quickExit === "boolean") out.quickExit = p.quickExit;
+      if (typeof p.passcodeHash === "string" && /^[0-9a-f]{64}$/.test(p.passcodeHash)) out.passcodeHash = p.passcodeHash;
       return out;
     },
     savePrefs: (p) => void write(PREFS_KEY, p),
