@@ -1,0 +1,53 @@
+{
+  "_meta": {
+    "description": "Level 2 Resilience rule values (docs/levels/level-2-resilience.md). The engine reads these numbers only from here. Every value is a proposed default from the spec (decisions R1 to R6) unless a source is named.",
+    "version": 1,
+    "updated": "2026-10-04",
+    "status": "Proposed, not reviewed by Eli."
+  },
+  "ruleOfFive": {
+    "ageDivisor": 5,
+    "stabilityMultipliers": { "steady": 0.8, "normal": 1.0, "variable": 1.5 },
+    "monthsToCloseDefault": 12,
+    "growthMonthsPerYear": 0.2
+  },
+  "staircase": {
+    "steps": [
+      { "id": "full", "label": "Full spending", "keeps": "all" },
+      { "id": "draftt", "label": "DRAFTT", "keeps": ["accommodation", "utilities", "food", "transportation", "therapy"], "note": "Debt payments stay; retirement contributions pause. Taxes and therapy are optional letters (decision M1)." },
+      { "id": "fat", "label": "FAT", "keeps": ["accommodation", "utilities", "food", "transportation"] },
+      { "id": "foodHousing", "label": "Food and housing", "keeps": ["accommodation", "utilities", "food"] },
+      { "id": "couch", "label": "Couch mode", "keeps": ["food"], "note": "Living with family or friends; housing dropped." }
+    ],
+    "mustPayCategories": ["insurance", "healthcare", "phone"],
+    "gracefulPathStepEveryMonths": 2
+  },
+  "runway": {
+    "reachableInvestments": { "rothBasisCounts": true, "taxableAfterTaxHaircut": 0.15 },
+    "breakGlass": { "pretaxTaxRateAssumed": 0.22, "penaltyRate": 0.10 }
+  },
+  "unemployment": {
+    "note": "State formulas belong in data/rules-registry.json (ui.stateBenefits). Until that table is sourced, this national placeholder is used and every estimate is marked unverified.",
+    "placeholder": { "replacementShareOfWeeklyWage": 0.5, "maxWeeklyBenefit": 600, "weeks": 26, "federallyTaxable": true },
+    "eligibleIncomeTypes": ["salary", "hourly"],
+    "source": "U.S. Department of Labor, Significant Provisions of State Unemployment Insurance Laws",
+    "url": "https://oui.doleta.gov/unemploy/statelaws.asp",
+    "lastVerified": null
+  },
+  "healthAfterJobLoss": {
+    "note": "The marketplace benchmark from data/healthcare.json with the credit at the reduced income (unemployment benefits only), or COBRA when entered. COBRA defaults to the benchmark times this factor.",
+    "cobraFactorOfBenchmark": 1.3
+  },
+  "shocks": [
+    { "id": "jobLoss", "label": "Job loss", "months": 6, "withUnemployment": true },
+    { "id": "marketDrop", "label": "Market drop", "stocksDropPercent": 30 },
+    { "id": "medicalBill", "label": "Medical bill", "amount": 10000 },
+    { "id": "disability", "label": "Disability", "months": 12 },
+    { "id": "repair", "label": "Car or home repair", "amount": 5000 }
+  ],
+  "disability": {
+    "defaultReplacesPercentOfPay": 60,
+    "defaultWaitingWeeks": 13,
+    "termLifeYearsOfSupport": [10, 20]
+  }
+}

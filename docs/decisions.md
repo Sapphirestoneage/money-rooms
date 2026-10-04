@@ -147,3 +147,176 @@ Rows L1 to L7 were not received by Claude Code when this table was created (the 
 | Y3 | A freedom budget shows hours freed after FI, with legacy projects placed in it. | Locked | Two-way | 2026-10-02 | Legacy costs time as well as money. |
 | Y4 | Hamilton references use only Hamilton's public-domain writings, never the musical's lyrics; theming is optional and off by default. | Locked | Two-way | 2026-10-02 | Keeps the brand clean. |
 | Y5 | Defaults: breathing room 10% of the FI number, heir tax rate 22%. | Proposed | Two-way | 2026-10-02 | Placeholders, editable. |
+
+## Entity map decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| X1 | A workplace contribution names its plan and destination account instead of being matched by preset. | Locked | Two-way | 2026-10-04 | Two 401(k)s, or a 403(b) beside a 457(b), cannot be told apart by preset. Answered in review, 2026-10-04. The employer match lives on the workplace plan entity; the income stream links to the plan. |
+| X2 | Workplace plan is its own entity: type, match, rule of 55, governmental 457(b), mega backdoor, separation age. Accounts hold money; plans hold rules. | Locked | One-way | 2026-10-04 | The M2 strategies A4, A7, E3, and F1 need plan rules that no account field can carry. Answered in review, 2026-10-04: the workplace plan entity holds the employer match; income streams link to it. |
+| X3 | Business is its own entity grouping self-employed income, expenses, and business debts; state of formation is a record, never a tax effect. | Proposed | One-way | 2026-10-04 | Net profit, self-employment tax, QBI, and solo 401(k) room all read from one place. |
+| X4 | Every account and plan has an owner: self, partner, or joint. Retirement accounts and plans are never joint. | Proposed | One-way | 2026-10-04 | Households of two need to know whose age and whose record apply. |
+| X5 | Scenario blocks are layered proposed changes applied in memory. Real rows are never edited by a block. | Locked | One-way | 2026-10-04 | A what-if that edits real numbers is a lost number. Answered in review, 2026-10-04. |
+| X6 | Roth conversions are records with amount, month, and a computed five-year clock. Future conversions live as year locks until they happen. | Proposed | Two-way | 2026-10-04 | The ordering rules (A1, A2) and MAGI effects (C1, C3) need each conversion's date. |
+
+## M2 engine decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| N10 | The engine has two conventions, m1 and m2, chosen per run. m1 is the tied-out skeleton and never changes; the app runs m2. | Proposed | Two-way | 2026-10-04 | The tripwire: Maya must tie out under m1 after every engine change, and nothing in m2 can touch that path. |
+| N11 | Level-two defaults: taxable basis 70% of balance, Roth contribution basis 50%, first Roth year five years before the plan date, ACA household size 1, Medicaid expansion unknown. All roughly. | Proposed | Two-way | 2026-10-04 | M2 spec section 7 sets the first two; the rest keep the engine running until asked. |
+| N12 | Before 65 the engine never draws from an HSA beyond saved receipts, so the 20% additional tax is never modeled as a choice. From 65, HSA draws are ordinary income. | Proposed | Two-way | 2026-10-04 | Nobody should be shown a plan that pays 20% on purpose. |
+| N13 | The 72(t) annuitization method is approximated with the Single Life table until the IRS mortality table is loaded. The federal mid-term rate is a policy input with the 5% floor applied. | Proposed | Two-way | 2026-10-04 | The notice's mortality table is not in data/ yet; the result is within a few percent of amortization and flagged. |
+| N14 | Conversions and harvests are sized inside the shortfall loop after the year's sales, so bracket targets and the ACA budget see the whole year. | Proposed | Two-way | 2026-10-04 | Sizing them first double-filled the 0% bracket and blew through the ACA target. |
+| N15 | Health care before 65 uses one benchmark premium at every age and one Medicaid expansion answer (unknown by default). From 65, IRMAA uses the plan date's MAGI for lookback years before the plan. | Locked | Two-way | 2026-10-04 | Placeholders until O3 is sourced; the mechanics are in and tested. Answered in review, 2026-10-04. Placeholders stay marked lookUp; O3 stays open. |
+| N16 | Under m2, income streams with an age or date end keep paying after retirement (Barista FI). Only streams ending at retirement stop. | Proposed | Two-way | 2026-10-04 | Replaces M1 convention C27, which the M2 spec (E6) planned to replace. |
+| N17 | Required distributions not needed for spending go to the taxable account the same year. | Proposed | Two-way | 2026-10-04 | The money has to land somewhere; taxable is where a surplus already goes. |
+
+## M2 optimizer decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| N18 | The search is coordinate descent over the knobs from the default policy, two passes, then a sweep of two knob pairs (conversion target with ACA target, conversion target with harvesting). Likely band only. | Proposed | Two-way | 2026-10-04 | About a hundred projections for Maya, under a second. An exhaustive search is thousands. |
+| N19 | Objectives other than earliest FI hold the retirement year fixed at the FI year under the default policy unless the person picks one. Most spending bisects a spending scale between 0.5 and 3 times entered spending. | Proposed | Two-way | 2026-10-04 | The spec says the others become limits; the FI date is the natural one to fix. |
+| N20 | Toggle and stress effects report years from a fresh FI search and dollars from a rerun at the same retirement year, never both from one run. | Proposed | Two-way | 2026-10-04 | Mixing them made "turn off conversions" look like it saved tax because it retired later. |
+| N21 | The 72(t) knob is on or off: on means amortization at the 5% floor from the first retired year. Rule of 55 is offered only when a plan says it allows it. The contribution-type knob is offered only when a workplace contribution exists. | Proposed | Two-way | 2026-10-04 | Keeps the search small and every candidate meaningful. |
+| N22 | The result screen's default section order: FI date, True FI, net worth chart, the plan, strategies, key figures, tripwires and stress test, rules behind the plan, flags. Rearrangeable, stored with display preferences, never with the household. | Proposed | Two-way | 2026-10-04 | Spec section 9 asks for a default order and a customizable one. |
+| N23 | The True FI number is the optimizer's earliest-FI result (assets at that date); the FI number is 25 times current spending. The reveal animates only when motion is allowed. | Proposed | Two-way | 2026-10-04 | Spec section 2 and 9. |
+
+## M3 flow decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| L12 | The FI number the materiality engine measures is assets at the FI date (likely band). An input's sensitivity is the change in the ending balance when the input is nudged to each end of its plausible range with the retirement year held, discounted back to the FI date at the likely blended return. Months at stake use the last working year's asset growth. | Proposed | Two-way | 2026-10-04 | The spec wants a smooth dollar measure where the date moves in whole years. Two projections per input keeps it fast. |
+| L13 | Coverage ("92% of what matters") is the impact-weighted share held by known values, not a count of fields. Level 1 passes when the required answers are in and nothing material is left to sharpen; Level 4 passes when the drawdown inputs are in. Levels 2, 3, and 5 pass when their content is built. | Proposed | Two-way | 2026-10-04 | Spec section 7. |
+| L14 | A required level-one answer is valued at the whole FI number (or $1,000,000 before there is one); a later-level item without a measured value is valued at 2% of the FI number, so it waits its turn but can be reached. | Proposed | Two-way | 2026-10-04 | Nothing shows without the required answers; later items need a placeholder to rank at all. |
+| L15 | Small wins answers (done, not for me, later) are stored on the household by win id (dictionary 9.7). A dollar a year of spending cut counts as 25 dollars of FI number when testing promotion, the same scale as the material line. | Proposed | Two-way | 2026-10-04 | What a person did is a fact about them, not a display choice. |
+| L16 | Entry mode, the materiality share, and the FI year at the last refresh are display preferences. The guided mode walks the five sections one per step; dump mode moves the paste box to the top. | Proposed | Two-way | 2026-10-04 | Spec sections 8 and 12; none of these are plan data. |
+| L17 | The Sky draws one orbit of circles per zoom level, sized by the square root of materiality so small items stay visible, with the outline as the equal alternative. | Proposed | Two-way | 2026-10-04 | Spec section 13 and decision L10. |
+
+## Level content decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| R7 | The staircase keeps categories by step from `data/resilience.json`: DRAFTT keeps housing, utilities, food, transportation, and therapy; FAT drops therapy; food and housing drops transportation; couch mode keeps food. Must-pays are the insurance, healthcare, and phone rows plus debt minimums plus anything entered. | Proposed | Two-way | 2026-10-04 | Level 2 spec section 3 names the letters; the category mapping is the engine's reading of them. |
+| R8 | Unemployment uses a national placeholder (50% of the weekly wage up to $600, 26 weeks) marked unverified until the state table is sourced. The Department of Labor pages could not be reached from the build session. | Proposed | Two-way | 2026-10-04 | Rule 9 of the build: keep a value, mark it, give the URL. |
+| R9 | Health insurance after a job loss is the marketplace benchmark less the credit at unemployment-only income (Medicaid at zero in an expansion state). COBRA is not entered yet. | Proposed | Two-way | 2026-10-04 | Reuses the M2 ACA mechanics. |
+| R10 | Shock tests change the inputs and rerun the FI search: a job loss or disability ends every stream now and restarts it after the months, with the benefit as a dated stream; a market drop cuts today's balances by the stock share times the drop; a bill is a one-month spending row. Runway after the shock is measured from cash. | Proposed | Two-way | 2026-10-04 | "The year it would hurt most" needs M6's sequence machinery; today's drop is the honest proxy. |
+| G6 | Coast FI uses today's assets grown at the likely blended return to the coast age against the FI number. Barista FI locks part-time income every year to 65. Lean and Fat FI scale spending (the FAT step share, and the multiplier). Slow FI bisects the spending scale at the target year. Walk-away and business milestones read the Level 2 runway. | Proposed | Two-way | 2026-10-04 | Each condition rendered with the engine hooks that exist; Flex FI waits for M6. |
+| Y6 | Giving forever uses the plan's own sustainable withdrawal rate (first retired year's spending over assets at retirement), not a fixed 4%. Legacy FI adds each project's money as dated giving rows and reruns the FI search. The breathing room is a margin on the FI number, reported as the year the working plan reaches it. | Proposed | Two-way | 2026-10-04 | Spec section 3 says "the plan's sustainable withdrawal rate". |
+
+## M5 what-if decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| W1 | A block's changes are applied to a copy of the household: added rows carry the block's id; a scale change ends the original row the month before and adds a scaled copy (and a resumed copy after any end); a pause does the same with nothing in between. The real rows are never touched. | Proposed | Two-way | 2026-10-04 | Decision X5 made concrete. |
+| W2 | The questionnaire's national defaults live in `data/scenario-blocks.json`, all marked roughly and unsourced until checked. A home block adds a 30-year mortgage at the stated rate, upkeep at 1.5% of price, and removes the rent; a car block adds a loan and running costs; a kid adds an annual cost for the years plus five years of childcare. | Proposed | Two-way | 2026-10-04 | Starting points the person edits; state defaults and quotes replace them. |
+| W3 | A block's headline measures cash flow in the first full year after its start (the gap with the block minus without) and the FI date from a fresh search, with every other enabled block already applied. | Proposed | Two-way | 2026-10-04 | Spec section 2. |
+| W4 | Goals are laid into spending as dated rows. "Short" means not funded at the baseline FI year; dreams are trimmed first (largest first), then wants; musts are never trimmed. A trimmed goal's "fits from" is the earliest start age at which it keeps the plan funded. | Proposed | Two-way | 2026-10-04 | Data dictionary 5.1 layer 3. |
+| W5 | The true amount grows the cost at the likely blended real return to age 65 (the spec's example). The timing curve covers ten years from the chosen age (eight on screen); markers are debt payoffs, Coast, Lean, and FI dates, income starts and ends, and other dreams ending. | Proposed | Two-way | 2026-10-04 | Spec sections 3 and 4. |
+| W6 | Payoff methods run a monthly simulation of the debts alone at a fixed budget (the minimums plus any extra): minimums first, the rest to the method's first open debt. Peace-first tries every order when there are six or fewer debts and minimizes stress times months owed; stress defaults to 3. The price of peace is its extra interest over the avalanche. | Proposed | Two-way | 2026-10-04 | Decision M2 made concrete. |
+
+## M4 meaning decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| K1 | Every ratio lives in `data/ratios.json` with formula, inputs, unit, unlock level, sentence template, optional plain-word bands, and the lenses it belongs to. Values are computed each time. | Proposed | Two-way | 2026-10-04 | M4 spec 2.1; a reader can repeat the arithmetic. |
+| K2 | A ratio is locked until its level is passed, unless the person asks for it. Level 1 ratios are never locked. | Proposed | Two-way | 2026-10-04 | M4 spec 2.2. |
+| K3 | The Shockingly simple math table is recomputed from its stated 5% real return and 4% withdrawal rate, and compared with the plan's own years to FI. | Proposed | Two-way | 2026-10-04 | A lens shows the idea, the plan shows the answer. |
+| K4 | The DRAFTT scorecard measures five letters against take-home pay and taxes against gross pay; therapy and taxes are optional letters off and on by toggle. The ranges are common guidance written as plain words, never verdicts. | Proposed | Two-way | 2026-10-04 | Decision M1 says the letters are optional. |
+| K5 | The Advice Translator's ten lines and their rules live in `data/advice.json`; each verdict (applies, partly, unlearn) is one sentence from the person's numbers. New lines are added to the data file, never to code. | Proposed | Two-way | 2026-10-04 | M4 spec 2.4. |
+| K6 | M4 stores nothing; which lens is open and the DRAFTT letters are display state. A test scans every M4 sentence for instructing phrases. | Proposed | Two-way | 2026-10-04 | Style guide: never a verdict. |
+
+## M6 risk decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| Q1 | The return series is `data/returns-history.json`: annual real returns on US stocks, 10-year Treasuries, and bills from 1928, made real with CPI. It was typed from memory of the Damodaran series because the sources were unreachable from the build session, and is marked unverified; every M6 result carries a flag until it is checked. | Locked | Two-way | 2026-10-04 | Rule 9 of the build: keep a value, mark it, give the URL. The mechanics are built and tested; the numbers are not trusted. Superseded 2026-10-04: the series was replaced with the Damodaran nominal returns and BLS CPI-U inflation Eli supplied, verified, and the flag is gone (registry data.returnsHistory). |
+| Q2 | A backtest replays the whole plan (working years too) from each start year with that year's returns; starts need at least 30 years of history, and missing tail years use the likely band's return and are counted. | Proposed | Two-way | 2026-10-04 | More starts, honestly labeled, beat a handful of full-length ones. |
+| Q3 | The sturdy FI date is the earliest retirement year whose success rate reaches the threshold (default 90%), searching up from the deterministic date. | Proposed | Two-way | 2026-10-04 | M6 spec 2.2. |
+| Q4 | Guardrails: cut 10% above 1.2 times the initial withdrawal rate, raise 10% under 0.8 times, never below 60% of plan. The initial rate is measured in the first retired year. | Proposed | Two-way | 2026-10-04 | Guyton-Klinger simplified to its two guardrails. |
+| Q5 | Flex FI trims spending by the Level 3 trim (10%) in every retired year whose stock return was negative, and its date is the sturdy FI date with the trim. It replaces "coming soon" on the spectrum; callers that need speed can skip it. | Proposed | Two-way | 2026-10-04 | M6 spec 2.4 and Level 3 decision G4. |
+| Q6 | The engine gained two hooks: real returns by calendar year, and a spending adjuster for retired years. Under the tie-out neither is set, so m1 is unchanged. | Proposed | Two-way | 2026-10-04 | The tripwire held: Maya ties out after the change. |
+
+## Households of two decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| H1 | One retirement date for the household. Both people's streams stop at it unless a stream carries its own end. Different dates per person wait. | Proposed | Two-way | 2026-10-04 | The FI search is one dimension; a second date is a later version. |
+| H2 | Married filing separately is two returns: the partner's on their own earned income and benefit, the self's on everything else (withdrawals, gains, conversions). State tax follows the same split. | Proposed | Two-way | 2026-10-04 | The simplest honest reading until account ownership drives the split. |
+| H3 | Spousal and survivor Social Security read `ss.spousalAndSurvivor` through a new ledger door for unverified rules; every plan the rule changes carries a flag until the rule is checked against ssa.gov. The survivor rule starts the year after the first plan-to age. | Locked | Two-way | 2026-10-04 | Build rule 9: keep the value, mark it, give the URL. Answered in review, 2026-10-04. Amended by H9: the rule now holds separate spousal and survivor schedules. The survivor start (the year after the first plan-to age) is accepted as a known simplification until mortality is modeled. |
+| H4 | The optimizer's claiming-age knob moves the self only. The partner claims at their entered age or their full retirement age. | Proposed | Two-way | 2026-10-04 | One knob per search dimension for now. |
+| H5 | The waterfall fills the self's accounts first and then the partner's workplace plan (match top-up, then the plan to its limit) in the same strategy order. The partner's HSA and IRA get only what is entered. | Proposed | Two-way | 2026-10-04 | Spec 2.3 allows self first then partner; the other steps are a later version. |
+| H6 | Removing a partner asks first, then removes their income rows and marks their accounts as the self's. Rows are not kept in the export after removal. | Proposed | Two-way | 2026-10-04 | A removed partner's rows with no owner would be a dangling fact; the confirm panel says what goes. |
+| H7 | A joint account reads the older owner's age for penalties and the younger's for required distributions. Debts can be joint. | Proposed | Two-way | 2026-10-04 | The conservative reading of each rule. |
+| H8 | Health care in retirement is priced per adult: one marketplace line for the adults under 65 (benchmark per adult), one Medicare line per adult 65 and over, on the household's MAGI. | Proposed | Two-way | 2026-10-04 | A couple pays two premiums; IRMAA is per person. |
+
+## Expansion pack decisions (added 2026-10-04, overnight build, specs only)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| P1 | A pack unlocks on a condition the engine reads from the household (a stream type, a debt, a partner, a level), never on a purchase or a flag the person cannot see. | Proposed | Two-way | 2026-10-04 | Packs add breadth for some; the condition is the honest gate. |
+| P2 | Every pack field goes in the data dictionary before code, every pack rule in the registry with a source, and a pack's result is a view on the one engine. | Proposed | One-way | 2026-10-04 | The architecture rules do not bend for packs. |
+| P3 | Six packs need new engine capability (Self-employed, Home, Family, Coach, and partly Partner, Move, Health, Taxes); two need none (Earn more, Debt freedom). The index table in `docs/packs/README.md` says which. | Proposed | Two-way | 2026-10-04 | So the order of building can follow value against engine cost. |
+
+## Foundations decisions (added 2026-10-04, overnight build)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| F1 | The Pages deploy is three jobs, test then build then deploy, and a second workflow runs the same checks on every other branch and pull request. The checks are types, every test, the Maya tie-out, and (on branches) the build. | Locked | Two-way | 2026-10-04 | A red test or a moved tie-out must stop a deploy before anything is built. Left on `foundations` for review; main is untouched. Answered in review, 2026-10-04. Amended: the bundle-size check from docs/performance-budget.md runs in CI as a warning, never a blocker. |
+| F2 | The backup nudge reads display preferences only (last export date, snooze date), never the household, and shows after 30 days without an export or when none was ever made. | Proposed | Two-way | 2026-10-04 | Nothing about the plan changes; the nudge is a display concern. |
+| F3 | Progress snapshots are the one stored derived value: a past date's results cannot be recomputed once inputs change. One per date, taken by the result screen, capped at 400 with the first kept, stored with the household so they travel in the export. | Proposed | One-way | 2026-10-04 | `docs/history-spec.md` section 2. |
+| F4 | The trend sentence compares the latest snapshot with the earliest at least 28 days older, or the earliest of all, and describes the likely FI date, net worth, and the savings rate in that order. | Proposed | Two-way | 2026-10-04 | Day-to-day noise would otherwise dominate the sentence. |
+| F5 | Two trust pages, About and Privacy, reachable from a footer on every screen; the only destructive action in the app (delete everything in this browser) lives on Privacy behind the confirm panel. | Proposed | Two-way | 2026-10-04 | The build's trust requirement. |
+| F6 | Three specs written without code: statement upload (browser-only parsing by pattern table, no AI call), the rules update routine (the November and January calendar), and the performance budget (150 KB gzipped target, 200 KB hard limit, long work in a worker). | Proposed | Two-way | 2026-10-04 | Each needs Eli's decision before it costs engineering. |
+
+## Coaching decisions (added 2026-10-04, overnight build, spec only)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| C1 to C12 | The weekly loop as specified in `docs/coaching-spec.md` section 16: weekly not daily, three rings, an openable readiness score with fixed weights, programs as content with progress as records, re-planning at the material line, records as dated bests, four engine-read phases, a four-line recap, rest-day headroom from the FI search, insights only from eight tagged weeks, coach mode through exports only, streaks with automatic freezes. | Proposed | Two-way | 2026-10-04 | Each is listed in the spec with its reason; none is built. |
+
+## Feature register decisions (added 2026-10-04, overnight build, docs only)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| R1 | The register's rubric (user value 30, fit 20, differentiation 15, effort inverse 15, trust 10, coaching 10) and the 25-point line are the sort; the scores are one builder's judgment on one night and are the first thing to argue with. | Proposed | Two-way | 2026-10-04 | The build asked for a scored register; the numbers are explicit so they can be changed. |
+| R2 | A v1 feature ports only as a view on the v2 engine, and only after every financial claim in it passes `data/rules-registry.json`; the seventeen failed claims in the register are not ported as they stand. | Proposed | One-way | 2026-10-04 | CLAUDE.md: the UI never calculates; the registry is the one source of rule values. |
+| R3 | The games (ski mountain, tech tree, Dungeons & Dividends, Ledgerfell, the spheres, the Pokémon chart), the personality quizzes, the budget close, the URL-fragment share, the client portal, and the marketing board go to the icebox with revisit triggers. | Proposed | Two-way | 2026-10-04 | They need a server, a game layer, or a verdict, each against a v2 stance. |
+
+## Review decisions (2026-10-04, Eli's answers to the overnight report)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| F7 | Eli owns the rules update routine. A rule verified more than 15 months before the plan date is flagged on every result that uses it (`RuleLedger.stale`, the timeline's flags); it is never refused. | Locked | Two-way | 2026-10-04 | Answered in review, 2026-10-04. A refusal would take a working plan away over a calendar date. |
+| H9 | `ss.spousalAndSurvivor` holds separate spousal and survivor schedules: spousal benefits are up to 50% of the worker's full-retirement-age benefit, reduced on the spousal early-claiming schedule (not the claimant's retirement factor) with no delayed credits; survivor benefits are up to 100% of the deceased's benefit, reduced when the survivor's own claiming age is before their full retirement age, as early as 60. The schedule numbers stay unverified, and every affected plan stays flagged, until Eli confirms them at the SSA URLs. | Locked | Two-way | 2026-10-04 | Answered in review, 2026-10-04. The first version applied the retirement reduction to the spousal benefit, which is wrong. Spousal schedule verified 2026-10-04 (SSA OACT); survivor schedule verified from secondary sources, flagged until confirmed at ssa.gov/benefits/survivors. |
+| H10 | A married filing status with no partner entered stays a flag, not an error. The headline FI date is the as-is plan (conventional order, no strategies) and is labeled "as you're set up today"; the optimized plan is the True FI reveal (N7, N8). | Locked | Two-way | 2026-10-04 | Answered in review, 2026-10-04 (questions 6 and 11). |
+
+## M2 tie-out decisions (added 2026-10-04, batch)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| T1 | An M2 conventions test mode (`testSettings.m2TieOut`) imposes the workpaper's conventions on the M2 engine: ACA premium on the year's MAGI with no out-of-pocket line, a flat amount from 65, the reserve on the M1 placeholder, the Roth IRA step, the standard deduction held flat. Test-only; the app never sets it. | Proposed | Two-way | 2026-10-04 | So a hand workpaper and the engine agree on method before numbers are compared (the M1 tie-out's own rule). |
+| T2 | Three engine corrections found by the tie-out: retirement taxes are drawn from the accounts (grossed up and settled), qualified Roth earnings are tax free, and a conversion sized to a MAGI budget counts the year's pretax draws. Each has a test. | Proposed | Two-way | 2026-10-04 | Engine bugs against the spec and the law; the first moves every M2 result in the app. |
+| T3 | A fourth withdrawal order, `rothLayersFirst` (cash, taxable, Roth contributions and conversions, pretax, Roth earnings), is a knob the optimizer searches. | Locked | Two-way | 2026-10-04 | The Roth ladder's access order; the tie-out's Plan B needs it and the optimizer uses it. Answered in review, 2026-10-04. rothLayersFirst stays a searched knob. |
+| T4 | The app's marketplace premium stays priced on the prior year's MAGI (the advance credit) until Eli decides; the tie-out settles it on the current year (the reconciled credit). | Locked | Two-way | 2026-10-04 | A product choice between what people pay monthly and what the year reconciles to. Answered in review, 2026-10-04. Decided the other way: the app prices the marketplace premium on the current year's MAGI (the reconciled credit), as the tie-out does. |
+| T5 | The 72(t) knob stores the retirement age as its start age (the fixed year's age, or the baseline FI age for the earliest-FI objective). | Locked | Two-way | 2026-10-04 | Answered in review, 2026-10-04. The start age is the first retired year, which is what the engine applies. |
+| T6 | The M2 tie-out follows the law on the additional standard deduction at 65 ($2,050 for an unmarried filer in 2026), in the app and in test mode; convention 3 revised. | Locked | Two-way | 2026-10-04 | Answered in review, 2026-10-04. |
+
+## Readiness polish decisions (added 2026-10-04, batch, branch polish-oct4)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| S1 | Every sentence the engine writes for a person (the plan in words, the year's actions, ratio and lens sentences, the Advice Translator's own lines) and every content file behind the cards (items, small wins) is scanned by `tests/wording.test.ts` for instructing phrases and sentence-initial imperatives. Quoted popular advice and button labels are exempt. Small wins are titled as the move, not as a command ("One forgotten subscription, cancelled"). | Proposed | Two-way | 2026-10-04 | Style guide: results describe, never instruct. Readiness item 6. |
+| S2 | The result screen's optimizer, strategy toggles, and stress test run in a Web Worker with a staged progress note; the FI date paints first. Fallback to a timeout where workers are unavailable. | Proposed | Two-way | 2026-10-04 | The first paint missed its budget at every throttle because the search held the main thread. |
+| S3 | An aged value is tested at the roughly range in the materiality engine (`materialInputs` reads the staleness clocks), so the next card pulls in an aged number only once its widened range is material (M3 spec section 8). | Proposed | Two-way | 2026-10-04 | M3 acceptance test 4. |
+| S4 | The result screen carries the rough-results label above the headline when materiality is set above the default (M3 section 4), and a "Something looks wrong?" report that copies an inputs summary with no personal data; the footer shows the version. | Proposed | Two-way | 2026-10-04 | M3 acceptance test 3; readiness Upkeep and Launch items. |
+
+## Answers decisions (added 2026-10-04, batch, branch answers-oct4)
+
+| # | Decision | Status | Door | Date | Why |
+|---|---|---|---|---|---|
+| A1 | The Plan B workpaper's 2045 penalty cell is corrected from $3,354 to $4,712 (reconciliation log issue 4). The only expected value changed in the tie-out, at Eli's direction. | Locked | Two-way | 2026-10-04 | Eli confirmed the cell as a transcription slip in the hand-entered row; the row's own taxes total and the 2046 row already carried the full penalty. |
+| A2 | 72(t) payments stay in the optimizer's default search. Any plan that uses them shows a commitment card beside the plan: the rule (payments continue unchanged until the later of 5 years or age 59 and a half; a change triggers the 10% penalty on all prior payments, `access.sepp72t`) and the best plan found without 72(t), with the difference in estate and FI date, so the person sees what the commitment buys. | Locked | Two-way | 2026-10-04 | Answered in review, 2026-10-04. The plan is often much better with 72(t); the cost is a long commitment, which the card makes visible instead of hiding the strategy. |
+| A3 | The result screen's three-band FI search and the Risk screen's backtests and sturdy dates run in the Web Worker with the optimizer (`ui/workers/engine.worker.ts`), with a progress note and a main-thread fallback. | Locked | Two-way | 2026-10-04 | Answered in review, 2026-10-04. The band search was what remained in the first paint; the backtests froze the Risk screen for a second or more. |
+| A4 | The most-spending search runs 9 bisection steps (the spending scale resolved to about 0.5%, about $200 on Maya's spending) and the screen shows the result to the nearest $100. The engine value is still the exact bisection result. | Locked | Two-way | 2026-10-04 | Answered in review, 2026-10-04. Fourteen steps resolved to about $6 at 14 projections per candidate, more precision than the inputs carry, and the search was the slowest test. |

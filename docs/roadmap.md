@@ -30,9 +30,13 @@ The thinnest version that runs all the way through: inputs, engine, one answer, 
 
 ## M2. Net FI and the strategy engine
 
+**Built 2026-10-04 (Proposed, awaiting Eli's review) on branches `m2-engine` and `m2-optimizer`.** The engine runs at M2 depth behind an m1/m2 switch; the Maya tie-out runs m1 and still passes.
+
 Full spec: [`m2-spec.md`](m2-spec.md). Full tax depth, every early-access strategy as a toggle, ACA and IRMAA, the optimizer with selectable objectives, year-by-year locks, Gross FI vs Net FI, and the rules registry with tripwires.
 
 ## M3. The Ledger and the flow
+
+**Built 2026-10-04 (Proposed) on `m3-flow`; Level 2, Level 3 milestones, and Level 5 on `levels`.**
 
 Levels and rounds (the planets), the next card (one big, two small), the list of every roughly and unknown number, the gross and take-home reconciliation, proof of cash.
 
@@ -40,9 +44,13 @@ Level content specs: [`levels/level-2-resilience.md`](levels/level-2-resilience.
 
 ## M4. Meaning
 
+**Spec written and built 2026-10-04 (Proposed) on `m4-meaning`: `m4-spec.md`.**
+
 Ratio registry, metrics unlocked, lenses ("more ways to look at this"), the 4% rule as a comparison lens, the Advice Translator.
 
 ## M5. What-ifs and goals
+
+**Built 2026-10-04 (Proposed) on `m5-whatifs`.**
 
 Scenario blocks, goal buckets in the projection, the dream and surplus views, payoff methods including peace-first.
 
@@ -52,6 +60,8 @@ Level content spec: [`levels/level-5-legacy.md`](levels/level-5-legacy.md). Esta
 
 ## M6. Risk
 
+**Spec written and built 2026-10-04 (Proposed) on `m6-risk`: `m6-spec.md`. The return series is unverified (decision Q1).**
+
 Sequence-of-returns risk and historical backtesting (Big ERN's territory), the remaining phenomena behind feature switches.
 
 ## M7. Porting v1
@@ -59,6 +69,14 @@ Sequence-of-returns risk and historical backtesting (Big ERN's territory), the r
 Bring rooms from version 1 over as views on the new foundation, one at a time. Merge candidates are decided here.
 
 ---
+
+## Expansion packs (specs only, Proposed)
+
+Ten pack specs in `docs/packs/` (drafted 2026-10-04, not reviewed): Earn more, Self-employed, Home, Partner, Family, Move, Health, Taxes, Debt freedom, Coach. Each names who it is for, when it unlocks, the questions it adds, the engine pieces it reuses, what is new, and whether it needs new engine capability. None is scheduled.
+
+## Coaching experience (spec only, Proposed)
+
+`docs/coaching-spec.md` (drafted 2026-10-04, not reviewed): the weekly loop (rings, readiness score, programs, adaptive plans, records, phases, the Sunday recap, rest days, insights from tags, coach mode, lessons, streaks with grace) and what will not be copied. Build order proposed in its section 15. Not scheduled.
 
 ## Parking lot
 

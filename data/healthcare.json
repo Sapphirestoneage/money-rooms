@@ -1,0 +1,29 @@
+{
+  "_meta": {
+    "description": "Health care cost inputs for retirement years (data dictionary 5.1, healthcare line; M2 spec section 4 C). Before 65: an ACA marketplace benchmark premium less the premium tax credit. From 65: Medicare premiums plus a placeholder for a supplement and out-of-pocket costs. The engine reads these numbers only from here and from data/rules-registry.json.",
+    "version": 1,
+    "updated": "2026-10-04",
+    "status": "PROPOSED PLACEHOLDERS. The benchmark premium and the from-65 supplement are not sourced yet (open question O3). Every value marked lookUp must be checked by Eli before release."
+  },
+  "before65": {
+    "benchmarkSilverPremiumAnnualPerAdult": {
+      "value": 7200,
+      "confidence": "lookUp",
+      "source": "Placeholder equal to the tie-out convention (tests/tie-out-conventions.md item 10). The real figure is the second-lowest-cost silver plan for the person's age and county, from HealthCare.gov plan preview.",
+      "url": "https://www.healthcare.gov/see-plans/",
+      "lastVerified": null
+    },
+    "outOfPocketAnnual": { "value": 0, "confidence": "roughly", "source": "Not modeled yet; deductibles and copays vary too much by plan.", "lastVerified": null },
+    "ageRating": "Not modeled: the same benchmark is used at every age under 65. Real premiums rise with age under the 3:1 federal age curve."
+  },
+  "from65": {
+    "partBStandardMonthly": { "ruleId": "health.irmaa.2026", "field": "partBStandardMonthly", "note": "Read from the rules registry, which carries the CMS figure." },
+    "partDBasePremiumAnnual": { "value": 480, "confidence": "lookUp", "source": "Placeholder. CMS publishes the Part D base beneficiary premium each year (2026 figure not fetched from this session).", "url": "https://www.cms.gov/newsroom", "lastVerified": null },
+    "supplementAndOutOfPocketAnnual": { "value": 1200, "confidence": "lookUp", "source": "Placeholder covering a Medigap or Advantage premium and out-of-pocket costs. Combined with Part B this lands near the tie-out convention of 3,600 a year from 65.", "lastVerified": null }
+  },
+  "medicaidExpansion": {
+    "note": "Which states expanded Medicaid decides whether income under 138% of the poverty line goes to Medicaid instead of a credit (strategy C2). Not sourced from this session (medicaid.gov and kff.org unreachable). Until it is, the engine treats every state as unknown and flags it.",
+    "url": "https://www.medicaid.gov/medicaid/program-information/medicaid-and-chip-eligibility-levels/index.html",
+    "states": {}
+  }
+}

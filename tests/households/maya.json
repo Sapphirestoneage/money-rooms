@@ -7,34 +7,112 @@
     "state": "NY",
     "filingStatus": "single",
     "income": [
-      { "id": "job", "type": "salary", "grossAnnual": 72000, "payFrequency": "biweekly", "end": "retirement",
-        "employerMatch": { "matchPercent": 100, "capPercentOfPay": 4 },
-        "preTaxDeductions": [ { "type": "401k", "annual": 2880 } ] }
+      {
+        "id": "job",
+        "type": "salary",
+        "grossAnnual": 72000,
+        "payFrequency": "biweekly",
+        "end": "retirement",
+        "employerMatch": {
+          "matchPercent": 100,
+          "capPercentOfPay": 4
+        },
+        "preTaxDeductions": [
+          {
+            "type": "401k",
+            "annual": 2880
+          }
+        ]
+      }
     ],
     "spending": [
-      { "category": "accommodation", "annual": 19200 },
-      { "category": "food", "annual": 6000 },
-      { "category": "transportation", "annual": 2400 },
-      { "category": "everythingElse", "annual": 9600 }
+      {
+        "category": "accommodation",
+        "annual": 19200
+      },
+      {
+        "category": "food",
+        "annual": 6000
+      },
+      {
+        "category": "transportation",
+        "annual": 2400
+      },
+      {
+        "category": "everythingElse",
+        "annual": 9600
+      }
     ],
     "accounts": [
-      { "id": "chk", "preset": "checking", "balance": 3500 },
-      { "id": "hysa", "preset": "savings", "balance": 6000 },
-      { "id": "k401", "preset": "trad401k", "balance": 8200 },
-      { "id": "loan", "preset": "studentFederal", "balance": 24000, "rate": 5.5, "minPaymentMonthly": 260 }
+      {
+        "id": "chk",
+        "preset": "checking",
+        "balance": 3500
+      },
+      {
+        "id": "hysa",
+        "preset": "savings",
+        "balance": 6000
+      },
+      {
+        "id": "k401",
+        "preset": "trad401k",
+        "balance": 8200
+      },
+      {
+        "id": "loan",
+        "preset": "studentFederal",
+        "balance": 24000,
+        "rate": 5.5,
+        "minPaymentMonthly": 260
+      }
     ]
   },
   "expected": {
     "byStrategy": {
-      "maxTaxSavingsNow":  { "fiAgeLikely": 42, "assetsAtRetirement": 899888, "lifetimeTaxes": 540195, "oneYearEarlierFailsAt": 80 },
-      "maxTaxFreeGrowth":  { "fiAgeLikely": 42, "assetsAtRetirement": 774824, "lifetimeTaxes": 366701, "oneYearEarlierFailsAt": 83 },
-      "enteredOnly":       { "fiAgeLikely": 42, "assetsAtRetirement": 777415, "lifetimeTaxes": 416454, "oneYearEarlierFailsAt": 85 }
+      "maxTaxSavingsNow": {
+        "fiAgeLikely": 42,
+        "assetsAtRetirement": 899888,
+        "lifetimeTaxes": 540195,
+        "oneYearEarlierFailsAt": 80
+      },
+      "maxTaxFreeGrowth": {
+        "fiAgeLikely": 42,
+        "assetsAtRetirement": 774824,
+        "lifetimeTaxes": 366701,
+        "oneYearEarlierFailsAt": 83
+      },
+      "enteredOnly": {
+        "fiAgeLikely": 42,
+        "assetsAtRetirement": 777415,
+        "lifetimeTaxes": 416454,
+        "oneYearEarlierFailsAt": 85
+      }
     },
-    "estateAtPlanTo": { "enteredOnly": 1557889 },
+    "estateAtPlanTo": {
+      "enteredOnly": 1557889
+    },
     "takeHomeYear1": 53780,
     "year1ExtraTraditional401k": 16532,
     "status": "Tied out 2026-10-03 against maya-checkpoints.csv and maya-checkpoints-taxfree.csv",
     "tolerance": "FI age exact; dollars within 1%. Checkpoint rows: flows within $10, balances within 0.5%.",
-    "conventions": "tests/tie-out-conventions.md"
+    "conventions": "tests/tie-out-conventions.md",
+    "m2TieOut": {
+      "status": "Tied out 2026-10-04 against maya-m2-planA.csv (280 of 280 cells) and maya-m2-planB.csv (300 of 300, after Eli corrected the 2045 penalty cell; docs/audits/m2-tie-out-reconciliation.md issue 4)",
+      "conventions": "tests/m2-tie-out-conventions.md",
+      "retireAt": 41,
+      "planA": {
+        "assetsAtRetirement": 810124,
+        "lifetimeTaxesAndPenalties": 495177,
+        "estateAt95": 269878,
+        "oneYearEarlierFailsAt": 65
+      },
+      "planB": {
+        "lifetimeTaxesAndPenalties": 528351,
+        "estateAt95": 870524,
+        "oneYearEarlierFailsAt": 68
+      },
+      "note": "Expected values supplied by Eli on 2026-10-04 (revised workpapers). The M1 expected values above are unchanged."
+    }
   }
 }

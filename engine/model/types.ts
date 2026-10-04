@@ -241,10 +241,66 @@ export interface AssetAccount extends AccountCommon {
   annualContribution: Value<number>;
   /** Percent per year. */
   fees: Value<number>;
-  /** Later. */
+  /** M2 (spec section 7): taxable accounts. Blank means 70% of the balance, roughly. */
   costBasis?: Value<number>;
+  /** M2: Roth accounts. Regular contributions, which come out first and free. Blank means 50% of the balance, roughly. */
+  rothBasis?: Value<number>;
+  /** M2: Roth accounts. Past conversions into this account, each with its own five-year clock (dictionary 9.6). */
+  conversions?: RothConversion[];
+  /** M2: HSA. Qualified medical receipts saved for later tax-free reimbursement (strategy A6). */
+  savedReceipts?: Value<number>;
+  /** M2: the workplace plan this account belongs to (dictionary 9.2). */
+  planId?: string;
+  /** Dictionary 9.4. Blank means self. */
+  owner?: AccountOwner;
   /** Later. */
   holdings?: Value<string[]>;
+}
+
+export type AccountOwner = "self" | "partner" | "joint";
+
+/** 72(t) payment methods (M2 strategy A3). */
+export type SeppMethod = "rmd" | "fixedAmortization" | "fixedAnnuitization";
+
+/** Dictionary 9.6. A past Roth conversion. The five-year clock starts January 1 of the conversion year. */
+export interface RothConversion {
+  id: string;
+  fromAccountId?: string;
+  /** The taxable part converted, in dollars. */
+  amount: Value<number>;
+  month: YearMonth;
+}
+
+/** Dictionary 9.2. The employer's plan: accounts hold money, the plan holds the rules. */
+export type WorkplacePlanType = "401k" | "403b" | "457bGovernmental" | "457bNonGovernmental" | "tsp" | "simpleIra" | "sepIra" | "solo401k";
+export type YesNoUnknown = "yes" | "no" | "unknown";
+
+export interface WorkplacePlan {
+  id: string;
+  /** The income stream of the employer. */
+  employerIncomeId: string;
+  planType: WorkplacePlanType;
+  ruleOf55Allowed: Value<YesNoUnknown>;
+  megaBackdoorAllowed: Value<YesNoUnknown>;
+  rothOffered: Value<boolean>;
+  /** Age in years at separation from this employer, or blank for retirement (M2 spec section 7). */
+  separationAge?: Value<number>;
+  owner?: AccountOwner;
+}
+
+/** Dictionary 9.3. A business groups self-employed income, expenses, and business debts. */
+export type BusinessEntityType = "soleProprietor" | "singleMemberLlc" | "partnership" | "sCorp" | "cCorp";
+
+export interface Business {
+  id: string;
+  name: string;
+  entityType: Value<BusinessEntityType>;
+  incomeIds: string[];
+  expenseAnnual: Value<number>;
+  debtIds: string[];
+  ownerSalary?: Value<number>;
+  /** A record only. Where an entity is formed never changes where income is taxed. */
+  stateOfFormation?: Value<StateCode>;
 }
 
 export interface PromoRate {
@@ -261,6 +317,8 @@ export type ForgivenessPath = "none" | "idr" | "pslf";
 
 export interface DebtAccount extends AccountCommon {
   side: "debt";
+  /** Dictionary 9.4. Blank means self. A debt can be joint. */
+  owner?: AccountOwner;
   /** Percent per year. */
   rate: Value<number>;
   promo?: PromoRate;
@@ -352,6 +410,8 @@ export interface GoalBucket {
   startAge: number;
   endAge: number;
   priority: GoalPriority;
+  /** Level 5: a dream that outlasts you moves into the legacy projects while keeping its price card. */
+  legacy?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -392,4 +452,129 @@ export interface Household {
   savingsStrategy: Value<SavingsStrategy>;
   /** Later. */
   goals: GoalBucket[];
+  /** M2, dictionary 9.2 (Proposed). */
+  plans?: WorkplacePlan[];
+  /** M2, dictionary 9.3 (Proposed). */
+  businesses?: Business[];
+  /** M2, spec section 7: the drawdown details that unlock the True FI number. */
+  drawdown?: DrawdownInputs;
+  /** M3, dictionary 9.7 (Proposed): what the person did with each small win, by win id. */
+  smallWins?: Record<string, "done" | "notForMe" | "later">;
+  /** Level 2 (dictionary 9.8, Proposed): resilience inputs. */
+  resilience?: ResilienceInputs;
+  /** Level 3 (dictionary 9.9, Proposed): milestone settings. */
+  milestones?: MilestoneSettings;
+  /** Level 5 (dictionary 9.10, Proposed): legacy inputs. */
+  legacy?: LegacyInputs;
+  /** M5 (dictionary 9.5, Proposed): scenario blocks, layered proposed changes never applied to the real rows. */
+  blocks?: ScenarioBlock[];
+  /** M6 (m6-spec.md section 3, Proposed). */
+  risk?: { successThresholdPercent?: Value<number>; guardrailsOn?: Value<boolean> };
+  /** Progress history (dictionary 9.12, Proposed): one frozen snapshot per date, taken by the result screen. */
+  history?: ProgressSnapshot[];
+}
+
+/** Dictionary 9.12. A plan's headline numbers frozen on a date. The only stored derived values, because a past date cannot be recomputed. */
+export interface ProgressSnapshot {
+  date: IsoDate;
+  fiYear: { best: number | null; likely: number | null; worst: number | null };
+  fiAge: { likely: number | null };
+  netWorth: number;
+  savingsRatePercent: number | null;
+  fiNumber: number;
+  conventions: "m1" | "m2";
+}
+
+/** Dictionary 9.5. One proposed change inside a block. */
+export type BlockChange =
+  | { target: "spending"; op: "add"; category: string; label: string; annual: number; start?: YearMonth; end?: YearMonth }
+  | { target: "spending"; op: "scale"; factor: number; start?: YearMonth; end?: YearMonth }
+  | { target: "income"; op: "add"; type: IncomeType; label: string; grossAnnual: number; start?: YearMonth; end?: YearMonth }
+  | { target: "income"; op: "scale"; factor: number; start?: YearMonth; end?: YearMonth }
+  | { target: "income"; op: "pause"; start: YearMonth; end: YearMonth }
+  | { target: "asset"; op: "add"; preset: AccountPresetKey; label: string; balance: number }
+  | { target: "debt"; op: "add"; preset: AccountPresetKey; label: string; balance: number; ratePercent: number; paymentMonthly: number }
+  | { target: "asset"; op: "remove"; amount: number; from: "cash" | "taxable" };
+
+export type ScenarioBlockType = "home" | "car" | "kid" | "jobChange" | "sabbatical" | "geoArbitrage" | "sideHustle" | "inheritance" | "marriage" | "custom";
+
+export interface ScenarioBlock {
+  id: string;
+  type: ScenarioBlockType;
+  name: string;
+  /** One or more start months, to compare timings side by side. The first is the chosen one. */
+  startDates: YearMonth[];
+  changes: BlockChange[];
+  /** Per block: how sure the numbers are. Defaults from the questionnaire are roughly. */
+  confidence: "known" | "lookUp" | "roughly";
+  relation?: { kind: "inAdditionTo" | "replacing"; blockId: string };
+  enabled: boolean;
+}
+
+/** Level 2 (docs/levels/level-2-resilience.md section 11). */
+export type IncomeStability = "steady" | "normal" | "variable";
+
+export interface ResilienceInputs {
+  incomeStability?: Value<IncomeStability>;
+  /** Months to close the emergency gap. Blank means 12. */
+  monthsToClose?: Value<number>;
+  /** Blank means from the income type: W-2 eligible, self-employed and gigs not. */
+  unemploymentEligible?: Value<boolean>;
+  /** Weeks of pay the job would give on the way out. Blank means 0. */
+  severanceWeeks?: Value<number>;
+  /** Employer disability coverage: the share of pay it replaces (percent) and the waiting period in weeks. Blank means unsure. */
+  disability?: { replacesPercentOfPay: Value<number>; waitingWeeks: Value<number> };
+  /** People who depend on this income. Blank means none. */
+  dependents?: Value<number>;
+  /** Monthly must-pays that survive every step down (health insurance, phone, debt minimums are added by the engine). Dollars per year. */
+  extraMustPaysAnnual?: Value<number>;
+  /** Whether retirement accounts count as runway (break glass). Blank means no. */
+  breakGlass?: Value<boolean>;
+}
+
+/** Level 3 (docs/levels/level-3-life-plans.md section 9). Every one has a default from data/milestones.json. */
+export interface MilestoneSettings {
+  coastAge?: Value<number>;
+  baristaIncomeAnnual?: Value<number>;
+  fatFiMultiplier?: Value<number>;
+  flexFiTrimPercent?: Value<number>;
+  slowFiTargetAge?: Value<number>;
+  walkAwayMonths?: Value<number>;
+  businessRunwayMonths?: Value<number>;
+}
+
+/** Level 5 (docs/levels/level-5-legacy.md section 9). */
+export type BasicsAnswer = "yes" | "no" | "unsure";
+
+export interface LegacyProject {
+  id: string;
+  name: string;
+  type: "book" | "mentoring" | "scholarship" | "community" | "family" | "business" | "creative" | "other";
+  oneOffCost: Value<number>;
+  annualCost: Value<number>;
+  hoursPerWeek: Value<number>;
+  startAge: number;
+  /** Years, or null for forever. */
+  horizonYears: number | null;
+}
+
+export interface LegacyInputs {
+  projects?: LegacyProject[];
+  /** Share of the FI number set aside for legacy. Blank means 10%. */
+  breathingRoomPercent?: Value<number>;
+  basics?: { beneficiaries: Value<BasicsAnswer>; will: Value<BasicsAnswer>; healthcareProxy: Value<BasicsAnswer>; powerOfAttorney: Value<BasicsAnswer> };
+  /** Free hours a week after FI. Blank means 45. */
+  freeHoursPerWeek?: Value<number>;
+}
+
+/** M2 spec section 7, the level-two inputs that are not on an account. */
+export interface DrawdownInputs {
+  /** The year of the first Roth IRA contribution, for the five-year earnings clock. Blank means the year of the oldest Roth account, or five years ago when unknown. */
+  firstRothYear?: Value<number>;
+  /** Expected heir tax rate, percent. Blank means 22, roughly (Level 5 Y5). */
+  heirTaxRatePercent?: Value<number>;
+  /** People covered on the health plan, for the poverty line. Blank means 1. */
+  acaHouseholdSize?: Value<number>;
+  /** Blank means the state's value from data/, else unknown. */
+  medicaidExpansionState?: Value<boolean>;
 }
