@@ -57,6 +57,74 @@ export function claimingFactor(birthYear: number, claimingAge: AgeYearsMonths, p
   return 1;
 }
 
+/** The spousal reduction schedule (rules registry ss.spousalAndSurvivor, spousal.reductionBeforeOwnFra). */
+export interface SpousalReductionSchedule {
+  firstMonths: number;
+  ratePerMonthFirst: number;
+  ratePerMonthBeyond: number;
+}
+
+/**
+ * The share of the maximum spousal benefit paid for the claimant's own claiming age: reduced on the
+ * spousal schedule before the claimant's full retirement age, never increased after it (no delayed credits).
+ */
+export function spousalFactor(birthYear: number, claimingAge: AgeYearsMonths, schedule: SpousalReductionSchedule, p: SocialSecurityParams): number {
+  const nra = toMonths(p.normalRetirementAge(birthYear));
+  const claim = Math.max(toMonths(claimingAge), p.earliestClaimingAge * 12);
+  if (claim >= nra) return 1;
+  const months = nra - claim;
+  const reduction = Math.min(months, schedule.firstMonths) * schedule.ratePerMonthFirst + Math.max(0, months - schedule.firstMonths) * schedule.ratePerMonthBeyond;
+  return Math.max(0, 1 - reduction / 100);
+}
+
+/** The survivor schedule (rules registry ss.spousalAndSurvivor, survivor). */
+export interface SurvivorReductionSchedule {
+  earliestAge: number;
+  /** The share paid at the earliest age (71.5 means 71.5%). */
+  shareAtEarliestAgePct: number;
+  /** The survivor full retirement age table, which differs from the retirement one. */
+  fullRetirementAgeTable: SurvivorFraTable;
+}
+
+export interface SurvivorFraTable {
+  bornThrough1939: AgeYearsMonths;
+  "1940": AgeYearsMonths;
+  "1941": AgeYearsMonths;
+  "1942": AgeYearsMonths;
+  "1943": AgeYearsMonths;
+  "1944": AgeYearsMonths;
+  "1945to1956": AgeYearsMonths;
+  "1957": AgeYearsMonths;
+  "1958": AgeYearsMonths;
+  "1959": AgeYearsMonths;
+  "1960": AgeYearsMonths;
+  "1961": AgeYearsMonths;
+  "1962orLater": AgeYearsMonths;
+}
+
+/** The survivor full retirement age for a birth year (SSA survivor table: 66 for 1945 to 1956, 67 for 1962 or later). */
+export function survivorFullRetirementAge(birthYear: number, table: SurvivorFraTable): AgeYearsMonths {
+  if (birthYear <= 1939) return table.bornThrough1939;
+  if (birthYear <= 1944) return table[String(birthYear) as "1940"];
+  if (birthYear <= 1956) return table["1945to1956"];
+  if (birthYear <= 1961) return table[String(birthYear) as "1957"];
+  return table["1962orLater"];
+}
+
+/**
+ * The share of the deceased worker's benefit a survivor receives for the survivor's own claiming age:
+ * 100% at or after the survivor's full retirement age, reduced evenly by month down to the share at
+ * the earliest age (71.5% at 60), never increased after full retirement age.
+ */
+export function survivorFactor(birthYear: number, claimingAge: AgeYearsMonths, schedule: SurvivorReductionSchedule, _p: SocialSecurityParams): number {
+  const nra = toMonths(survivorFullRetirementAge(birthYear, schedule.fullRetirementAgeTable));
+  const earliest = schedule.earliestAge * 12;
+  const claim = Math.max(toMonths(claimingAge), earliest);
+  if (claim >= nra || nra <= earliest) return 1;
+  const reductionAtEarliest = 1 - schedule.shareAtEarliestAgePct / 100;
+  return 1 - reductionAtEarliest * ((nra - claim) / (nra - earliest));
+}
+
 /** Annual real benefit: PIA, scaled by the claiming factor and the policy assumption (1.0 = full scheduled). */
 export function annualBenefit(pia: number, factor: number, policy: number): number {
   return pia * factor * 12 * policy;

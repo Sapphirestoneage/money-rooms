@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "description": "The Advice Translator (docs/m4-spec.md section 2.4): common advice, each with the rule that decides whether it applies to this person. Verdicts are applies, partly, or unlearn, each with one sentence built from the person's numbers by the engine.",
+    "version": 1,
+    "updated": "2026-10-04",
+    "status": "Proposed, not reviewed by Eli."
+  },
+  "advice": [
+    { "id": "threeToSix", "statement": "Save three to six months of expenses.", "rule": "ruleOfFive" },
+    { "id": "debtFirst", "statement": "Pay off all debt before investing.", "rule": "highInterestOnly" },
+    { "id": "max401k", "statement": "Max your 401(k).", "rule": "matchThenStrategy" },
+    { "id": "neverTouch", "statement": "Never touch retirement money before 59 and a half.", "rule": "earlyAccess" },
+    { "id": "twentyFiveTimes", "statement": "You need 25 times your spending.", "rule": "grossVsNet" },
+    { "id": "noSocialSecurity", "statement": "Don't count on Social Security.", "rule": "policyBand" },
+    { "id": "rothYoung", "statement": "Roth is always better when you're young.", "rule": "bracketNowVsLater" },
+    { "id": "rentThrowsAway", "statement": "Rent is throwing money away.", "rule": "homeBlock" },
+    { "id": "budgetCategories", "statement": "Keep a budget by category.", "rule": "oneTotal" },
+    { "id": "cashOnly", "statement": "An emergency fund has to be cash.", "rule": "runwayStack" }
+  ]
+}

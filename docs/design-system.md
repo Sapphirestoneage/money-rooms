@@ -26,14 +26,16 @@ The tokens live in [`ui/tokens.css`](../ui/tokens.css). This document explains h
 | `--color-ink-muted` | Labels and secondary text |
 | `--color-rule` | Borders and dividers |
 | `--color-brand-*` | Brand accents, charts, primary buttons (900 darkest, 100 lightest) |
-| `--color-attention` | "Needs a look": rough numbers, stale numbers, gentle flags |
+| `--color-attention` | "Needs a look": rough numbers, stale numbers, gentle flags (as a border or fill) |
+| `--color-attention-ink` | Attention used as text, or as a pill behind light text. Darker than `--color-attention` in light so it meets 4.5:1 |
+| `--color-computed-text` | The text on a Computed pill: ink on the light pill, ink on the dark pill (the pill itself changes) |
 | `--color-band-best / likely / worst` | The three projection bands |
 
 **Rules**
 
 - Red is not in the palette. Shortfalls and flags use attention (ochre) with clear words.
 - Color never carries meaning alone. Every colored state also has a label or icon.
-- Text meets WCAG AA contrast (4.5:1 for body text) in both light and dark themes.
+- Text meets WCAG AA contrast (4.5:1 for body text) in both light and dark themes. The dark theme overrides `--color-brand-700`, `--color-brand-500`, and every kind color so pills and quiet buttons keep that ratio on dark surfaces (audited with axe on 2026-10-04, see `docs/accessibility-audit-2026-10.md`).
 
 ---
 
@@ -171,6 +173,78 @@ Spending is a list of rows, added from a list of categories ("Add spending"). On
 
 ### Promo fields
 On a debt whose rate is 0% (or that already has a promo), the card shows "This rate" with two choices: "Does not end" and "Ends after a month". Choosing the second shows the month and year the promo lasts through and the rate after it. A 0% rate with no end shows a gentle flag, and so does a rate-after that is still a typical rate or blank.
+
+### True FI card
+The unlockable moment from M2 spec section 9. Locked, it says how many questions and minutes remain and lists them, each a link to its field, with a quiet "Locked" pill in the title. Unlocked, it shows the 4% rule number in muted text, the True FI number in hero type with a Computed badge, one sentence with the difference in dollars and years, the top three strategies, and two quiet buttons: "Reveal" (later "Replay the reveal") and "Share card". The number counts from the FI number to the True FI number over about a second and a half; with reduced motion on, it appears at once. The share card (in the drawer) shows years gained and the strategies, never dollar amounts unless the person turns them on.
+
+### Plan steps
+An ordered list of age ranges ("Ages 40 to 44") each followed by one to four plain sentences describing what the numbers show for those years. Divider between steps. Above it, a select for "Optimize for" with the four objectives written as the question each answers.
+
+### Strategy row
+One per strategy the optimizer can use: an On or Off pill (On is filled brand 700 with light text), the strategy's name, and under it in muted text what turning it off would do in years and dollars. "Not in this plan" when off.
+
+### Stress list and rules list
+Plain lists with a divider between items. A stress item is the case and its effect. A rules item is the rule's name linking to its official source, with source, last-verified date, and status in metadata type beneath.
+
+### Section order control
+When "Rearrange" is on (a toggle button in the screen head), every result section gets Up and Down quiet buttons in its title row, each a 44px target with an accessible label naming the section. The order is a display preference, stored separately from the plan.
+
+### Plan details card
+A collapsed details card on the entry screen holding the Level 4 drawdown inputs: cost basis per taxable account, contributions so far per Roth account, saved receipts per HSA, the first Roth year, the workplace plan's rule of 55, 457(b), and mega backdoor answers, the separation age, the heir tax rate, the number of people on the health plan, and the Medicaid expansion answer. Its title counts what is left to unlock the True FI number. Every money field carries a kind badge; every question has a "Not sure yet" answer.
+
+### Tabs
+A row of tab buttons under the screen title (Next, Small wins, The Sky), each a 44px target with `role="tab"` and `aria-selected`; the active tab carries a brand underline.
+
+### Next card
+The big card: a quiet kicker ("Next"), the item's sentence as the title in screen-title size ("Your 401(k) balance is marked roughly and could move your FI number by $41,000 (about 14 months)"), one muted line with what it is worth, how long it takes, why we are asking, and where to find it, and one primary button. Two small cards follow with the same parts at body size and a quiet button. No card appears without value, effort, and why.
+
+### Level progress
+A card naming the current level, one sentence ("You've covered 92% of what matters"), a progress bar (`role="progressbar"`) filled to the impact-weighted coverage, and a muted line listing levels passed. Above 5% materiality the screen carries a gentle flag: "Calculated at 15% materiality. Results are rougher than usual."
+
+### Refresh card and Rough numbers card
+The same card pattern: a title with the count ("4 numbers have aged", "6 numbers are rough"), one sentence naming them and the minutes, and a quiet button that opens the list in place. Each aged line shows the value, its age, and its next check, with "Still right" and "Update it"; "Confirm all that haven't changed" sits under the list. Each rough line shows its kind badge, what it could move, and a small running bar of uncertainty cleared.
+
+### Small wins card
+The running total at the top in headline size ("12 small wins: $1,340 a year, about 4 months sooner"), then one win at a time as a big card with its category as the kicker, the range and minutes in muted text, and three buttons: Done (primary), Not for me, Later. Answered wins collapse under "Already answered" with a Reopen button.
+
+### The Sky
+An SVG of circles around a center circle (you and your FI date), one per area, then one per row when zoomed in. Fill height shows coverage, the ring color shows the kind (dashed attention for missing), and size shows materiality. Each circle is a focusable button with an accessible label; Enter or Space zooms. A breadcrumb trail ("Everything › Accounts › Roth IRA") and a Zoom out button go back. Motion is a transition that reduced motion turns off. "Show as an outline" swaps in the same hierarchy as an indented list with kind badges and coverage, fully usable by keyboard and screen reader.
+
+### Entry mode switch
+Three toggle buttons at the top of Your numbers: One at a time (guided: one section per step with Back and Next), All on one form (express), Paste everything (dump: the template paste box moves to the top). The choice is remembered and can change at any time without losing anything.
+
+### Level cards
+One card per level on the Levels screen: the level's headline sentence with a Computed badge, then subtitled parts (the Rule of 5, the staircase, the runway stack, shock tests; the spectrum line and each milestone with its condition and what moves it; the estate by money type, giving, legacy projects, Legacy FI, the freedom budget, the basics). Each card ends with a collapsed details card of that level's inputs, every one with a default and a plain help line.
+
+### Block card
+One per scenario block: its name with the block's kind badge, one line per start date with the change in monthly cash flow and the FI date moved, a muted line listing its changes, and three quiet buttons (Turn off, Compare a timing, Remove). Below the list, a select adds a block; choosing a kind shows its three or four questions with the national defaults as placeholders and "Add this as a block".
+
+### Price card
+One per dream: the name with its kind badge and priority, then an ordered list in the spec's order (the cost in time, the true amount, the other side of the trade, the best timing), a small bar chart of cost in years by start age with a dot above ages that carry a marker, the markers in words, the milestones moved, and ways to lower the price. "What would you rather have?" is a question on the card, never a verdict.
+
+### Comparison table
+Payoff methods side by side: method, order, months to debt free, interest, stress-months, with a sentence beneath naming the price of peace and a Computed badge. An input above sets the extra a month.
+
+### Ratio row
+One per ratio: the name, a Computed badge (or a quiet level pill when locked), the value right-aligned in tabular figures, the sentence beneath, and a muted "How:" line with the formula.
+
+### Lens buttons and verdict pills
+Lenses are toggle buttons in a row; the open lens shows its idea and its parts beneath. A verdict pill (Applies, Partly, Unlearn) sits right of each advice line: Applies filled brand 700, Unlearn filled attention ink, Partly outlined.
+
+### Risk cards
+The return series card (source, years, verified date, and a gentle flag while unverified); the backtest card with the success rate in its title, the worst starts as sentences ("Retiring in 2041 with 1966's markets ahead: the plan ran short at 81"), and the sturdy FI date; the guardrails card; the Flex FI card with the date beside the plan's own. Every headline figure carries a Computed badge.
+
+### Partner block and owner pickers
+On About you, "Add a partner" opens a second set of person fields under a "Your partner" subheading (birth month and year, HSA eligible, Social Security claiming age). Removing the partner shows the confirm panel first and says what goes with them. Once a partner exists, each income row's editor gains a "Whose income" select (Mine, My partner's), the Income section gains an "Add partner's income" picker and marks the partner's rows "partner's", and each account editor gains a "Whose account" select (Mine, My partner's, Joint; retirement accounts never offer Joint).
+
+### Backup nudge card
+A quiet card above the screen (never a modal, never on the trust pages) when the numbers have not been exported in 30 days, or ever. One sentence on where the numbers live and when the last copy was saved, then "Export my numbers" (primary) and "Not now" (quiet, which keeps it quiet for 30 days). An attention-colored left rule, since it is "needs a look", not a judgment.
+
+### Progress section
+On the result screen, in the rearrangeable order: the trend sentence with a Computed badge ("Since July 2026, your likely FI date moved 2 years earlier, your net worth rose $12,400, and your savings rate went from 22% to 25%."), a muted line on how snapshots are taken, a dense table of the last eight snapshots (date, likely FI age, net worth, savings rate) in a keyboard-reachable scroll region, and a quiet "Clear history" that asks first.
+
+### Site footer and trust pages
+Every screen ends with a footer: links to About and Your data and privacy, and the one-line promise ("Educational, not individualized financial, tax, or legal advice. Your numbers stay in this browser."). The two pages are plain text in cards; Privacy carries the one destructive action in the app, "Delete my numbers from this browser", behind the confirm panel.
 
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.

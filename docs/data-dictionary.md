@@ -84,7 +84,7 @@ Age is never stored. It's computed from birth date and the projection year.
 | Cadence | Value with dated changes |
 | Default | `single`, confidence `roughly` |
 | Source | User |
-| Validation | Married statuses require a partner record (Later) |
+| Validation | Married statuses require a partner record (built as a flag, not an error: `docs/household-two-spec.md`, Proposed) |
 | Relevance | Always |
 | Feeds | Federal brackets and standard deduction; contribution limits; Roth IRA eligibility; ACA subsidy (Later) |
 
@@ -418,3 +418,145 @@ The minimum set for M1. Everything else has a default.
 | 14 | Savings strategy | No | Entered only |
 
 Five answers produce a first FI date. Everything else sharpens it.
+
+---
+
+## 9. Proposed additions (October 2026, not yet reviewed by Eli)
+
+**Status: Proposed.** Written during the 2026-10-04 overnight build (Phase 0b) to close six gaps found in the entity map. Nothing here is built until Eli confirms it. Each addition follows the rules in section 2: metadata on every value, parts not totals, ids that never repeat. Decisions are logged as X1 to X6 in `decisions.md`.
+
+### 9.1 Income stream linked to its workplace plan
+
+Today a workplace contribution (3.4) is a percent of pay on the income stream, and the engine finds the matching account by preset. That breaks when a person has two 401(k)s, or a 403(b) and a 457(b). The link makes it explicit.
+
+| Field | On | Stored as | Default |
+|---|---|---|---|
+| `planId` | Each `WorkplaceContribution` | The id of a workplace plan (9.2) | The one plan whose employer matches the stream; if none, the engine adds an implicit plan and flags it |
+| `destinationAccountId` | Each `WorkplaceContribution` | The id of the account the money lands in (traditional or Roth side of the plan) | The plan's account for the chosen `accountType` |
+
+**Feeds:** which account grows; which plan's match applies; the rule of 55 (only the plan of the employer separated from); the 457(b) separate limit.
+
+### 9.2 Workplace plan (new entity)
+
+**Decided 2026-10-04 (review, X1 and X5 locked):** the employer match lives on the workplace plan; the income stream links to its plan. The stream's `employerMatch` field is the migration source and is read until the plan carries it.
+
+A plan is the employer's arrangement. Accounts hold money; the plan holds the rules. One plan can have two accounts (traditional and Roth).
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `id` | | Stable id | |
+| `employerIncomeId` | Fact | The income stream of the employer | Required |
+| `planType` | Fact | `401k`, `403b`, `457bGovernmental`, `457bNonGovernmental`, `tsp`, `simpleIra`, `sepIra`, `solo401k` | Required |
+| `match` | Fact | `{ matchPercent, capPercentOfPay }` (moves here from the income stream, 3.4; the stream keeps a read-through for the migration) | None |
+| `ruleOf55Allowed` | Fact | `yes`, `no`, `unknown` | `unknown`, shown as "check with your plan" |
+| `megaBackdoorAllowed` | Fact | `yes`, `no`, `unknown` (after-tax contributions plus in-plan conversion or in-service withdrawal) | `unknown` |
+| `rothOffered` | Fact | Boolean | `yes` |
+| `accountIds` | | The accounts (3.6) that belong to this plan | |
+| `separationAge` | Decision | Age in years, or `retirement` | `retirement` (M2 spec section 7, "planned separation age") |
+
+**Validation.** `457bGovernmental` is the only plan type whose withdrawals skip the 10% additional tax and whose limit is separate from the 401(k)/403(b) limit (`limits.457b.2026`). A `solo401k` requires a self-employed income stream. **Feeds:** the savings waterfall steps 1, 4, 5, 7; rule of 55; 457(b) early access; the mega backdoor room (total additions limit minus employee and employer amounts).
+
+### 9.3 Business (new entity)
+
+Self-employed and side-gig income (3.4), business expenses, and business debts (3.6, `purpose: business`) today sit on separate rows with nothing tying them together. A business groups them so the engine can compute net profit, self-employment tax, the QBI deduction (M2+), and solo 401(k) room from one place.
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `id` | | Stable id | |
+| `name` | Fact | Text | "My business" |
+| `entityType` | Fact | `soleProprietor`, `singleMemberLlc`, `partnership`, `sCorp`, `cCorp` | `soleProprietor`, `roughly` |
+| `incomeIds` | | Income streams of type `selfEmployed` or `sideGig` | |
+| `expenseAnnual` | Fact | Annual dollars (moves here from `businessExpensesAnnual` on the stream; the stream keeps a read-through) | 0 |
+| `debtIds` | | Accounts with `purpose: business` | |
+| `ownerSalary` | Fact | Annual dollars, S corporations only (strategy F3) | None |
+| `stateOfFormation` | Fact | State code | The person's state |
+
+**Rule to carry into the engine (from the SPARKS catalog correction):** forming an entity in another state does not change where income is taxed; residence and where the work is done decide. The field is for record-keeping, not for a tax effect. **Feeds:** self-employment tax; QBI (M2+); solo 401(k) and SEP room; the Self-employed pack.
+
+### 9.4 Account owner
+
+| Field | On | Stored as | Default |
+|---|---|---|---|
+| `owner` | Every account (3.6) and every workplace plan (9.2) | `self`, `partner`, `joint` | `self` |
+
+**Validation.** Retirement accounts (pretax, Roth, HSA) and workplace plans cannot be `joint`; debts and taxable accounts can. `partner` requires a partner record (2.7); removing the partner resets their accounts to `self`. **Feeds:** whose age decides penalties, RMDs, and catch-ups; whose Social Security record; the household-of-two tax split; the Partner pack. Built in the households-of-two phase (`docs/household-two-spec.md`, Proposed).
+
+### 9.5 Scenario blocks (layered proposed changes)
+
+A scenario block is a set of proposed changes laid over the real rows. The real rows are never edited by a block; the engine applies the block's changes in memory when a scenario is run (Level 3, section 2).
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `id` | | Stable id | |
+| `type` | Goal | `home`, `car`, `kid`, `jobChange`, `sabbatical`, `geoArbitrage`, `sideHustle`, `inheritance`, `marriage`, `custom` | Required |
+| `name` | Goal | Text | From type |
+| `startDates` | Goal | One or more `YYYY-MM`, so one block can compare timings | Required |
+| `changes` | Goal | A list of `{ target, op, value, start, end }` where `target` is a row id or a new-row spec, `op` is `add`, `replace`, `remove`, or `scale`, and dates follow 2.6 | Required |
+| `confidence` | | Per change, from the questionnaire's national or state default, or a quote | `roughly` |
+| `relation` | Goal | `inAdditionTo` or `replacing` another block's id | None |
+| `enabled` | Goal | Boolean | `true` |
+
+**Rules.** Blocks stack in list order. Adding a block asks the person to reconfirm related blocks; nothing changes automatically. The headline for every block is the change in monthly cash flow and the FI date moved. **Feeds:** M5 what-ifs, the price card, best timing, milestones.
+
+### 9.6 Roth conversion record
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `id` | | Stable id | |
+| `fromAccountId` | Fact | A pretax account | Required |
+| `toAccountId` | Fact | A Roth account | Required |
+| `amount` | Fact | Dollars (the taxable part; a nondeductible basis part is stored separately as `basisPart`) | Required |
+| `month` | Fact | `YYYY-MM` | Required |
+| `clockStart` | Computed | January 1 of the conversion year; the five-year clock ends December 31 four years later (`access.rothOrdering`) | Never stored |
+
+Past conversions are facts the person enters. Future conversions are decisions the optimizer proposes, stored as year-by-year locks (M2 spec section 5) and never as conversion records until they happen. **Feeds:** Roth ordering (A1, A2), MAGI for ACA and IRMAA in the conversion year, the conversion ladder.
+
+### 9.7 Small wins answers
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `smallWins` | Decision | A map from win id (`data/small-wins.json`) to `done`, `notForMe`, or `later`. A win not in the map is open | Empty |
+
+**Feeds:** the Small wins running total and its promotion to the main path (M3 spec section 10). The dollar values are never stored; they are recomputed from the win definitions and the household's spending each time.
+
+### 9.8 Resilience inputs (Level 2)
+
+Stored under `resilience`. Every field has a default, so nothing is required.
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `incomeStability` | Goal | `steady`, `normal`, `variable` | `normal` |
+| `monthsToClose` | Goal | Months | 12 |
+| `unemploymentEligible` | Fact | Boolean | From the income type (W-2 yes, self-employed and gigs no) |
+| `severanceWeeks` | Fact | Weeks of pay | 0 |
+| `disability` | Fact | `{ replacesPercentOfPay, waitingWeeks }` | Unsure (shown at 60% and 13 weeks) |
+| `dependents` | Fact | Count | 0 |
+| `extraMustPaysAnnual` | Fact | Dollars a year | 0 (health insurance, phone, and debt minimums come from the rows) |
+| `breakGlass` | Decision | Boolean | No |
+
+**Feeds:** the Rule of 5, the staircase, the runway stack, the shock tests, the walk-away and business milestones.
+
+### 9.9 Milestone settings (Level 3)
+
+Stored under `milestones`, each with its default from `data/milestones.json` (G5): `coastAge` 65, `baristaIncomeAnnual` 20,000, `fatFiMultiplier` 1.5, `flexFiTrimPercent` 10, `slowFiTargetAge` (FI plus 5), `walkAwayMonths` 12, `businessRunwayMonths` 12.
+
+### 9.10 Legacy inputs (Level 5)
+
+Stored under `legacy`.
+
+| Field | Kind | Stored as | Default |
+|---|---|---|---|
+| `projects` | Goal | List of `{ id, name, type, oneOffCost, annualCost, hoursPerWeek, startAge, horizonYears }` | None |
+| `breathingRoomPercent` | Goal | Percent of the FI number | 10 |
+| `basics` | Fact | `beneficiaries`, `will`, `healthcareProxy`, `powerOfAttorney`, each yes, no, or unsure | Unsure |
+| `freeHoursPerWeek` | Assumption | Hours | 45 |
+
+A goal bucket (5.1) gains an optional `legacy` tag; a tagged dream appears among the projects while keeping its price card. The heir tax rate lives with the drawdown inputs (M2 spec section 7). Annual giving is read from the giving spending category, never stored twice.
+
+### 9.11 Risk settings (M6)
+
+Stored under `risk`: `successThresholdPercent` (Goal, default 90) and `guardrailsOn` (Decision, default off). The Flex FI trim lives with the milestone settings (9.9).
+
+### 9.12 Progress history (Proposed, `docs/history-spec.md`)
+
+Stored under `history` as a list of snapshots, one per date: `date`, `fiYear` by band, `fiAge.likely`, `netWorth`, `savingsRatePercent`, `fiNumber` (25 times spending), `conventions`. The one allowed exception to "never persist a derived value": a past date's results cannot be derived again once the inputs change. Taken by the result screen, at most once a day, capped at 400 (the first is always kept). In the export; removed by delete.

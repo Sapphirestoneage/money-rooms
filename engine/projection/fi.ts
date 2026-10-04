@@ -7,7 +7,8 @@
 import type { BandName, Household, SocialSecurityParams, TaxTables } from "../model";
 import { loadSocialSecurityParams, loadTaxTables, parseYearMonth, resolveAssumptions } from "../model";
 import { BAND_NAMES, resolveBand, type BandNumbers } from "./bands";
-import { requireComplete, runTimeline, type CompleteHousehold, type TieOutSettings, type TimelineResult } from "./timeline";
+import type { DrawdownPolicy } from "./policy";
+import { requireComplete, runTimeline, type CompleteHousehold, type EngineConventions, type TieOutSettings, type TimelineResult } from "./timeline";
 
 export interface BandResult {
   band: BandName;
@@ -34,10 +35,28 @@ export interface Deps {
   ssParams: SocialSecurityParams;
   /** Test-only settings for hand tie-outs. The app never sets these. */
   testSettings?: TieOutSettings;
+  /** m1 (the tied-out skeleton) or m2 (full depth). Blank means m1. */
+  conventions?: EngineConventions;
+  /** M2: the drawdown policy. Blank means the conventional order with no strategies. */
+  policy?: DrawdownPolicy;
+  /** Stress test: rules treated as gone. */
+  disabledRules?: readonly string[];
+  /** Spending scaled every year (1 = as entered). */
+  spendingScale?: number;
+  /** M6: real returns by calendar year. */
+  returnsByYear?: Readonly<Record<number, { stocks: number; bonds: number; cash: number }>>;
+  /** M6: a factory for the spending rule, called once per timeline run so the rule can keep state. */
+  spendingAdjuster?: () => NonNullable<import("./timeline").TimelineOptions["spendingAdjuster"]>;
 }
 
+/** What the app uses: M2 depth with the default policy. */
 export function defaultDeps(): Deps {
-  return { tables: loadTaxTables(2026), ssParams: loadSocialSecurityParams(2026) };
+  return { tables: loadTaxTables(2026), ssParams: loadSocialSecurityParams(2026), conventions: "m2" };
+}
+
+/** The walking skeleton's method, for M1 tests and the Maya tie-out. */
+export function m1Deps(): Deps {
+  return { tables: loadTaxTables(2026), ssParams: loadSocialSecurityParams(2026), conventions: "m1" };
 }
 
 export function isFunded(t: TimelineResult): boolean {
@@ -45,12 +64,58 @@ export function isFunded(t: TimelineResult): boolean {
 }
 
 /** Searches retirement years from year 0 forward and returns the first fully funded one. */
-export function findFiDate(hh: CompleteHousehold, band: BandNumbers, deps: Deps): BandResult {
+/** One timeline run under the deps, for a retirement year. */
+export function runFor(hh: CompleteHousehold, band: BandNumbers, deps: Deps, retirementYear: number): TimelineResult {
+  return runTimeline(hh, {
+    band,
+    retirementYear,
+    tables: deps.tables,
+    ssParams: deps.ssParams,
+    ...(deps.testSettings ? { testSettings: deps.testSettings } : {}),
+    ...(deps.conventions ? { conventions: deps.conventions } : {}),
+    ...(deps.policy ? { policy: deps.policy } : {}),
+    ...(deps.disabledRules ? { disabledRules: deps.disabledRules } : {}),
+    ...(deps.spendingScale !== undefined ? { spendingScale: deps.spendingScale } : {}),
+    ...(deps.returnsByYear ? { returnsByYear: deps.returnsByYear } : {}),
+    ...(deps.spendingAdjuster ? { spendingAdjuster: deps.spendingAdjuster() } : {}),
+  });
+}
+
+/**
+ * The FI search. `near` is a hint from an earlier search: the walk starts there, steps back while
+ * still funded, and steps forward while not, so the answer is the same earliest funded year with
+ * far fewer runs. Without a hint it walks up from year 0.
+ */
+export function findFiDate(hh: CompleteHousehold, band: BandNumbers, deps: Deps, near?: number): BandResult {
   const year0 = parseYearMonth(hh.asOf.slice(0, 7)).year;
   const birthYear = parseYearMonth(hh.birthDate).year;
   const lastYear = birthYear + band.planToAge;
-  const run = (retirementYear: number) =>
-    runTimeline(hh, { band, retirementYear, tables: deps.tables, ssParams: deps.ssParams, ...(deps.testSettings ? { testSettings: deps.testSettings } : {}) });
+  const run = (retirementYear: number) => runFor(hh, band, deps, retirementYear);
+
+  if (near !== undefined && near > year0 && near <= lastYear) {
+    let y = near;
+    let t = run(y);
+    if (isFunded(t)) {
+      // Step back to the earliest funded year.
+      while (y > year0) {
+        const earlier = run(y - 1);
+        if (!isFunded(earlier)) {
+          return { band: band.band, funded: true, retirementYear: y, fiAge: y - birthYear, timeline: t, oneYearEarlier: earlier.firstShortfall, neverFundedShortfall: null };
+        }
+        y -= 1;
+        t = earlier;
+      }
+      return { band: band.band, funded: true, retirementYear: y, fiAge: y - birthYear, timeline: t, oneYearEarlier: null, neverFundedShortfall: null };
+    }
+    let previous = t;
+    for (let z = y + 1; z <= lastYear; z++) {
+      const later = run(z);
+      if (isFunded(later)) return { band: band.band, funded: true, retirementYear: z, fiAge: z - birthYear, timeline: later, oneYearEarlier: previous.firstShortfall, neverFundedShortfall: null };
+      previous = later;
+    }
+    const never = run(Infinity);
+    return { band: band.band, funded: false, retirementYear: null, fiAge: null, timeline: never, oneYearEarlier: null, neverFundedShortfall: never.firstShortfall ?? previous.firstShortfall };
+  }
 
   let previous: TimelineResult | null = null;
   for (let y = year0; y <= lastYear; y++) {
