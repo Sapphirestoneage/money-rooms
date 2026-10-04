@@ -16,6 +16,7 @@ import { resolveAssumptions } from "../model";
 import { resolveBand, type BandNumbers } from "../projection/bands";
 import { defaultDeps, findFiDate, runFor, type Deps } from "../projection/fi";
 import { requireComplete, type CompleteHousehold } from "../projection/timeline";
+import { agedValues, effectiveRangeKind } from "./staleness";
 
 export const MATERIALITY = materiality;
 
@@ -83,15 +84,18 @@ export interface MaterialityReport {
 type Nudge = { inputId: string; label: string; kind: RangeKind; apply: (h: Household, factor: number) => void };
 
 /** Every rough, look-up, or defaulted input the materiality engine can test, with a way to nudge it. */
-export function materialInputs(h: Household): Nudge[] {
+export function materialInputs(h: Household, today: string = h.asOf): Nudge[] {
   const out: Nudge[] = [];
+  // M3 spec section 8: an aged value is tested at the roughly range, so the next card pulls it in once that is material.
+  const aged = new Map(agedValues(h, today).map((v) => [v.inputId, v]));
+  const widen = (inputId: string, kind: RangeKind): RangeKind => (kind === "known" || kind === "lookUp" || kind === "roughly" ? effectiveRangeKind(kind, aged.get(inputId)) : kind);
   const kindOf = (c: Confidence | undefined, isDefault: boolean): RangeKind => (isDefault ? "default" : c ?? "default");
   if (h.self.income.kind === "rows") {
     for (const s of h.self.income.rows) {
       out.push({
         inputId: `income.${s.id}.grossAnnual`,
         label: `${s.label ?? s.type} income`,
-        kind: kindOf(s.grossAnnual.confidence, false),
+        kind: widen(`income.${s.id}.grossAnnual`, kindOf(s.grossAnnual.confidence, false)),
         apply: (c, f) => {
           if (c.self.income.kind !== "rows") return;
           const row = c.self.income.rows.find((r) => r.id === s.id);
@@ -105,7 +109,7 @@ export function materialInputs(h: Household): Nudge[] {
       out.push({
         inputId: `spending.${r.id}.annual`,
         label: `${r.label ?? r.category} spending`,
-        kind: kindOf(r.annual.confidence, false),
+        kind: widen(`spending.${r.id}.annual`, kindOf(r.annual.confidence, false)),
         apply: (c, f) => {
           if (c.spending.kind !== "rows") return;
           const row = c.spending.rows.find((x) => x.id === r.id);
@@ -120,7 +124,7 @@ export function materialInputs(h: Household): Nudge[] {
       out.push({
         inputId: `account.${a.id}.balance`,
         label: `${a.name?.value ?? a.preset} balance`,
-        kind: kindOf(a.balance.confidence, false),
+        kind: widen(`account.${a.id}.balance`, kindOf(a.balance.confidence, false)),
         apply: (c, f) => {
           if (c.accounts.kind !== "rows") return;
           const row = c.accounts.rows.find((x) => x.id === a.id);

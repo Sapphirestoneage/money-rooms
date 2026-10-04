@@ -18,7 +18,6 @@ import {
   drawdownUnlockItems,
   fiNumbers,
   missingLevelOneAnswers,
-  optimize,
   planSteps,
   project,
   requireComplete,
@@ -26,8 +25,6 @@ import {
   resolveBand,
   runFor,
   strategiesUsed,
-  strategyToggles,
-  stressTest,
   toNominal,
   traceFiDate,
   tripwireFlags,
@@ -49,7 +46,16 @@ import { toggleButton } from "../components/toggle-button";
 import { computedFromBody, fiTraceBody, type Drawer } from "../components/trace-drawer";
 import { clear, el } from "../dom";
 import { dollars, dollarsShort, percent, yearWord } from "../format";
+import pkg from "../../package.json";
+import MATERIALITY from "../../data/materiality.json";
 import type { Store } from "../store";
+import { runOptimizerJob, type OptimizerMessage, type OptimizerProgress, type OptimizerRequest } from "../workers/optimizer.worker";
+
+const STAGE_TEXT: Record<OptimizerProgress["stage"], string> = {
+  searching: "Working out your True FI number: searching about a hundred plans...",
+  toggles: "Working out what each strategy is worth...",
+  stress: "Running the stress test...",
+};
 
 export interface ResultContext {
   household: Household;
@@ -119,25 +125,49 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
   let rearranging = false;
   let revealing = false;
 
-  // The optimizer runs after the screen is on the page, so the FI date shows first.
+  // The optimizer runs off the main thread in a Web Worker (docs/performance-budget.md), so the FI date paints first
+  // and the page stays responsive; the True FI card shows which stage is running. Without workers it falls back to a timeout.
   let optimized: OptimizerResult | null = null;
   let toggles: ToggleEffect[] | null = null;
   let stress: StressCase[] | null = null;
   let working = false;
+  let stage: OptimizerProgress["stage"] | null = null;
+  let jobId = 0;
+  let worker: Worker | null = null;
+  const onMessage = (m: OptimizerMessage) => {
+    if (m.id !== jobId) return;
+    if ("stage" in m) {
+      stage = m.stage;
+      const note = root.querySelector("[data-optimizer-stage]");
+      if (note) note.textContent = STAGE_TEXT[stage];
+      return;
+    }
+    if ("done" in m) {
+      optimized = m.optimized;
+      toggles = m.toggles;
+      stress = m.stress;
+    } else optimized = null;
+    working = false;
+    stage = null;
+    render();
+  };
   const optimize_ = () => {
     if (working) return;
     working = true;
-    window.setTimeout(() => {
+    jobId += 1;
+    const req: OptimizerRequest = { id: jobId, household: structuredClone(ctx.household), objective };
+    if (typeof Worker !== "undefined") {
       try {
-        optimized = optimize(ctx.household, { objective });
-        toggles = strategyToggles(ctx.household, optimized.best.policy);
-        stress = stressTest(ctx.household, optimized.best.policy);
+        worker ??= new Worker(new URL("../workers/optimizer.worker.ts", import.meta.url), { type: "module" });
+        worker.onmessage = (e: MessageEvent<OptimizerMessage>) => onMessage(e.data);
+        worker.onerror = () => onMessage({ id: jobId, error: "The optimizer worker failed." });
+        worker.postMessage(req);
+        return;
       } catch {
-        optimized = null;
+        worker = null;
       }
-      working = false;
-      render();
-    }, 30);
+    }
+    window.setTimeout(() => runOptimizerJob(req, onMessage), 30);
   };
 
   const order = (): SectionId[] => {
@@ -243,10 +273,64 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
         toggleButton(rearranging ? "Done rearranging" : "Rearrange", rearranging, (next) => { rearranging = next; render(); }),
       ),
     );
+    // M3 spec section 4: above the default material line, every result carries the rough-results label.
+    const share = prefs().materialShare ?? MATERIALITY.lines.materialShareOfFiNumber.default;
+    if (share > MATERIALITY.lines.materialShareOfFiNumber.default + 1e-9) root.append(gentleFlag(`Calculated at ${Math.round(share * 100)}% materiality. Results are rougher than usual.`));
     for (const id of order()) root.append(sections[id]());
     root.append(
-      el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: ctx.goToEntry }, "Change my numbers")),
+      el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: ctx.goToEntry }, "Change my numbers"), el("button", { type: "button", class: "button button--quiet", onClick: () => reportProblem() }, "Something looks wrong?")),
       el("p", { class: "notice" }, "Money Rooms is educational software, not individualized financial, tax, or legal advice. Amounts are in today's dollars unless marked as future dollars. Results describe what the numbers show under the rules as verified; they are not recommendations."),
+    );
+  }
+
+  // ---- Something looks wrong? (readiness, Upkeep: support) ----------------------
+  /** A summary of the inputs' shape and the result, with no personal data, that the person can copy into a report. */
+  function problemSummary(): string {
+    const hh = ctx.household;
+    const count = (a: { kind: string; rows?: unknown[] }) => (a.kind === "rows" ? (a.rows?.length ?? 0) : 0);
+    const kinds = (rows: { confidence?: string }[]) => rows.map((r) => r.confidence ?? "?").join(",");
+    const incomeRows = hh.self.income.kind === "rows" ? hh.self.income.rows : [];
+    const spendingRows = hh.spending.kind === "rows" ? hh.spending.rows : [];
+    const accountRows = hh.accounts.kind === "rows" ? hh.accounts.rows : [];
+    const bands = (["best", "likely", "worst"] as const).map((b) => `${b}: ${result.bands[b].funded ? `age ${result.bands[b].fiAge}` : "not funded"}`).join("; ");
+    const t = result.bands.likely.timeline;
+    return [
+      `Money Rooms ${pkg.version}, report prepared ${hh.asOf}`,
+      `Plan date ${hh.asOf}; state ${hh.self.state?.value ?? "?"}; filing ${hh.self.filingStatus.value}; partner: ${hh.partner ? "yes" : "no"}; conventions ${t.conventions}`,
+      `Income rows ${count(hh.self.income)} (kinds ${kinds(incomeRows.map((r) => r.grossAnnual))}); spending rows ${count(hh.spending)} (kinds ${kinds(spendingRows.map((r) => r.annual))}); accounts ${count(hh.accounts)} (${accountRows.map((a) => `${a.preset}:${a.balance.confidence}`).join(",")})`,
+      `FI date by band: ${bands}`,
+      `Assets at retirement (likely): ${t.assetsAtRetirement === null ? "not reached" : Math.round(t.assetsAtRetirement)}; lifetime taxes ${Math.round(t.lifetimeTaxes)}; estate ${Math.round(t.estate)}`,
+      `Flags: ${[...new Set([...t.flags, ...t.rows.flatMap((r) => r.flags)])].join(" | ") || "none"}`,
+      `Rules used: ${t.rulesUsed.map((r) => `${r.id}@${r.lastVerified ?? "unverified"}`).join(", ")}`,
+      "No names, no dollar inputs, no account balances are included.",
+    ].join("\n");
+  }
+
+  function reportProblem(): void {
+    const summary = problemSummary();
+    const text = el("textarea", { class: "input", rows: "10", readonly: "true", "aria-label": "Summary to copy" }, summary);
+    const status = el("p", { class: "muted", "aria-live": "polite" }, "");
+    const copy = el("button", { type: "button", class: "button", onClick: async () => {
+      try {
+        await navigator.clipboard.writeText(summary);
+        status.textContent = "Copied. Nothing was sent anywhere.";
+      } catch {
+        text.focus();
+        (text as HTMLTextAreaElement).select();
+        status.textContent = "Select the text above and copy it.";
+      }
+    } }, "Copy the summary");
+    ctx.drawer.open(
+      "Something looks wrong?",
+      el(
+        "div",
+        { class: "stack" },
+        el("p", {}, "Thank you for looking closely. The summary below describes the shape of your numbers and what the engine produced, with no names, no dollar inputs, and no balances. Nothing is sent anywhere by this app."),
+        el("p", {}, "To report it, copy the summary and paste it into a new issue at ", el("a", { href: "https://github.com/Sapphirestoneage/money-rooms/issues/new", target: "_blank", rel: "noopener" }, "github.com/Sapphirestoneage/money-rooms/issues"), ", or into a message to the maker, with a sentence on what looked wrong."),
+        text,
+        el("div", { class: "row-actions" }, copy),
+        status,
+      ),
     );
   }
 
@@ -298,7 +382,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     }
     if (!optimized) {
       if (!working) optimize_();
-      body.push(el("p", { class: "muted" }, "Working out your True FI number..."));
+      body.push(el("p", { class: "muted", "data-optimizer-stage": "true", "aria-live": "polite" }, stage ? STAGE_TEXT[stage] : "Working out your True FI number..."));
       return sectionCard_("trueFi", body);
     }
     const band = likelyBand;
@@ -385,7 +469,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     const body: (HTMLElement | null)[] = [el("div", { class: "field" }, el("label", {}, "Optimize for"), objectivePicker())];
     if (!optimized) {
       if (!working) optimize_();
-      body.push(el("p", { class: "muted" }, "Working out the plan..."));
+      body.push(el("p", { class: "muted" }, stage ? STAGE_TEXT[stage] : "Working out the plan..."));
       return sectionCard_("plan", body);
     }
     const best = optimized.best;
@@ -414,7 +498,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     const body: (HTMLElement | null)[] = [];
     if (!optimized || !toggles) {
       if (!working) optimize_();
-      body.push(el("p", { class: "muted" }, "Working out what each strategy is worth..."));
+      body.push(el("p", { class: "muted" }, stage ? STAGE_TEXT[stage] : "Working out what each strategy is worth..."));
       return sectionCard_("strategies", body);
     }
     const on = toggles.filter((t) => t.on);

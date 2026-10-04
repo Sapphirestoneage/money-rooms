@@ -8,17 +8,20 @@
 
 The app runs every projection in the browser, on phones. Each FI date is a search over retirement years, each year a full tax return; the optimizer runs about a hundred projections; a backtest runs one per start year; the sturdy FI date runs a backtest per candidate year. Without a budget these will quietly grow until the screen feels broken on a mid-range phone.
 
-## 2. Measured today (2026-10-04, this session's container)
+## 2. Measured (2026-10-04, Playwright on the built site, Chromium, 360 by 740, Maya with the Level 4 inputs so the True FI card runs the optimizer)
 
-| Measure | Value | Where |
-|---|---|---|
-| Production bundle (JS) | 401 KB, 122 KB gzipped | `npx vite build` |
-| Full test suite | 512 tests, about 15 seconds | `npm test` |
-| One projection, three bands, Maya, m2 | Under 100 ms in Node | Observed in tests |
-| Optimizer, Maya | A few seconds in Node (about a hundred projections) | Result screen runs it after the date shows |
-| Backtest, Maya | Several seconds; sturdy FI date tens of seconds | Risk screen computes after it is shown and says so |
+CPU throttling is Chromium's `Emulation.setCPUThrottlingRate`; 4x is the usual stand-in for a mid-range phone, 6x for a slow one.
 
-Phone numbers were not measured (no device in the session). Treat Node timings as roughly 2 to 4 times faster than a mid-range phone.
+| Measure | 1x | 4x (mid-range phone) | 6x (slow phone) |
+|---|---|---|---|
+| **Before the worker:** first paint of the FI date | 2.3 s | 5.1 s | 6.9 s |
+| **Before the worker:** optimizer, toggles, and stress test done | 2.4 s | 5.1 s | 7.0 s |
+| **After the worker:** first paint of the FI date | (filled below) | | |
+| **After the worker:** optimizer, toggles, and stress test done | | | |
+
+Before the worker the two numbers were the same: the optimizer started in a timeout right after the first render and held the main thread, so the FI date was not painted until the whole search finished. That missed the first-paint target (1 second) and limit (2 seconds) at every throttle, and sat at the optimizer limit's edge at 6x.
+
+Other measures (Node, this session): the full test suite is 546 tests in about 15 seconds; one projection of three bands for Maya under m2 is under 100 ms; the production bundle is 130 KB gzipped.
 
 ## 3. The budget
 
@@ -34,7 +37,7 @@ Phone numbers were not measured (no device in the session). Treat Node timings a
 ## 4. Rules
 
 1. Nothing computes before it is asked for. Screens show what they have and mark what is still working ("Working out your True FI number...").
-2. Long work (over 1 second) runs in a Web Worker so the page never freezes; the worker is the one place a timeline is run off the main thread. Not built yet.
+2. Long work (over 1 second) runs in a Web Worker so the page never freezes. Built 2026-10-04 for the result screen's optimizer, toggles, and stress test (`ui/workers/optimizer.worker.ts`), with a staged progress note on the True FI card and a main-thread fallback where workers are unavailable. The Risk screen's backtests still run on the main thread (next).
 3. Every new data file over 50 KB is loaded on demand, not bundled.
 4. The CI size check prints the bundle size on every run so growth is seen, not discovered.
 5. Reduced motion turns off every animation; animations never block a result.

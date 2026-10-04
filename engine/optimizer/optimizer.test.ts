@@ -90,10 +90,10 @@ describe("the plan in words", () => {
     const r = optimize(mayaHousehold(), { objective: "leastLifetimeTax" });
     const steps = planSteps(r.best.result.timeline, r.best.policy);
     expect(steps.length).toBeGreaterThan(2);
-    expect(steps[0]!.lines[0]).toBe("Work and save as entered.");
+    expect(steps[0]!.lines[0]).toBe("Work income continues and savings follow the plan as entered.");
     const text = planText(r.best.result.timeline, r.best.policy).join("\n");
-    expect(text).toMatch(/^Ages 25 to \d+: Work and save as entered\./);
-    expect(text).toMatch(/Convert about \$[\d,]+ a year/);
+    expect(text).toMatch(/^Ages 25 to \d+: Work income continues and savings follow the plan as entered\./);
+    expect(text).toMatch(/About \$[\d,]+ a year moves from .* to Roth as a conversion/);
     expect(text).not.toMatch(/\byou should\b/i);
     expect(strategiesUsed(r.best.policy, r.best.result.timeline)).toContain("Roth conversion ladder");
   });

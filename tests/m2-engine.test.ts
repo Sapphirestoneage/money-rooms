@@ -154,7 +154,7 @@ describe("Roth conversion ladder (A2, B1, B2)", () => {
     expect(y1.m2!.taxDetail.ordinary).toBeCloseTo(0, 6);
     const without = run(h, 2026).rows[1]!;
     expect(y1.balances["k401"]!).toBeLessThan(without.balances["k401"]! - 15000);
-    expect(y1.m2!.actions.join(" ")).toMatch(/Convert about 16,100/);
+    expect(y1.m2!.actions.join(" ")).toMatch(/About 16,100 moves from .* to Roth as a conversion/);
   });
 
   it("fill the 12% bracket converts more and pays tax at 10% and 12%", () => {

@@ -60,16 +60,16 @@ export function planSteps(t: TimelineResult, policy: DrawdownPolicy): PlanStep[]
     const lines: string[] = [];
     if (first.retired) {
       const src = mainSource(first, t.accounts);
-      if (src) lines.push(`Live on ${src}.`);
+      if (src) lines.push(`Spending comes from ${src}.`);
       const conv = avg((r) => r.m2?.conversion ?? 0);
       if (conv >= 500) {
         const from = t.accounts.find((a) => a.kind === "asset" && a.taxBucket === "pretax")?.label.replace(" (added by the engine)", "") ?? "pretax savings";
-        lines.push(`Convert about ${money(conv)} a year from the ${from} to Roth.`);
+        lines.push(`About ${money(conv)} a year moves from the ${from} to Roth as a conversion.`);
       }
       const harvest = avg((r) => r.m2?.harvested ?? 0);
-      if (harvest >= 500) lines.push(`Sell and rebuy about ${money(harvest)} of gains a year while they fall in the 0% bracket.`);
+      if (harvest >= 500) lines.push(`About ${money(harvest)} of gains a year is realized and rebought while it falls in the 0% bracket.`);
       const sepp = avg((r) => r.m2?.sepp ?? 0);
-      if (sepp >= 500) lines.push(`Take 72(t) payments of about ${money(sepp)} a year, penalty free.`);
+      if (sepp >= 500) lines.push(`72(t) payments of about ${money(sepp)} a year come out penalty free.`);
       const rmd = avg((r) => r.m2?.rmd ?? 0);
       if (rmd >= 500) lines.push(`Required distributions of about ${money(rmd)} a year come out of pretax accounts.`);
       const aca = first.m2?.healthcare.acaPctFpl;
@@ -82,7 +82,7 @@ export function planSteps(t: TimelineResult, policy: DrawdownPolicy): PlanStep[]
       const pen = avg((r) => r.m2?.penalized ?? 0);
       if (pen >= 500) lines.push(`About ${money(pen)} a year of withdrawals pays the 10% additional tax.`);
     } else {
-      lines.push("Work and save as entered.");
+      lines.push("Work income continues and savings follow the plan as entered.");
     }
     steps.push({ fromAge: first.age, toAge: last.age, fromYear: first.year, toYear: last.year, lines });
     group = [];

@@ -1144,7 +1144,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           m2s.rmd += rmdBy.get(a.id)!;
         }
       }
-      if (m2s.rmd > 0) actions.push(`Take the required minimum distribution of about ${Math.round(m2s.rmd * f).toLocaleString("en-US")}.`);
+      if (m2s.rmd > 0) actions.push(`The required minimum distribution is about ${Math.round(m2s.rmd * f).toLocaleString("en-US")}.`);
 
       // 2. 72(t) payments, sized once at the start and held level (the RMD method is resized each year).
       let seppThisYear = 0;
@@ -1166,7 +1166,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
             if (seppThisYear > 0) {
               rmdBy.set(source.id, (rmdBy.get(source.id) ?? 0) + seppThisYear);
               m2s.sepp = seppThisYear;
-              actions.push(`Take the 72(t) payment of about ${Math.round(seppThisYear * f).toLocaleString("en-US")} from the ${source.label}, penalty free.`);
+              actions.push(`The 72(t) payment of about ${Math.round(seppThisYear * f).toLocaleString("en-US")} comes from the ${source.label}, penalty free.`);
             }
           }
         }
@@ -1367,9 +1367,9 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
       if (m2s.conversion > 0 && conversionSource) {
         conversionFrom = conversionSource;
         conversionTo = rothIra();
-        actions.push(`Convert about ${Math.round(m2s.conversion * f).toLocaleString("en-US")} from the ${conversionSource.label} to Roth.`);
+        actions.push(`About ${Math.round(m2s.conversion * f).toLocaleString("en-US")} moves from the ${conversionSource.label} to Roth as a conversion.`);
       }
-      if (m2s.harvest > 0) actions.push(`Harvest about ${Math.round(m2s.harvest * f).toLocaleString("en-US")} of gains at 0%.`);
+      if (m2s.harvest > 0) actions.push(`About ${Math.round(m2s.harvest * f).toLocaleString("en-US")} of gains is realized at 0%.`);
       if (shortfall <= 0) {
         // Cash left over after spending (Social Security, part-time pay, or forced pretax income above the need) goes to taxable.
         const drawn = [...withdrawals.values()].reduce((a, b) => a + b, 0);

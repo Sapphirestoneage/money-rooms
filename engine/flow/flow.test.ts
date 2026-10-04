@@ -34,6 +34,16 @@ describe("materiality", () => {
   it("lists every rough, look-up, or defaulted input and measures each one against the plan", () => {
     const h = mayaHousehold();
     expect(materialInputs(h).map((n) => n.inputId)).toEqual(expect.arrayContaining(["income.job.grossAnnual", "spending.spend-0-accommodation.annual", "account.loan.rate"]));
+  });
+
+  it("a balance left unconfirmed for 12 months is tested at the roughly range (M3 test 4, spec section 8)", () => {
+    const h = householdFromExample(maya as ExampleHouseholdFile, asOf);
+    const fresh = materialInputs(h).find((n) => n.inputId === "account.k401.balance")!;
+    expect(fresh.kind).toBe("known");
+    // The same balance, 16 months old: the staleness clock widens it to roughly, so the next card can weigh it as material.
+    if (h.accounts.kind === "rows") for (const a of h.accounts.rows) if (a.id === "k401") a.balance = { ...a.balance, asOf: "2025-06-01" };
+    const aged = materialInputs(h, "2026-10-04").find((n) => n.inputId === "account.k401.balance")!;
+    expect(aged.kind).toBe("roughly");
     const r = materialityReport(h);
     expect(r.fiNumber).toBeGreaterThan(100000);
     expect(r.sensitivities.length).toBeGreaterThan(5);

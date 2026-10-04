@@ -3,6 +3,7 @@
  * Screens read the engine. They never calculate.
  */
 
+import pkg from "../package.json";
 import { emptyHousehold, type Household } from "../engine";
 import { backupNudge } from "./components/backup-nudge";
 import { sharedDrawer } from "./components/trace-drawer";
@@ -58,7 +59,7 @@ function boot(): void {
     "footer",
     { class: "sitefooter" },
     el("nav", { "aria-label": "About this app" }, el("a", { href: "#/about" }, "About"), el("a", { href: "#/privacy" }, "Your data and privacy")),
-    el("p", { class: "muted" }, "Educational, not individualized financial, tax, or legal advice. Your numbers stay in this browser."),
+    el("p", { class: "muted" }, `Educational, not individualized financial, tax, or legal advice. Your numbers stay in this browser. Version ${pkg.version}.`),
   );
   app.after(footer);
   const reset = () => {

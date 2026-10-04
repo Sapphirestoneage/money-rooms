@@ -246,6 +246,9 @@ On the result screen, in the rearrangeable order: the trend sentence with a Comp
 ### Site footer and trust pages
 Every screen ends with a footer: links to About and Your data and privacy, and the one-line promise ("Educational, not individualized financial, tax, or legal advice. Your numbers stay in this browser."). The two pages are plain text in cards; Privacy carries the one destructive action in the app, "Delete my numbers from this browser", behind the confirm panel.
 
+### Working notes and the problem report
+While the optimizer runs off the main thread, the True FI card carries one muted, live-region line naming the stage ("searching about a hundred plans", "what each strategy is worth", "the stress test"). At the foot of the result screen, "Something looks wrong?" (a quiet button beside "Change my numbers") opens the drawer with a plain summary of the inputs' shape and the result (counts, kinds, FI dates by band, flags, the rules used with their verified dates), with no names, no dollar inputs, and no balances; a Copy button and a line saying nothing is sent anywhere and where to paste it. Above the headline, when materiality is set above the default, the gentle flag "Calculated at 15% materiality. Results are rougher than usual." The footer carries the version number.
+
 ### Toggle button
 A button that is either on or off, for display choices like "Show future dollars". It says what it does, shows its state with a filled background and `aria-pressed`, and is a full 44px tap target. Used instead of small checkboxes.
 
