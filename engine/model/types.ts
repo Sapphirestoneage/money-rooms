@@ -61,7 +61,9 @@ export type ListAnswer<T> =
 export type EndRule =
   | { kind: "date"; date: YearMonth }
   | { kind: "age"; age: number }
-  | { kind: "retirement" };
+  | { kind: "retirement" }
+  /** Dictionary 9.14: ends when a dependent reaches an age (childcare ending at 13). */
+  | { kind: "dependentAge"; dependentId: string; age: number };
 
 /** An age in years and months, for claiming ages and similar. */
 export interface AgeYearsMonths {
@@ -106,10 +108,13 @@ export type IncomeType =
   | "unemployment"
   | "allowance"
   | "rental" // Later
-  | "other";
+  | "other"
+  /** Dictionary 9.17: received support. Not taxable (child support; alimony under agreements after 2018). Ends on its date. */
+  | "childSupport"
+  | "alimony";
 
 /** The income types that have a growth default in an assumption set. */
-export type IncomeGrowthType = Exclude<IncomeType, "rental" | "unemployment">;
+export type IncomeGrowthType = Exclude<IncomeType, "rental" | "unemployment" | "childSupport" | "alimony">;
 
 export type PayFrequency = "weekly" | "biweekly" | "semimonthly" | "monthly";
 
@@ -330,7 +335,16 @@ export interface DebtAccount extends AccountCommon {
   interestDeductible: Value<boolean>;
   /** Later. */
   forgivenessPath?: Value<ForgivenessPath>;
+  /** Dictionary 9.16 (family loans): whether the payment can flex or pause without penalty. Blank means fixed. */
+  paymentFlexibility?: Value<PaymentFlexibility>;
+  /** Dictionary 9.16: whether the lender might forgive some or all of it. Blank means unknown. */
+  possibleForgiveness?: Value<PossibleForgiveness>;
+  /** Dictionary 9.16: how many people lent it (each can forgive up to the annual gift exclusion a year). Blank means 1. */
+  lenders?: Value<number>;
 }
+
+export type PaymentFlexibility = "fixed" | "flexible" | "pausable";
+export type PossibleForgiveness = "unknown" | "none" | "possible";
 
 export type Account = AssetAccount | DebtAccount;
 
@@ -433,6 +447,30 @@ export interface Person {
   /** 3.7. Covered by a high-deductible health plan. Defaults to no, roughly. */
   hsaEligible: Value<boolean>;
   socialSecurity: PersonSocialSecurity;
+  /** Dictionary 9.15: local earned income tax, percent of wages plus net profit. Blank means the state's default from the registry (PA 1%), else none. */
+  localTaxPercent?: Value<number>;
+}
+
+/** Dictionary 9.14. A dependent child. */
+export interface Dependent {
+  id: string;
+  /** A first name or a word; never required. */
+  label?: Value<string>;
+  birthDate: Value<YearMonth>;
+  /** True when the child lives with the person more than half the year (head of household, the credits). */
+  livesWithYou: Value<boolean>;
+}
+
+/** Dictionary 9.15. The home as an asset: excluded from the FI number unless included. */
+export interface Home {
+  value: Value<number>;
+  /** Annual, when not already inside the spending rows. */
+  propertyTaxAnnual?: Value<number>;
+  insuranceAnnual?: Value<number>;
+  /** Percent of value a year set aside for upkeep. Blank means 1%. */
+  maintenanceReservePercent?: Value<number>;
+  /** Blank means false: the home never joins the withdrawal order or the FI number. */
+  includeInFi?: Value<boolean>;
 }
 
 export interface Household {
@@ -470,6 +508,12 @@ export interface Household {
   blocks?: ScenarioBlock[];
   /** M6 (m6-spec.md section 3, Proposed). */
   risk?: { successThresholdPercent?: Value<number>; guardrailsOn?: Value<boolean> };
+  /** Dictionary 9.14. */
+  dependents?: Dependent[];
+  /** Dictionary 9.15. */
+  home?: Home;
+  /** Dictionary 9.18: hard season mode, which puts stability first and pauses the optimizer's nudges. */
+  hardSeason?: Value<boolean>;
   /** Progress history (dictionary 9.12, Proposed): one frozen snapshot per date, taken by the result screen. */
   history?: ProgressSnapshot[];
 }

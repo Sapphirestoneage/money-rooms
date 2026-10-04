@@ -61,7 +61,7 @@ export interface ModuleManifest {
 }
 
 /** Top-level keys of the household record a module may read (engine/model/types.ts, `Household`). */
-export const HOUSEHOLD_KEYS: readonly string[] = ["schemaVersion", "asOf", "self", "partner", "spending", "accounts", "assumptions", "savingsStrategy", "goals", "plans", "businesses", "drawdown", "smallWins", "resilience", "milestones", "legacy", "blocks", "risk", "history"];
+export const HOUSEHOLD_KEYS: readonly string[] = ["schemaVersion", "asOf", "self", "partner", "spending", "accounts", "assumptions", "savingsStrategy", "goals", "plans", "businesses", "drawdown", "smallWins", "resilience", "milestones", "legacy", "blocks", "risk", "history", "dependents", "home", "hardSeason"];
 
 const FLAGS: readonly ModuleFlag[] = ["off", "beta", "on"];
 const LEVELS: readonly number[] = [1, 2, 3, 4, 5];

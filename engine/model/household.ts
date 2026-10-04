@@ -62,9 +62,15 @@ export function debtsNeedingRate(h: Household): { id: string; label: string }[] 
   return out;
 }
 
+/** The home's upkeep reserve a year (dictionary 9.15): a percent of its value, 1% when blank, plus any tax and insurance entered on the home itself. */
+export function homeReserveAnnual(h: Pick<Household, "home">): number {
+  if (!h.home) return 0;
+  return (h.home.value.value * (h.home.maintenanceReservePercent?.value ?? 1)) / 100 + (h.home.propertyTaxAnnual?.value ?? 0) + (h.home.insuranceAnnual?.value ?? 0);
+}
+
 /** Plain names for income types, used when a stream has no name of its own. */
 export const INCOME_TYPE_NAMES: Readonly<Record<IncomeType, string>> = {
-  salary: "Salary", hourly: "Hourly job", selfEmployed: "Self-employment", sideGig: "Side gig", unemployment: "Unemployment benefits", allowance: "Allowance", rental: "Rental", other: "Other income",
+  salary: "Salary", hourly: "Hourly job", selfEmployed: "Self-employment", sideGig: "Side gig", unemployment: "Unemployment benefits", allowance: "Allowance", rental: "Rental", other: "Other income", childSupport: "Child support received", alimony: "Alimony received",
 };
 
 /** The names of income streams marked expected but not confirmed (data dictionary 3.4). */

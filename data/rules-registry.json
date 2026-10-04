@@ -3,7 +3,7 @@
     "description": "Every tax and benefit rule the engine uses. The engine reads rules only from here. See docs/m2-spec.md section 6 (tripwires).",
     "version": 2,
     "drafted": "2026-10-02",
-    "updated": "2026-10-03",
+    "updated": "2026-10-04",
     "verification": "Each entry was checked against the official document named in its source on 2026-10-03 (see docs/rules-verification-2026-10.md). 'url' is the official link and 'lastVerified' the date it was confirmed. Where a page could not be fetched from the build session, 'verification' says so and 'lastVerified' stays null. Entries with lastVerified null are not to be used for new features; M1 keeps its own sourced copies in data/tax/2026.json.",
     "statuses": "current | sunsetting | watch | stale"
   },
@@ -1093,6 +1093,169 @@
       "watch": "Damodaran updates each January; add the new year then",
       "affects": [
         "M6"
+      ]
+    },
+    {
+      "id": "fed.childTaxCredit.2026",
+      "name": "Child tax credit",
+      "value": {
+        "perChild": 2200,
+        "maxRefundable": 1700,
+        "childUnderAgeAtYearEnd": 17,
+        "phaseOutStartMagi": {
+          "single": 200000,
+          "headOfHousehold": 200000,
+          "marriedJoint": 400000,
+          "marriedSeparate": 200000
+        },
+        "phaseOutPer1000": 50
+      },
+      "effective": [
+        "2026-"
+      ],
+      "sunset": null,
+      "source": "IRC 24 as amended by P.L. 119-21 section 70102; IRS, Child Tax Credit",
+      "url": "https://www.irs.gov/credits-deductions/individuals/child-tax-credit",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "Confirmed on the IRS page on 2026-10-04: $2,200 per qualifying child, under 17 at year end, up to $1,700 refundable, full credit up to $200,000 ($400,000 joint). The $50 per $1,000 phase-out rate is from IRC 24(b)(2) and was not on the page. The engine applies the credit as nonrefundable against tax; the refundable part is not modeled (flagged where it would matter).",
+      "watch": "Indexed from 2026 under P.L. 119-21",
+      "affects": [
+        "family.ctc"
+      ]
+    },
+    {
+      "id": "fed.dependentCareCredit.2026",
+      "name": "Child and dependent care credit",
+      "value": {
+        "expenseCap": {
+          "one": 3000,
+          "twoOrMore": 6000
+        },
+        "qualifyingPersonUnderAge": 13,
+        "maxPercent": 50,
+        "minPercent": 20,
+        "phaseDown": [
+          {
+            "agiAbove": 15000,
+            "per": 2000,
+            "points": 1,
+            "floorPercent": 35
+          },
+          {
+            "agiAbove": 75000,
+            "agiAboveJoint": 150000,
+            "per": 2000,
+            "points": 1,
+            "floorPercent": 20
+          }
+        ],
+        "dependentCareFsaCap": 7500
+      },
+      "effective": [
+        "2026-"
+      ],
+      "sunset": null,
+      "source": "IRC 21 as amended by P.L. 119-21 section 70404; IRS Form 2441 instructions (2026)",
+      "url": "https://www.irs.gov/credits-deductions/individuals/child-and-dependent-care-credit-information",
+      "lastVerified": null,
+      "status": "current",
+      "verification": "The IRS page reached on 2026-10-04 confirms only the under-13 rule. The 50% maximum, the phase-down to 35% by $2,000 steps above $15,000 of AGI, the second phase-down to 20% above $75,000 ($150,000 joint), the $3,000 and $6,000 caps, and the $7,500 FSA cap are from the statute as amended in 2025 and the 2026 Form 2441 instructions, not yet confirmed at the official page. Flagged on every result that uses it.",
+      "watch": "New phase-down from 2026; confirm against the 2026 Form 2441 instructions",
+      "affects": [
+        "family.cdcc"
+      ]
+    },
+    {
+      "id": "fed.qbiDeduction.2026",
+      "name": "Qualified business income deduction (section 199A)",
+      "value": {
+        "percent": 20,
+        "qbiLessDeductibleHalfSeTax": true,
+        "limitPercentOfTaxableIncomeLessNetCapitalGain": 20,
+        "thresholdsModeled": false
+      },
+      "effective": [
+        "2026-"
+      ],
+      "sunset": null,
+      "source": "IRC 199A as amended by P.L. 119-21 section 70105; IRS, Qualified Business Income Deduction",
+      "url": "https://www.irs.gov/newsroom/qualified-business-income-deduction",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "Confirmed on the IRS page on 2026-10-04: 20% of QBI, QBI net of the deductible half of self-employment tax, limited to 20% of taxable income less net capital gain. The income thresholds where the W-2 wage and specified-service limits begin are not modeled; a result above them is flagged.",
+      "watch": "Thresholds indexed yearly; the new minimum deduction for active QBI from 2026 is not modeled",
+      "affects": [
+        "selfEmployed.qbi"
+      ]
+    },
+    {
+      "id": "fed.giftExclusion.2026",
+      "name": "Annual gift tax exclusion",
+      "value": {
+        "perDoneePerDonor": 19000
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRC 2503(b); IRS, Frequently asked questions on gift taxes",
+      "url": "https://www.irs.gov/businesses/small-businesses-self-employed/frequently-asked-questions-on-gift-taxes",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "Confirmed on the IRS page on 2026-10-04: $19,000 per donee in 2026.",
+      "watch": "Indexed in $1,000 steps",
+      "affects": [
+        "familyLoan.forgiveness"
+      ]
+    },
+    {
+      "id": "fed.belowMarketLoans",
+      "name": "Below-market loans between individuals (imputed interest)",
+      "value": {
+        "deMinimisAggregate": 10000,
+        "netInvestmentIncomeLimitAggregate": 100000,
+        "note": "Above $100,000 outstanding, forgone interest at the applicable federal rate is imputed to the lender; the borrower's tax is unaffected"
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "IRC 7872(c)(2) and 7872(d)(1); IRS Publication 550",
+      "url": "https://www.irs.gov/publications/p550",
+      "lastVerified": null,
+      "status": "current",
+      "verification": "Not reached from the build session on 2026-10-04 (the statute host is blocked by the proxy). The $10,000 and $100,000 amounts are from the statute text as known; confirm at the URL. Informational only: it is the lender's tax.",
+      "watch": null,
+      "affects": [
+        "familyLoan.belowMarket"
+      ]
+    },
+    {
+      "id": "state.PA.compensation",
+      "name": "Pennsylvania taxable compensation and local earned income tax",
+      "value": {
+        "ratePercent": 3.07,
+        "retirementDeferralsTaxable": true,
+        "halfSelfEmploymentTaxDeductible": false,
+        "localEarnedIncomeTax": {
+          "defaultPercent": 1.0,
+          "base": "wages plus net profit",
+          "note": "Set by municipality and school district; 1% is the common nonresident and many resident rates; Philadelphia is higher"
+        }
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "PA Personal Income Tax Guide, Gross Compensation (elective deferrals to 401(k) plans are taxable compensation); 72 P.S. 7301; Act 32 of 2008 (local earned income tax)",
+      "url": "https://www.pa.gov/agencies/revenue/resources/tax-types-and-information/personal-income-tax.html",
+      "lastVerified": null,
+      "status": "current",
+      "verification": "pa.gov is blocked from the build session (2026-10-04). The 3.07% rate matches the Tax Foundation table already in data/tax/2026.json. The 401(k) treatment, the absence of the half-SE deduction, and the 1% local default are from the PA PIT Guide as known; confirm at the URL. Flagged on every PA result.",
+      "watch": "Local rates vary by municipality",
+      "affects": [
+        "state.PA"
       ]
     }
   ]

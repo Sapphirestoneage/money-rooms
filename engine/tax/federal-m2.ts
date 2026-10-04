@@ -35,6 +35,11 @@ export interface FederalTaxM2Input {
   partnerAge?: number;
   partnerWages?: number;
   partnerSelfEmploymentNet?: number;
+  /** Dependents (dictionary 9.14): qualifying children under 17 at year end, for the child tax credit. */
+  qualifyingChildren?: number;
+  /** Children under 13 at year end, and the care spent on them this year, for the dependent care credit. */
+  careChildren?: number;
+  careExpenses?: number;
 }
 
 export interface FederalTaxM2Result {
@@ -46,6 +51,14 @@ export interface FederalTaxM2Result {
   taxableSocialSecurity: number;
   seniorDeduction: number;
   standardDeduction: number;
+  /** The section 199A deduction on self-employment income. */
+  qbiDeduction: number;
+  childTaxCredit: number;
+  dependentCareCredit: number;
+  /** Nonrefundable credits applied against the income tax (never below zero). */
+  credits: number;
+  /** True when a credit came from a rule not yet confirmed at its source. */
+  creditsUnverified: boolean;
   taxableIncome: number;
   ordinaryTaxableIncome: number;
   ordinaryTax: number;
@@ -147,7 +160,16 @@ export function computeFederalTaxM2(input: FederalTaxM2Input, t: FederalTables, 
   const senior = seniorDeduction(input.age, agi, filingStatus, seniorRule) + (filingStatus === "marriedJoint" && input.partnerAge !== undefined ? seniorDeduction(input.partnerAge, agi, filingStatus, seniorRule) : 0);
   const deductions = standardDeduction + senior;
 
-  const taxableIncome = Math.max(0, agi - deductions);
+  // Section 199A: 20% of qualified business income (net of the deductible half of self-employment tax), capped at 20% of taxable income less net capital gain.
+  let qbiDeduction = 0;
+  if (selfEmploymentNet > 0) {
+    const qbiRule = ledger.get<{ percent: number; qbiLessDeductibleHalfSeTax: boolean }>("fed.qbiDeduction.2026");
+    const qbi = Math.max(0, selfEmploymentNet - (qbiRule.qbiLessDeductibleHalfSeTax ? halfSe : 0));
+    const taxableBeforeQbi = Math.max(0, agi - deductions);
+    qbiDeduction = Math.min((qbiRule.percent / 100) * qbi, (qbiRule.percent / 100) * Math.max(0, taxableBeforeQbi - input.longTermGains));
+  }
+
+  const taxableIncome = Math.max(0, agi - deductions - qbiDeduction);
   // Gains are taxed last, so ordinary taxable income is what is left after deductions come off the gains first.
   const gainsInTaxable = Math.min(input.longTermGains, taxableIncome);
   const ordinaryTaxableIncome = taxableIncome - gainsInTaxable;
@@ -157,11 +179,39 @@ export function computeFederalTaxM2(input: FederalTaxM2Input, t: FederalTables, 
   const ordinaryTax = taxFromBrackets(ordinaryTaxableIncome, ordinarySchedule);
   const gainsTax = capitalGainsTax(ordinaryTaxableIncome, gainsInTaxable, gainsSchedule);
 
+  // Credits for dependents (dictionary 9.14): the child tax credit and the dependent care credit, nonrefundable here.
+  let childTaxCredit = 0;
+  let dependentCareCredit = 0;
+  let creditsUnverified = false;
+  const children = input.qualifyingChildren ?? 0;
+  if (children > 0) {
+    const r = ledger.get<{ perChild: number; phaseOutStartMagi: Record<FilingStatus, number>; phaseOutPer1000: number }>("fed.childTaxCredit.2026");
+    const over = Math.max(0, agi - r.phaseOutStartMagi[filingStatus]);
+    childTaxCredit = Math.max(0, r.perChild * children - Math.ceil(over / 1000) * r.phaseOutPer1000);
+  }
+  const careChildren = input.careChildren ?? 0;
+  const careExpenses = input.careExpenses ?? 0;
+  if (careChildren > 0 && careExpenses > 0) {
+    const got = ledger.getUnverified<{ expenseCap: { one: number; twoOrMore: number }; maxPercent: number; minPercent: number; phaseDown: { agiAbove: number; agiAboveJoint?: number; per: number; points: number; floorPercent: number }[] }>("fed.dependentCareCredit.2026");
+    creditsUnverified = creditsUnverified || !got.verified;
+    const r = got.value;
+    const capped = Math.min(careExpenses, careChildren >= 2 ? r.expenseCap.twoOrMore : r.expenseCap.one, Math.max(0, wages + selfEmploymentNet));
+    let pct = r.maxPercent;
+    for (const step of r.phaseDown) {
+      const above = filingStatus === "marriedJoint" && step.agiAboveJoint !== undefined ? step.agiAboveJoint : step.agiAbove;
+      if (agi > above) pct = Math.max(step.floorPercent, Math.min(pct, r.maxPercent) - Math.ceil((agi - above) / step.per) * step.points);
+      else break;
+    }
+    pct = Math.max(r.minPercent, pct);
+    dependentCareCredit = (capped * pct) / 100;
+  }
+  const credits = Math.min(childTaxCredit + dependentCareCredit, ordinaryTax + gainsTax);
+
   const niitRule = ledger.get<{ rate: number; magiAbove: Record<FilingStatus, number> }>("fed.niit");
   const niit = niitRule.rate * Math.max(0, Math.min(input.longTermGains, magiIrmaa - niitRule.magiAbove[filingStatus]));
 
   const penalty = (Math.max(0, input.penalized) * t.earlyWithdrawalPenalty.rate) / 100;
-  const total = ordinaryTax + gainsTax + niit + socialSecurityTax + medicareTax + additionalMedicareTax + se.tax + penalty;
+  const total = ordinaryTax + gainsTax - credits + niit + socialSecurityTax + medicareTax + additionalMedicareTax + se.tax + penalty;
 
   const zeroTop = gainsSchedule.find((b) => b.rate > 0)?.from ?? 0;
   return {
@@ -171,6 +221,11 @@ export function computeFederalTaxM2(input: FederalTaxM2Input, t: FederalTables, 
     taxableSocialSecurity: taxableSs,
     seniorDeduction: senior,
     standardDeduction,
+    qbiDeduction,
+    childTaxCredit,
+    dependentCareCredit,
+    credits,
+    creditsUnverified,
     taxableIncome,
     ordinaryTaxableIncome,
     ordinaryTax,

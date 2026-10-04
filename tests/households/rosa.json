@@ -1,0 +1,62 @@
+{
+  "id": "rosa",
+  "label": "Rosa, 38, head of household, one child, a paid-off home, a family loan",
+  "story": "Fictional and anonymized (answers batch, Part 3). A salaried worker with a side business, head of household with a ten-year-old, a paid-off home in Pennsylvania, after-school childcare that ends when the child turns 13, and a $230,000 interest-free loan from her parents with a flexible $1,000 a month payment. Every expected value below is Eli's hand computation for 2026 (tests/rosa.test.ts asserts each within $5).",
+  "inputs": {
+    "birthDate": "1988-06",
+    "state": "PA",
+    "filingStatus": "headOfHousehold",
+    "localTaxPercent": 1,
+    "income": [
+      { "id": "job", "type": "salary", "grossAnnual": 68000, "payFrequency": "biweekly", "end": "retirement", "preTaxDeductions": [{ "type": "401k", "annual": 3400 }] },
+      { "id": "side", "type": "sideGig", "grossAnnual": 9000, "businessExpensesAnnual": 1500, "end": "retirement" }
+    ],
+    "spending": [
+      { "category": "accommodation", "annual": 14400, "label": "Core: housing costs, property tax and insurance included" },
+      { "category": "food", "annual": 9600, "label": "Core: food" },
+      { "category": "transportation", "annual": 6000, "label": "Core: transportation" },
+      { "category": "everythingElse", "annual": 10800, "label": "Core: everything else" },
+      { "category": "childcare", "annual": 6000, "label": "After-school and summer care", "end": "dependentAge:child:13" }
+    ],
+    "accounts": [
+      { "id": "cash", "preset": "savings", "balance": 12000 },
+      { "id": "k401", "preset": "trad401k", "balance": 85000 },
+      { "id": "brokerage", "preset": "brokerage", "balance": 30000 },
+      { "id": "family", "preset": "family", "name": "Loan from parents", "balance": 230000, "rate": 0, "minPaymentMonthly": 1000, "stress": 5, "paymentFlexibility": "flexible", "possibleForgiveness": "unknown", "lenders": 2 }
+    ],
+    "dependents": [{ "id": "child", "birthDate": "2016-03", "livesWithYou": true }],
+    "home": { "value": 410000, "maintenanceReservePercent": 1 }
+  },
+  "expected": {
+    "year": 2026,
+    "note": "Hand-computed by Eli, 2026-10-04, under the 2026 rules. Asserted within $5 each. The brokerage cost basis of $21,000 is set in the test (the example file carries no basis field).",
+    "selfEmploymentTax": 1060,
+    "deductibleHalfSeTax": 530,
+    "agi": 71570,
+    "qbiDeduction": 1394,
+    "federalTaxableIncome": 46026,
+    "standardDeduction": 24150,
+    "federalTaxBeforeCredits": 5169,
+    "ifSingle": { "taxableIncome": 54076, "tax": 6609 },
+    "childTaxCredit": 2200,
+    "dependentCareCredit": 1050,
+    "federalTaxAfterCredits": 1919,
+    "fica": 5202,
+    "stateTax": 2318,
+    "localTax": 755,
+    "totalTaxes": 11254,
+    "takeHomeAfter401k": 60846,
+    "spending": 50900,
+    "familyLoanPayments": 12000,
+    "annualGap": -2054,
+    "beforeThisBatchGap": 3356,
+    "ruleOfFive": { "targetMonths": 7.6, "monthlySpending": 4242, "targetDollars": 32237, "gap": 20237 },
+    "liquidation": {
+      "cashOut401k": { "gross": 85000, "federalTax": 17064, "penalty": 8500, "stateTax": 2610, "net": 56826 },
+      "sellBrokerage": { "gross": 30000, "gains": 9000, "federalTax": 0, "stateTax": 276, "net": 29724 },
+      "bothNet": 86550,
+      "needed": 230000,
+      "lostToTaxesAndPenalties": 28450
+    }
+  }
+}

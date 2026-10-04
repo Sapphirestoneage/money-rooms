@@ -566,3 +566,25 @@ Stored under `history` as a list of snapshots, one per date: `date`, `fiYear` by
 **`accounts[].stress`** (debt accounts): how much the debt weighs on the person, 1 (barely on my mind) to 5 (it weighs on me). Kind: decision. Default 3 (`data/scenario-blocks.json`, `payoff.stressDefault`). Used by the peace-first payoff order (M5, decision D10) and the Debt freedom room, which is where it is entered. The field has been in the model since M5; this entry records it in the dictionary.
 
 **Module manifests** (`data/modules/<id>.json`) are not household fields. They describe what a feature reads from this dictionary and what it adds (`docs/module-contract.md`). A module adds a field only by proposing it here first and then listing it in its manifest's `adds.fields`. The beta switch that shows beta modules is a display preference in the browser, not a household field.
+
+### 9.14 Dependents (Proposed, 2026-10-04, answers batch Part 3)
+
+`household.dependents[]`, each `{ id, label?, birthDate, livesWithYou }`. Kind: fact. `birthDate` is a year and month; `livesWithYou` (default true) means more than half the year. The engine counts a qualifying child under 17 at year end for the child tax credit (`fed.childTaxCredit.2026`), under 13 for the dependent care credit (`fed.dependentCareCredit.2026`, unverified), and under 19 for head of household; the year no qualifying child remains, a head-of-household return files single and the row says so. Students to 24 and adult dependents are not modeled. A spending row can end on a dependent's age: `end: { kind: "dependentAge", dependentId, age }` (childcare ending at 13). The spending category `childcare` counts toward the dependent care credit.
+
+### 9.15 The home, local tax (Proposed, 2026-10-04)
+
+`household.home`: `{ value, propertyTaxAnnual?, insuranceAnnual?, maintenanceReservePercent?, includeInFi? }`. The value is a rough fact. The home never joins the withdrawal order or the FI number (`includeInFi` is reserved; false today) and is not on the net worth chart; its upkeep reserve, a percent of value a year (1% when blank) plus any tax and insurance entered here rather than in the spending rows, is counted as spending in every year (`homeReserveAnnual`). Selling or downsizing is a scenario block, not a field (home pack section 4).
+
+`self.localTaxPercent`: local earned income tax, percent of wages plus net profit. Blank means the state's default from the registry (Pennsylvania 1%, `state.PA.compensation`, unverified), else none. Shown as its own tax line (`taxes.local`).
+
+### 9.16 Family loans (Proposed, 2026-10-04)
+
+On a debt with the `family` preset: `paymentFlexibility` (fixed, flexible, pausable; blank means fixed), `possibleForgiveness` (unknown, none, possible; blank means unknown), `lenders` (how many people lent it; blank means 1). A flexible or pausable payment is left out of the Rule of 5's spending (decision A11) and is the first stability item in a hard season. Forgiveness is a gift from each lender up to the annual exclusion (`fed.giftExclusion.2026`, $19,000); a 0% loan above $100,000 carries an informational flag about the lender's imputed interest (`fed.belowMarketLoans`, unverified). The stress rating (9.13) feeds the peace-first order.
+
+### 9.17 Support received and paid (Proposed, 2026-10-04; divorce pack, spec only)
+
+Income types `childSupport` and `alimony` (received): not taxable (alimony under agreements after 2018), no payroll tax, no growth default, end on their date. Spending categories `childSupportPaid`, `alimonyPaid` (not deductible), and `legal` (tagged unavoidable). A `divorce` scenario block that splits accounts is specified in `docs/packs/divorce.md` and not built.
+
+### 9.18 Hard season (Proposed, 2026-10-04)
+
+`household.hardSeason`: a decision, true or false. While on, the optimizer's nudges and the True FI reveal are paused, the runway and the staircase come first, and the next card shows stability items only, the first of which is pausing or reducing a flexible family loan payment when one exists. The engine suggests it (never turns it on) when a debt's stress rating is 4 or more or a shock test leaves under three months of runway.

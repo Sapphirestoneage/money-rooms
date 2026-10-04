@@ -16,9 +16,11 @@ describe("the rules registry", () => {
   });
 
   it("refuses an unverified rule, so a feature cannot lean on an unchecked number", () => {
-    // Since Eli's review of 2026-10-04 every rule is verified, so the guard is checked on the predicate it uses.
-    const unverified = [...loadRules().values()].find((r) => r.lastVerified === null);
-    expect(unverified).toBeUndefined();
+    // The rules still unverified after the answers batch of 2026-10-04 (their sources could not be reached from the build
+    // session): each is read only through getUnverified and flagged on every result that leans on it.
+    const unverified = [...loadRules().values()].filter((r) => r.lastVerified === null).map((r) => r.id).sort();
+    expect(unverified).toEqual(["fed.belowMarketLoans", "fed.dependentCareCredit.2026", "state.PA.compensation"]);
+    for (const id of unverified) expect(() => rule(id)).toThrow(/not been verified/);
     const sample = loadRules().get("fed.niit")!;
     expect(isVerified({ ...sample, lastVerified: null })).toBe(false);
     expect(isVerified(sample)).toBe(true);

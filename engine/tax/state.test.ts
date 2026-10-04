@@ -14,7 +14,7 @@ describe("state tax, 2026", () => {
   });
 
   it("Texas, Jordan: nothing", () => {
-    expect(computeStateTax(115000, "TX", "single", tables)).toEqual({ taxableIncome: 0, tax: 0, marginalRate: 0 });
+    expect(computeStateTax(115000, "TX", "single", tables)).toEqual({ taxableIncome: 0, tax: 0, marginalRate: 0, local: 0 });
   });
 
   it("New Jersey, Dev: no standard deduction, graduated brackets", () => {
@@ -32,5 +32,13 @@ describe("state tax, 2026", () => {
   it("married filers read the joint column", () => {
     const r = computeStateTax(69120, "NY", "marriedJoint", tables);
     expect(r.taxableIncome).toBe(69120 - 16050);
+  });
+
+  it("Pennsylvania (rule state.PA.compensation): 401(k) deferrals and the half-SE deduction are added back, and the local earned income tax is a separate line", () => {
+    // Rosa: federal AGI $71,570 (wages $64,600 after the $3,400 deferral, $7,500 of net profit, less $530 of half-SE tax).
+    const r = computeStateTax(71570, "PA", "headOfHousehold", tables, { addBack: 3400 + 530, localTaxPercent: 1, localBase: 68000 + 7500 });
+    expect(r.taxableIncome).toBe(75500);
+    expect(r.tax).toBeCloseTo(2317.85, 2);
+    expect(r.local).toBeCloseTo(755, 2);
   });
 });

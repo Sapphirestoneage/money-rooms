@@ -13,8 +13,10 @@ import type {
   AccountOwner,
   AssetAccount,
   DebtAccount,
+  Dependent,
   DrawdownInputs,
   FilingStatus,
+  Home,
   Household,
   IncomeStream,
   RuleRef,
@@ -27,7 +29,7 @@ import type {
   WorkplacePlan,
   YearMonth,
 } from "../model";
-import { RuleLedger, amountFromPercentOfPay, getAccountPreset, isAnswered, isWorkplaceContribution, parseYearMonth, stubFraction } from "../model";
+import { RuleLedger, amountFromPercentOfPay, getAccountPreset, homeReserveAnnual, isAnswered, isWorkplaceContribution, parseYearMonth, stubFraction } from "../model";
 import {
   annualBenefit,
   averageIndexedMonthlyEarnings,
@@ -41,7 +43,7 @@ import {
 } from "../social-security/benefit";
 import { computeFederalTax, type FederalTaxResult } from "../tax/federal";
 import { bracketTop, computeFederalTaxM2, type FederalTaxM2Result } from "../tax/federal-m2";
-import { computeStateTax, type StateTaxResult } from "../tax/state";
+import { computeStateTax, type StateAdjustments, type StateTaxResult } from "../tax/state";
 import { drawRoth, governmental457bPenaltyFree, requiredMinimumDistribution, ruleOf55Applies, seppMaxRate, seppPayment, seppYearsRequired, type RothLayer } from "./drawdown";
 import { acaPremiumCredit, healthcareLine, lookbackYears, magiForPctFpl, type HealthcareLine } from "./healthcare";
 import { defaultPolicy, type DrawdownPolicy, type YearLock } from "./policy";
@@ -74,6 +76,12 @@ export interface CompleteHousehold {
   drawdown: DrawdownInputs;
   /** Households of two (docs/household-two-spec.md): the partner's own fields. Blank for one person. */
   partner?: CompletePartner;
+  /** Dictionary 9.14: dependent children. */
+  dependents: readonly Dependent[];
+  /** Dictionary 9.15: the home, kept out of the FI number; its upkeep reserve is spending. */
+  home?: Home;
+  /** Dictionary 9.15: local earned income tax, percent. Blank means the state's default. */
+  localTaxPercent?: number;
 }
 
 /** The partner's person-level answers. The state and filing status are the household's, read from self. */
@@ -116,6 +124,9 @@ export function requireComplete(h: Household): CompleteHousehold {
     plans: h.plans ?? [],
     drawdown: h.drawdown ?? {},
     ...(partner ? { partner } : {}),
+    dependents: h.dependents ?? [],
+    ...(h.home ? { home: h.home } : {}),
+    ...(h.self.localTaxPercent ? { localTaxPercent: h.self.localTaxPercent.value } : {}),
   };
 }
 
@@ -175,6 +186,8 @@ export interface TaxLine {
   selfEmployment: number;
   penalty: number;
   state: number;
+  /** Local earned income tax (dictionary 9.15). Zero outside the states that levy one. */
+  local: number;
   total: number;
 }
 
@@ -496,6 +509,13 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 
   // ---- Pass 1: income by year, for the Social Security earnings record ----
   const planMonth = parseYearMonth(hh.asOf.slice(0, 7)).month;
+  const dependentAgesFor = (year: number): Record<string, number> => Object.fromEntries(hh.dependents.map((d) => [d.id, year - parseYearMonth(d.birthDate.value).year]));
+  /** Qualifying children at year end (dictionary 9.14): living with the person and under the age given. */
+  const childrenUnder = (age: number, year: number): number => hh.dependents.filter((d) => d.livesWithYou.value && year - parseYearMonth(d.birthDate.value).year < age).length;
+  /** Head of household needs a qualifying child (under 19 here; students to 24 are not modeled); the year none remains, the return is single. */
+  const filingStatusFor = (year: number): FilingStatus => (hh.filingStatus === "headOfHousehold" && childrenUnder(19, year) === 0 ? "single" : hh.filingStatus);
+  if (hh.filingStatus === "headOfHousehold" && childrenUnder(19, year0) === 0) flags.add("The filing status is head of household but no qualifying child lives with you, so the plan files single until one does.");
+  if (hh.home) flags.add(`Your home (${Math.round(hh.home.value.value).toLocaleString("en-US")}) is not counted in the FI number or the net worth chart; its upkeep reserve is counted as spending.`);
   const ctxFor = (year: number): YearContext => ({
     year,
     t: year - year0,
@@ -503,6 +523,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     retirementYear,
     fraction: year === year0 ? stubFraction(hh.asOf) : 1,
     startMonth: year === year0 ? planMonth : 1,
+    dependentAges: dependentAgesFor(year),
   });
   const lockFor = (year: number): YearLock => (m2 ? policy.locks[year] ?? {} : {});
   const incomeFor = (y: number): YearIncome => {
@@ -639,12 +660,17 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
   for (let y = year0; y <= lastYear; y++) {
     const t = y - year0;
     const f = t === 0 ? stubFraction(hh.asOf) : 1;
+    const rowFlagsDated: string[] = [];
     const ctx = ctxFor(y);
     const age = ctx.age;
     const retired = y >= retirementYear;
+    const filingStatus = filingStatusFor(y);
+    if (y > year0 && filingStatus !== filingStatusFor(y - 1)) rowFlagsDated.push("Head of household ends this year: no qualifying child remains, so the return is single from here.");
+    if (y > year0 && childrenUnder(17, y) < childrenUnder(17, y - 1)) rowFlagsDated.push("The child tax credit ends this year: a child turns 17.");
+    if (y > year0 && childrenUnder(13, y) < childrenUnder(13, y - 1)) rowFlagsDated.push("A child turns 13 this year: childcare that ends at 13 stops, and the dependent care credit with it.");
     const inc = incomeByYear.get(y) ?? emptyIncome();
     const limits = contributionLimits(age, fed);
-    const rowFlags: string[] = [];
+    const rowFlags: string[] = [...rowFlagsDated];
     const lock = lockFor(y);
     const actions: string[] = [];
     // The partner's side of the year (spec 2.2): their own age and limits; the household's totals add both.
@@ -744,6 +770,12 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
 
     // Spending, Social Security, scheduled debt payments (annualized).
     const spend = spendingForYear(hh.spending, ctx, retired, band.phases);
+    if (hh.home) {
+      const reserve = homeReserveAnnual(hh);
+      spend.lines.push({ rowId: "home.reserve", category: "accommodation", amount: reserve, phaseMultiplier: 1 });
+      spend.total += reserve;
+    }
+    const careExpenses = spend.lines.filter((l) => l.category === "childcare").reduce((sum, l) => sum + l.amount, 0);
     if (retired && opts.spendingAdjuster) {
       const assetsAtStart = assets().reduce((sum, a) => sum + a.balance, 0);
       const factor = opts.spendingAdjuster({ year: y, age, assetsAtStart, assetsAtRetirement, plannedSpending: spend.total, stocksReturn: returnsFor(y).stocks });
@@ -811,6 +843,17 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
      * waterfall contribution. Filing jointly: one return on both incomes. Filing separately: two returns,
      * the partner's on their own earned income and benefit, the self's on everything else.
      */
+    /** State departures from federal AGI (rule `state.PA.compensation`, dictionary 9.15): PA taxes workplace deferrals and allows no half-SE deduction, and its municipalities levy an earned income tax. */
+    const stateAdjustmentsFor = (workplaceDeferrals: number, halfSe: number): StateAdjustments => {
+      const base = inc.wages + inc.selfEmploymentNet + pInc.wages + pInc.selfEmploymentNet;
+      if (hh.state === "PA") {
+        const got = ledger.getUnverified<{ retirementDeferralsTaxable: boolean; halfSelfEmploymentTaxDeductible: boolean; localEarnedIncomeTax: { defaultPercent: number } }>("state.PA.compensation");
+        if (!got.verified) flags.add("Pennsylvania's treatment of 401(k) contributions and the local earned income tax come from a rule not yet confirmed at its source.");
+        const r = got.value;
+        return { addBack: (r.retirementDeferralsTaxable ? workplaceDeferrals : 0) + (r.halfSelfEmploymentTaxDeductible ? 0 : halfSe), localTaxPercent: hh.localTaxPercent ?? r.localEarnedIncomeTax.defaultPercent, localBase: base };
+      }
+      return { addBack: 0, localTaxPercent: hh.localTaxPercent ?? 0, localBase: base };
+    };
     const taxesFor = (pretaxExtra: number, hsaExtra: number, pretaxWithdrawal: number, iraExtra = 0, pExtra = 0): TaxView => {
       const selfDeductions = enteredWorkplace + enteredHsaAmt + premiumsAndOther + pretaxExtra + hsaExtra;
       const partnerFields = partner && !separateReturns ? { partnerWages: pInc.wages, partnerSelfEmploymentNet: pInc.selfEmploymentNet } : {};
@@ -845,7 +888,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         {
           year: y,
           age,
-          filingStatus: hh.filingStatus,
+          filingStatus,
           wages: inc.wages,
           pretaxPayrollDeductions: selfDeductions + jointPartnerDeductions,
           selfEmploymentNet: inc.selfEmploymentNet,
@@ -857,17 +900,21 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           iraDeduction: m2s.iraDeduction + iraExtra,
           ...partnerFields,
           ...(partner && !separateReturns && pAge !== null && pAlive ? { partnerAge: pAge } : {}),
+          qualifyingChildren: childrenUnder(17, y),
+          careChildren: childrenUnder(13, y),
+          careExpenses,
         },
         fed,
         ledger,
       );
-      let stR = computeStateTax(fedR.agi, hh.state, hh.filingStatus, tables);
+      if (fedR.creditsUnverified) flags.add("The dependent care credit comes from a rule not yet confirmed at its source (its 2026 phase-down).");
+      let stR = computeStateTax(fedR.agi, hh.state, filingStatus, tables, stateAdjustmentsFor(enteredWorkplace + pretaxExtra - amount457 + jointPartnerDeductions, fed.selfEmployment.halfDeductibleFromIncome ? fedR.selfEmploymentTax / 2 : 0));
       if (separateReturns && pAge !== null) {
         const fedP = computeFederalTaxM2(
           {
             year: y,
             age: pAge,
-            filingStatus: hh.filingStatus,
+            filingStatus,
             wages: pInc.wages,
             pretaxPayrollDeductions: pPretaxEntered + pExtra,
             selfEmploymentNet: pInc.selfEmploymentNet,
@@ -881,11 +928,11 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           fed,
           ledger,
         );
-        const stP = computeStateTax(fedP.agi, hh.state, hh.filingStatus, tables);
+        const stP = computeStateTax(fedP.agi, hh.state, filingStatus, tables);
         fedR = addReturn(fedR, fedP);
         stR = { ...stR, tax: stR.tax + stP.tax };
       }
-      return { fedR, stR, total: fedR.total + stR.tax, marginal: (fedR.marginalRate + stR.marginalRate) / 100, agi: fedR.agi };
+      return { fedR, stR, total: fedR.total + stR.tax + stR.local, marginal: (fedR.marginalRate + stR.marginalRate) / 100, agi: fedR.agi };
     };
     const m2Tax = (v: TaxView): FederalTaxM2Result => v.fedR as FederalTaxM2Result;
     const cashIn = (pretaxExtra: number, hsaExtra: number, pretaxWithdrawal: number, iraExtra = 0, pExtra = 0) =>
@@ -1486,7 +1533,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
     const m2r = m2 ? m2Tax(tx) : null;
     if (m2r) magiHistory.set(y, m2r.magiIrmaa);
     for (const fl of healthcare.flags) rowFlags.push(fl);
-    const federalIncomeTax = m2r ? m2r.ordinaryTax + m2r.capitalGainsTax + m2r.niit : (tx.fedR as FederalTaxResult).incomeTax;
+    const federalIncomeTax = m2r ? m2r.ordinaryTax + m2r.capitalGainsTax + m2r.niit - m2r.credits : (tx.fedR as FederalTaxResult).incomeTax;
     rows.push({
       year: y,
       t,
@@ -1508,6 +1555,7 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         selfEmployment: tx.fedR.selfEmploymentTax * f,
         penalty: tx.fedR.penalty * f,
         state: tx.stR.tax * f,
+        local: tx.stR.local * f,
         total: tx.total * f,
       },
       takeHome: takeHome * f,

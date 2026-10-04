@@ -8,7 +8,7 @@
 import resilience from "../../data/resilience.json";
 import healthcare from "../../data/healthcare.json";
 import type { Household, IncomeStability, SpendingRow } from "../model";
-import { RuleLedger, ageInYears, resolveAssumptions, yearMonthOf } from "../model";
+import { RuleLedger, ageInYears, resolveAssumptions, yearMonthOf, homeReserveAnnual } from "../model";
 import { resolveBand } from "../projection/bands";
 import { defaultDeps, findFiDate, type Deps } from "../projection/fi";
 import { acaPremiumCredit } from "../projection/healthcare";
@@ -26,14 +26,20 @@ export interface MustPay {
 }
 
 /** Full monthly spending: every current spending row plus scheduled debt payments. */
+/** Full spending a month: the rows, the home's reserve, and the debt payments that cannot pause (decision A11). */
 export function fullMonthlySpending(h: Household): number {
   const spending = h.spending.kind === "rows" ? h.spending.rows.reduce((s, r) => s + r.annual.value, 0) : 0;
-  return (spending + debtPaymentsAnnual(h)) / 12;
+  return (spending + homeReserveAnnual(h) + debtPaymentsAnnual(h, { fixedOnly: true })) / 12;
 }
 
-export function debtPaymentsAnnual(h: Household): number {
+/** Scheduled debt payments a year. With `fixedOnly`, a payment the lender lets flex or pause is left out (a family loan in a hard season). */
+export function debtPaymentsAnnual(h: Household, options: { fixedOnly?: boolean } = {}): number {
   if (h.accounts.kind !== "rows") return 0;
-  return h.accounts.rows.filter((a) => a.side === "debt").reduce((s, a) => s + (a.side === "debt" ? a.actualPaymentAnnual.value : 0), 0);
+  return h.accounts.rows.reduce((s, a) => {
+    if (a.side !== "debt") return s;
+    if (options.fixedOnly && a.paymentFlexibility && a.paymentFlexibility.value !== "fixed") return s;
+    return s + a.actualPaymentAnnual.value;
+  }, 0);
 }
 
 /** The bills that do not disappear below full spending: health insurance and phone from the rows, debt minimums, and anything entered. */
@@ -267,7 +273,7 @@ export function disabilityGap(h: Household): { coveredMonthly: number; gapMonthl
 }
 
 export function termLifeRange(h: Household): { low: number; high: number; applies: boolean } {
-  const dependents = h.resilience?.dependents?.value ?? 0;
+  const dependents = Math.max(h.resilience?.dependents?.value ?? 0, h.dependents?.length ?? 0);
   if (dependents <= 0) return { low: 0, high: 0, applies: false };
   const annual = fullMonthlySpending(h) * 12;
   const debts = h.accounts.kind === "rows" ? h.accounts.rows.filter((a) => a.side === "debt").reduce((s, a) => s + (a.balance.value ?? 0), 0) : 0;
