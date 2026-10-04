@@ -1531,6 +1531,14 @@
 }
 
 /* Progress history table on the result screen. */
+/* The 72(t) commitment beside the plan (decision A2) */
+.commitment {
+  margin-block: var(--space-4);
+  padding-block: var(--space-3);
+  border-top: var(--border-width) solid var(--color-rule);
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
 .history-table {
   width: 100%;
   border-collapse: collapse;

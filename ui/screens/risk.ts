@@ -4,22 +4,7 @@
  * and Flex FI. Reads the engine. Never calculates.
  */
 
-import {
-  SERIES_SOURCE,
-  backtest,
-  defaultDeps,
-  findFiDate,
-  flexAdjuster,
-  guardrailsAdjuster,
-  missingLevelOneAnswers,
-  requireComplete,
-  resolveAssumptions,
-  resolveBand,
-  sturdyFiYear,
-  userValue,
-  type Backtest,
-  type Household,
-} from "../../engine";
+import { SERIES_SOURCE, missingLevelOneAnswers, userValue, type Backtest, type Household } from "../../engine";
 import { gentleFlag } from "../components/gentle-flag";
 import { kindBadge } from "../components/kind-badge";
 import { toggleButton } from "../components/toggle-button";
@@ -27,6 +12,17 @@ import type { Drawer } from "../components/trace-drawer";
 import { clear, el } from "../dom";
 import { dollars } from "../format";
 import type { Store } from "../store";
+import { nextJobId, runInEngineWorker } from "../workers/client";
+import type { EngineStage, SturdyFiYear } from "../workers/engine.worker";
+
+const STAGE_TEXT: Partial<Record<EngineStage, string>> = {
+  fiDate: "Finding the plan's own FI date...",
+  backtest: "Replaying the plan from every start year in history...",
+  guardrails: "Replaying it with guardrails...",
+  flex: "Replaying it with the Flex FI trim...",
+  sturdy: "Searching for the sturdy FI date...",
+  flexSturdy: "Searching for Flex FI...",
+};
 
 export interface RiskContext {
   household: Household;
@@ -45,36 +41,48 @@ export function riskScreen(ctx: RiskContext): HTMLElement {
   let plain: Backtest | null = null;
   let guard: Backtest | null = null;
   let flex: Backtest | null = null;
-  let sturdy: ReturnType<typeof sturdyFiYear> | null = null;
-  let flexSturdy: ReturnType<typeof sturdyFiYear> | null = null;
+  let sturdy: SturdyFiYear | null = null;
+  let flexSturdy: SturdyFiYear | null = null;
   let working = false;
+  let computed = false;
+  let failed: string | null = null;
+  let stage: EngineStage | null = null;
+  let jobId = 0;
   const threshold = () => h().risk?.successThresholdPercent?.value ?? 90;
   const trim = () => h().milestones?.flexFiTrimPercent?.value ?? 10;
 
+  // The backtests and sturdy dates run in the engine worker (decision A3); the screen shows which stage is running.
   const compute = () => {
-    if (working || !complete()) return;
+    if (working || failed || !complete()) return;
     working = true;
-    window.setTimeout(() => {
-      try {
-        const band = resolveBand(resolveAssumptions(h().assumptions), "likely");
-        const fi = findFiDate(requireComplete(h()), band, defaultDeps());
-        fiYear = fi.retirementYear;
-        fiAge = fi.fiAge;
-        if (fiYear !== null) {
-          plain = backtest(h(), fiYear, { minHistoryYears: 30 });
-          guard = backtest(h(), fiYear, { minHistoryYears: 30, spendingAdjuster: guardrailsAdjuster() });
-          flex = backtest(h(), fiYear, { minHistoryYears: 30, spendingAdjuster: flexAdjuster(trim()) });
-          sturdy = sturdyFiYear(h(), fiYear, threshold(), { minHistoryYears: 30 });
-          flexSturdy = sturdyFiYear(h(), fiYear, threshold(), { minHistoryYears: 30, spendingAdjuster: flexAdjuster(trim()) });
-        }
-      } catch {
+    jobId = nextJobId();
+    runInEngineWorker({ id: jobId, kind: "backtests", household: structuredClone(h()), thresholdPercent: threshold(), trimPercent: trim(), minHistoryYears: 30 }, (m) => {
+      if (m.id !== jobId) return;
+      if ("stage" in m) {
+        stage = m.stage;
+        const note = root.querySelector("[data-risk-stage]");
+        if (note) note.textContent = STAGE_TEXT[stage] ?? "Replaying the plan...";
+        return;
+      }
+      if ("done" in m && m.kind === "backtests") {
+        fiYear = m.fiYear;
+        fiAge = m.fiAge;
+        plain = m.plain;
+        guard = m.guard;
+        flex = m.flex;
+        sturdy = m.sturdy;
+        flexSturdy = m.flexSturdy;
+        computed = true;
+      } else {
         plain = null;
+        failed = "error" in m ? m.error : "The replay did not finish.";
       }
       working = false;
+      stage = null;
       render();
-    }, 30);
+    });
   };
-  const invalidate = () => { plain = null; guard = null; flex = null; sturdy = null; flexSturdy = null; ctx.save(); render(); };
+  const invalidate = () => { plain = null; guard = null; flex = null; sturdy = null; flexSturdy = null; computed = false; failed = null; ctx.save(); render(); };
   const pct = (x: number) => `${Math.round(x * 100)}%`;
 
   function render(): void {
@@ -86,8 +94,16 @@ export function riskScreen(ctx: RiskContext): HTMLElement {
     }
     root.append(seriesCard());
     if (!plain) {
+      if (failed) {
+        root.append(gentleFlag(`The replay could not run: ${failed}`));
+        return;
+      }
+      if (computed && fiYear === null) {
+        root.append(el("p", { class: "muted" }, "The plan is not fully funded in the likely band, so there is no date to replay yet."));
+        return;
+      }
       if (!working) compute();
-      root.append(el("p", { class: "muted" }, fiYear === null && plain === null && !working ? "The plan is not fully funded in the likely band, so there is no date to replay yet." : "Replaying the plan from every start year in history (a minute or so)..."));
+      root.append(el("p", { class: "muted", "data-risk-stage": "true", "aria-live": "polite" }, (stage && STAGE_TEXT[stage]) ?? "Replaying the plan from every start year in history..."));
       return;
     }
     root.append(backtestCard(), guardrailsCard(), flexCard(), settingsCard());

@@ -19,7 +19,6 @@ import {
   fiNumbers,
   missingLevelOneAnswers,
   planSteps,
-  project,
   requireComplete,
   resolveAssumptions,
   resolveBand,
@@ -33,6 +32,7 @@ import {
   type Objective,
   type OptimizerResult,
   type ProjectionResult,
+  type SeppCommitment,
   type ToggleEffect,
   type StressCase,
 } from "../../engine";
@@ -49,12 +49,21 @@ import { dollars, dollarsShort, percent, yearWord } from "../format";
 import pkg from "../../package.json";
 import MATERIALITY from "../../data/materiality.json";
 import type { Store } from "../store";
-import { runOptimizerJob, type OptimizerMessage, type OptimizerProgress, type OptimizerRequest } from "../workers/optimizer.worker";
+import { nextJobId, runInEngineWorker } from "../workers/client";
+import type { EngineMessage, EngineStage } from "../workers/engine.worker";
 
-const STAGE_TEXT: Record<OptimizerProgress["stage"], string> = {
+const STAGE_TEXT: Record<EngineStage, string> = {
+  projecting: "Working out your FI date in three bands...",
   searching: "Working out your True FI number: searching about a hundred plans...",
   toggles: "Working out what each strategy is worth...",
   stress: "Running the stress test...",
+  commitment: "Working out the best plan without 72(t) payments...",
+  fiDate: "Finding the plan's own FI date...",
+  backtest: "Replaying the plan from every start year in history...",
+  guardrails: "Replaying it with guardrails...",
+  flex: "Replaying it with the Flex FI trim...",
+  sturdy: "Searching for the sturdy FI date...",
+  flexSturdy: "Searching for Flex FI...",
 };
 
 export interface ResultContext {
@@ -97,27 +106,28 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     return root;
   }
 
-  let result: ProjectionResult;
-  try {
-    result = project(ctx.household);
-  } catch (error) {
-    root.append(
-      el("h1", { class: "screen-title" }, "Your FI date"),
-      gentleFlag(`The plan could not run: ${error instanceof Error ? error.message : String(error)}`, { label: "Go to your numbers", onClick: ctx.goToEntry }),
-    );
-    return root;
-  }
-
   const likelyBand = resolveBand(resolveAssumptions(ctx.household.assumptions), "likely");
-  // Progress history (docs/history-spec.md): one snapshot a day, taken here and saved with the household.
-  {
+  // The three-band FI search runs in the engine worker (decision A3): the screen paints a note first, then the date when it lands.
+  let result: ProjectionResult | null = null;
+  const projectionJob = nextJobId();
+  runInEngineWorker({ id: projectionJob, kind: "project", household: structuredClone(ctx.household) }, (m) => {
+    if ("stage" in m) return;
+    if ("error" in m) {
+      clear(root);
+      root.append(el("h1", { class: "screen-title" }, "Your FI date"), gentleFlag(`The plan could not run: ${m.error}`, { label: "Go to your numbers", onClick: ctx.goToEntry }));
+      return;
+    }
+    if (m.kind !== "project") return;
+    result = m.projection;
+    // Progress history (docs/history-spec.md): one snapshot a day, taken here and saved with the household.
     const snap = snapshotFrom(ctx.household, result, ctx.household.asOf);
     const next = addSnapshot(ctx.household.history ?? [], snap);
     if (JSON.stringify(next) !== JSON.stringify(ctx.household.history ?? [])) {
       ctx.household.history = next;
       ctx.store.save(ctx.household);
     }
-  }
+    render();
+  });
   const prefs = () => ctx.store.loadPrefs();
   const savePrefs = (patch: Partial<ReturnType<Store["loadPrefs"]>>) => ctx.store.savePrefs({ ...prefs(), ...patch });
   let nominal = false;
@@ -130,11 +140,12 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
   let optimized: OptimizerResult | null = null;
   let toggles: ToggleEffect[] | null = null;
   let stress: StressCase[] | null = null;
+  let commitment: SeppCommitment | null = null;
+  let optimizerError: string | null = null;
   let working = false;
-  let stage: OptimizerProgress["stage"] | null = null;
+  let stage: EngineStage | null = null;
   let jobId = 0;
-  let worker: Worker | null = null;
-  const onMessage = (m: OptimizerMessage) => {
+  const onMessage = (m: EngineMessage) => {
     if (m.id !== jobId) return;
     if ("stage" in m) {
       stage = m.stage;
@@ -142,32 +153,25 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
       if (note) note.textContent = STAGE_TEXT[stage];
       return;
     }
-    if ("done" in m) {
+    if ("done" in m && m.kind === "optimize") {
       optimized = m.optimized;
       toggles = m.toggles;
       stress = m.stress;
-    } else optimized = null;
+      commitment = m.commitment;
+      optimizerError = null;
+    } else {
+      optimized = null;
+      optimizerError = "error" in m ? m.error : "The search did not finish.";
+    }
     working = false;
     stage = null;
     render();
   };
   const optimize_ = () => {
-    if (working) return;
+    if (working || optimizerError) return;
     working = true;
-    jobId += 1;
-    const req: OptimizerRequest = { id: jobId, household: structuredClone(ctx.household), objective };
-    if (typeof Worker !== "undefined") {
-      try {
-        worker ??= new Worker(new URL("../workers/optimizer.worker.ts", import.meta.url), { type: "module" });
-        worker.onmessage = (e: MessageEvent<OptimizerMessage>) => onMessage(e.data);
-        worker.onerror = () => onMessage({ id: jobId, error: "The optimizer worker failed." });
-        worker.postMessage(req);
-        return;
-      } catch {
-        worker = null;
-      }
-    }
-    window.setTimeout(() => runOptimizerJob(req, onMessage), 30);
+    jobId = nextJobId();
+    runInEngineWorker({ id: jobId, kind: "optimize", household: structuredClone(ctx.household), objective }, onMessage);
   };
 
   const order = (): SectionId[] => {
@@ -195,7 +199,12 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
 
   function render(): void {
     clear(root);
-    const likely = result.bands.likely;
+    if (!result) {
+      root.append(el("h1", { class: "screen-title" }, "Your FI date"), el("p", { class: "muted", "aria-live": "polite" }, STAGE_TEXT.projecting));
+      return;
+    }
+    const projection = result;
+    const likely = projection.bands.likely;
     const t = likely.timeline;
     const firstYear = t.rows[0]!.year;
     const retirementIndex = likely.retirementYear === null ? 0 : likely.retirementYear - firstYear;
@@ -221,10 +230,10 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     };
 
     const sections: Record<SectionId, () => HTMLElement> = {
-      date: () => el("div", {}, headlineResult(result, openTrace), rearranging ? el("div", { class: "section-order section-order--center" }, el("button", { type: "button", class: "button button--quiet button--small", disabled: order().indexOf("date") === 0, onClick: () => move("date", -1) }, "Up"), el("button", { type: "button", class: "button button--quiet button--small", onClick: () => move("date", 1) }, "Down")) : null),
+      date: () => el("div", {}, headlineResult(projection, openTrace), rearranging ? el("div", { class: "section-order section-order--center" }, el("button", { type: "button", class: "button button--quiet button--small", disabled: order().indexOf("date") === 0, onClick: () => move("date", -1) }, "Up"), el("button", { type: "button", class: "button button--quiet button--small", onClick: () => move("date", 1) }, "Down")) : null),
       trueFi: () => trueFiSection(),
       progress: () => progressSection(),
-      chart: () => sectionCard("chart", [bandChart(result, { display, dollarsLabel: dollarsLabel(), width: chartWidth() })]),
+      chart: () => sectionCard("chart", [bandChart(projection, { display, dollarsLabel: dollarsLabel(), width: chartWidth() })]),
       plan: () => planSection(),
       strategies: () => strategiesSection(),
       figures: () =>
@@ -292,8 +301,8 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     const incomeRows = hh.self.income.kind === "rows" ? hh.self.income.rows : [];
     const spendingRows = hh.spending.kind === "rows" ? hh.spending.rows : [];
     const accountRows = hh.accounts.kind === "rows" ? hh.accounts.rows : [];
-    const bands = (["best", "likely", "worst"] as const).map((b) => `${b}: ${result.bands[b].funded ? `age ${result.bands[b].fiAge}` : "not funded"}`).join("; ");
-    const t = result.bands.likely.timeline;
+    const bands = (["best", "likely", "worst"] as const).map((b) => `${b}: ${result!.bands[b].funded ? `age ${result!.bands[b].fiAge}` : "not funded"}`).join("; ");
+    const t = result!.bands.likely.timeline;
     return [
       `Money Rooms ${pkg.version}, report prepared ${hh.asOf}`,
       `Plan date ${hh.asOf}; state ${hh.self.state?.value ?? "?"}; filing ${hh.self.filingStatus.value}; partner: ${hh.partner ? "yes" : "no"}; conventions ${t.conventions}`,
@@ -460,6 +469,8 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
       optimized = null;
       toggles = null;
       stress = null;
+      commitment = null;
+      optimizerError = null;
       render();
     });
     return sel;
@@ -469,7 +480,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
     const body: (HTMLElement | null)[] = [el("div", { class: "field" }, el("label", {}, "Optimize for"), objectivePicker())];
     if (!optimized) {
       if (!working) optimize_();
-      body.push(el("p", { class: "muted" }, stage ? STAGE_TEXT[stage] : "Working out the plan..."));
+      body.push(optimizerError ? gentleFlag(`The search could not run: ${optimizerError}`) : el("p", { class: "muted" }, stage ? STAGE_TEXT[stage] : "Working out the plan..."));
       return sectionCard_("plan", body);
     }
     const best = optimized.best;
@@ -484,6 +495,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
             : `Estate after heirs' taxes: ${dollars(best.headline)}, up from ${dollars(optimized.baseline.headline)} with no strategies.`;
     body.push(
       el("p", {}, headline, " ", kindBadge("computed")),
+      commitment ? commitmentCard(commitment) : null,
       el(
         "ol",
         { class: "plan-steps" },
@@ -492,6 +504,31 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
       el("p", { class: "muted" }, `The search tried ${optimized.evaluations} full projections of your plan and kept the best one by this objective.`),
     );
     return sectionCard_("plan", body);
+  }
+
+  /** The 72(t) commitment beside the plan (decision A2): what the rule binds, and the best plan found without the payments. */
+  function commitmentCard(c: SeppCommitment): HTMLElement {
+    const withPlan = optimized!.best;
+    const without = c.without.best;
+    const ageText = (a: number) => (Number.isInteger(a) ? String(a) : `${Math.floor(a)} and a half`);
+    const fiText = (r: typeof withPlan) => (r.result.fiAge === null ? "Not funded" : `Age ${r.result.fiAge} (${r.result.retirementYear})`);
+    const yearsText = c.deltaYearsWithout === null ? "one of the two plans is never funded" : c.deltaYearsWithout === 0 ? "the FI date is the same" : `the FI date is ${yearWord(Math.abs(c.deltaYearsWithout))} ${c.deltaYearsWithout > 0 ? "later" : "sooner"}`;
+    const estateText = `the estate after heirs' taxes is ${dollars(Math.abs(c.deltaEstateWithout))} ${c.deltaEstateWithout > 0 ? "less" : "more"}`;
+    const row = (label: string, r: typeof withPlan, estate: number) => el("tr", {}, el("th", { scope: "row" }, label), el("td", {}, fiText(r)), el("td", {}, dollars(estate)));
+    return el(
+      "div",
+      { class: "commitment", role: "group", "aria-label": "The 72(t) commitment" },
+      el("h3", { class: "card__subtitle" }, "This plan takes 72(t) payments, which is a commitment"),
+      el("p", {}, `The rule: payments must continue unchanged until the later of 5 years or age 59 and a half (for this plan, from ${c.startAge} to ${ageText(c.endsAtAge)}, ${c.years % 1 === 0 ? yearWord(c.years) : `${c.years} years`}); changing them triggers the 10% penalty on all prior payments.`),
+      el(
+        "table",
+        { class: "history-table" },
+        el("thead", {}, el("tr", {}, el("th", { scope: "col" }, "Plan"), el("th", { scope: "col" }, "FI date"), el("th", { scope: "col" }, "Estate after heirs' taxes"))),
+        el("tbody", {}, row("With the payments", withPlan, c.estateWith), row("Best plan without them", without, c.estateWithout)),
+      ),
+      el("p", {}, `Without the payments, ${yearsText} and ${estateText}.`),
+      el("p", { class: "muted" }, `${c.rule.source}${c.rule.lastVerified ? `, verified ${c.rule.lastVerified}` : ""}.`),
+    );
   }
 
   function strategiesSection(): HTMLElement {
@@ -516,7 +553,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
   // ---- Tripwires, rules, flags -------------------------------------------------
   function tripwiresSection(): HTMLElement {
     const body: (HTMLElement | null)[] = [];
-    const r = optimized?.best.result ?? result.bands.likely;
+    const r = optimized?.best.result ?? result!.bands.likely;
     const flags = tripwireFlags(r);
     if (!flags.length) body.push(el("p", {}, "This plan does not lean on any rule that is sunsetting or under watch."));
     for (const f of flags) body.push(gentleFlag(f.sentence));
@@ -531,7 +568,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
   }
 
   function rulesSection(): HTMLElement {
-    const r = optimized?.best.result ?? result.bands.likely;
+    const r = optimized?.best.result ?? result!.bands.likely;
     const rules = r.timeline.rulesUsed;
     return sectionCard_("rules", [
       el("p", { class: "muted" }, "Every rule the plan read, with its source and the date it was last checked against that source."),
@@ -540,7 +577,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
   }
 
   function flagsSection(): HTMLElement {
-    const t = (optimized?.best.result ?? result.bands.likely).timeline;
+    const t = (optimized?.best.result ?? result!.bands.likely).timeline;
     const flags = [...new Set([...t.flags, ...t.rows.flatMap((r) => r.flags)])].slice(0, 10);
     const notConfirmed = unconfirmedIncome(ctx.household);
     return sectionCard_("flags", [

@@ -44,7 +44,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 
 ## 2. Maya tie-out (M1 conventions mode)
 
-After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after closing the M2 tie-out on `m2-tieout`. Full suite: 52 files, 539 tests, all passing. M2 tie-out: Plan A 280 of 280; Plan B 300 of 300 after Eli corrected the 2045 penalty cell (answers batch, A1).
+After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after closing the M2 tie-out on `m2-tieout`. Full suite: 55 files, 553 tests, all passing. M2 tie-out: Plan A 280 of 280; Plan B 300 of 300 after Eli corrected the 2045 penalty cell (answers batch, A1).
 
 ## 3. Proposed specs written (review first)
 
@@ -191,6 +191,8 @@ From `docs/readiness.md`, in order:
 **Data round of 2026-10-04 (also on `review-oct4`):** the return series replaced and verified, the wage base and the 2025 poverty guidelines (with Alaska and Hawaii, read by state) verified, the spousal and survivor schedules implemented as specified and tested (32.5% at 62, 37.5% at 64, 71.5% at 60), X2 locked. Maya's M6 results on the verified series: the sturdy FI date stays 2046 (age 45) and the worst historical start stays 1958 (short at 50); the success rate moved from 72.1% to 72.5% with the 2025 row adding one more start. The from-memory series was close to the real one in the years that decide Maya's worst starts (the 1966 to 1982 stretch), so the headline risk numbers did not move.
 
 **Where I stopped:** every phase, 0 to 13, is complete and pushed; the last branch is `review-oct4`, which carries the final report. Nothing was merged to `main`. The branch chain, each from the one before: `prep-oct4`, `m2-engine`, `m2-optimizer`, `m3-flow`, `levels`, `m5-whatifs`, `m4-meaning`, `m6-risk`, `household-two`, `packs-specs`, `foundations`, `coaching-specs`, `feature-register`, `readiness`. Merging `readiness` into `main` brings everything; reviewing the Proposed specs in section 3 and the decisions in section 4 first is the order the build assumed.
+
+**Answers batch (branch `answers-oct4`, 2026-10-04):** the Plan B 2045 penalty cell corrected at Eli's direction (Plan B 300 of 300, A1); 72(t) stays in the default search and every plan that uses it shows the commitment card beside the plan, the rule from `access.sepp72t` and the best plan without the payments with the difference in estate and FI date (`engine/optimizer/sepp-commitment.ts`, A2, locked); one shared engine worker now runs the result screen's three-band FI search, the optimizer with its toggles, stress test, and commitment, and the Risk screen's backtests and sturdy dates, each with a staged note (`ui/workers/engine.worker.ts`, `ui/workers/client.ts`, A3, locked); the most-spending search runs 9 bisection steps and the screen shows the result to the nearest $100 (A4, locked; Maya's test takes 1.9 seconds instead of 3.7).
 
 **What is next, in the order the readiness audit gives:** the M2 workpaper (yours), the two unverified data items, protect `main` and merge the CI gate, five timed people, the attorney questions. The leftover `preflight-check` branch and the branch protection on `main` are still the two fixes from the preflight that the session could not make.
 
