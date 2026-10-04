@@ -16,10 +16,10 @@ CPU throttling is Chromium's `Emulation.setCPUThrottlingRate`; 4x is the usual s
 |---|---|---|---|
 | **Before the worker:** first paint of the FI date | 2.3 s | 5.1 s | 6.9 s |
 | **Before the worker:** optimizer, toggles, and stress test done | 2.4 s | 5.1 s | 7.0 s |
-| **After the worker:** first paint of the FI date | (filled below) | | |
-| **After the worker:** optimizer, toggles, and stress test done | | | |
+| **After the worker:** first paint of the FI date | 0.6 s | 1.4 s | 1.9 s |
+| **After the worker:** optimizer, toggles, and stress test done | 1.5 s | 2.4 s | 2.9 s |
 
-Before the worker the two numbers were the same: the optimizer started in a timeout right after the first render and held the main thread, so the FI date was not painted until the whole search finished. That missed the first-paint target (1 second) and limit (2 seconds) at every throttle, and sat at the optimizer limit's edge at 6x.
+Before the worker the two numbers were the same: the optimizer started in a timeout right after the first render and held the main thread, so the FI date was not painted until the whole search finished. That missed the first-paint target (1 second) and limit (2 seconds) at every throttle. After the worker the FI date paints in 0.6 seconds at 1x, 1.4 at 4x, and 1.9 at 6x (inside the 2-second limit everywhere, inside the 1-second target only at 1x), and the optimizer, toggles, and stress test finish in 1.5, 2.4, and 2.9 seconds (inside the 5-second target at every throttle). What is left in the first paint is the three-band FI search the headline needs; moving it to the worker too would get the 4x figure under the target.
 
 Other measures (Node, this session): the full test suite is 546 tests in about 15 seconds; one projection of three bands for Maya under m2 is under 100 ms; the production bundle is 130 KB gzipped.
 

@@ -1518,6 +1518,8 @@
 .sitefooter a {
   color: var(--color-ink-muted);
   min-height: var(--tap-target);
+  min-width: var(--tap-target);
+  padding: 0 var(--space-1);
   display: inline-flex;
   align-items: center;
 }

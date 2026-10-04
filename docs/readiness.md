@@ -39,7 +39,7 @@ Grades are one builder's reading of the code and docs on one night. "Ready" mean
 | Item | Grade | Evidence | Work remaining |
 |---|---|---|---|
 | Disclaimer | Ready | The result screen's notice and the About page: "Educational, not individualized financial, tax, or legal advice"; the footer on every screen | Attorney review of the wording |
-| Wording that stays educational | Partial | The style guide forbids verdicts; a test scans every M4 sentence for instructing phrases; the plan in words says what the plan does ("Convert about $16,100 a year"), which reads close to an instruction | Extend the scan to the optimizer's plan text and the lessons; decide whether "the plan does X" needs a softer frame |
+| Wording that stays educational | Ready | The style guide forbids verdicts; `tests/wording.test.ts` (2026-10-04) scans every sentence the engine writes (the plan in words, the year's actions, ratio and lens sentences, the Advice Translator's lines) and the card content files for instructing phrases and sentence-initial imperatives; the plan text now describes ("About $5,800 a year moves from the 401(k) to Roth as a conversion") and small wins are titled as moves, not commands | Lessons and pack copy join the scan when they are written |
 | Rules sourced and dated | Ready | Every rule the M2 engine reads carries a source, a URL, and a verified date, listed on every result; unverified rules are refused except through the one flagged door | The rules update routine's first run |
 | Privacy | Ready | No server, no network request with data, local storage only, export and delete on the Privacy page | Attorney review; a privacy policy in the legal sense if the app is published under a business |
 | Coach mode | Missing (by design) | Specified only (`docs/packs/coach.md`, coaching spec 11); off by default; works through files | The attorney questions below, then the audience decision |
@@ -59,20 +59,20 @@ Grades are one builder's reading of the code and docs on one night. "Ready" mean
 
 | Item | Grade | Evidence | Work remaining |
 |---|---|---|---|
-| Onboarding | Partial | Three entry modes, the next card, the template; no first-run script; not tested with a person | Build the two-question opening (feature register rank in the top quartile); test with five people |
+| Onboarding | Partial | Three entry modes, the next card (which now weighs aged numbers at their widened range, M3 test 4), the template; the result screen carries the rough-results label above the default materiality (M3 test 3); no first-run script; not tested with a person | Build the two-question opening (feature register rank in the top quartile); test with five people |
 | Comprehension | Partial | Every number has a trace drawer; kinds are badged; the style guide is followed; no comprehension test has been run | Five-person test: can they say what the FI date means and what moves it |
 | The weekly loop | Missing | `docs/coaching-spec.md` written; nothing built | Build order in the spec's section 15 |
 | Retention signals | Missing | No analytics by design; the progress history and (later) the weekly record are the only local signals | Decide what to measure locally and show to the person only |
-| Accessibility | Partial | An axe audit on two screens found and fixed contrast issues (`docs/accessibility-audit-2026-10.md`); keyboard reachability for tables and the Sky; no screen-reader walkthrough; the five judgment calls are open; the newer screens (Levels, What-ifs, Meaning, Risk, the trust pages) were audited only by construction | Re-run axe on every route; one screen-reader session; Eli's call on the five items |
+| Accessibility | Partial | Second axe audit 2026-10-04 (`docs/accessibility-audit-2026-10.md`): every route, light and dark, 360 and desktop, 0 violations on 44 combinations, no overflow; the footer link width fixed; three judgment calls listed. No screen-reader walkthrough yet | One screen-reader session; Eli's call on the judgment calls |
 
 ## 5. Upkeep
 
 | Item | Grade | Evidence | Work remaining |
 |---|---|---|---|
 | Rules updates | Partial | The registry with verified dates; `docs/rules-update-routine.md` with the November, January, monthly, and quarterly checks; no owner, no first run | Assign the owner; the first monthly report |
-| Support | Missing | No way to report a problem from the app; no FAQ | A "something looks wrong" link that opens a prefilled issue, with no numbers in it |
+| Support | Partial | "Something looks wrong?" on the result screen opens a copyable summary of the inputs' shape and the result (no names, no dollar inputs, no balances) with where to send it (2026-10-04); no FAQ | A FAQ; an issue template on the repository |
 | Error handling | Partial | The result screen catches engine errors and explains; imports list every problem; storage failures are detected; unverified rules refuse to run | A test that every screen survives a corrupt saved household |
-| Performance on phones | Partial, unmeasured | `docs/performance-budget.md` with the targets; bundle 124 KB gzipped (under the 150 KB target); the optimizer and backtests run after paint but on the main thread; no phone measurement | Measure on a mid-range phone; the worker; the CI size check |
+| Performance on phones | Partial, measured | `docs/performance-budget.md`: measured with Chromium CPU throttling at 1x, 4x, and 6x (section 2); the optimizer, toggles, and stress test now run in a Web Worker with a staged progress note so the FI date paints first; bundle 130 KB gzipped; the CI size check runs as a warning | Measure on a real phone; move the Risk screen's backtests to the worker |
 
 ## 6. Launch
 
@@ -81,7 +81,7 @@ Grades are one builder's reading of the code and docs on one night. "Ready" mean
 | Deploy safety | Partial | `deploy.yml` now gates on types, tests, and the tie-out (on `foundations`, for review); main is not protected (the preflight found this); branches cannot be deleted from a session | Protect main (require the Tests check and a pull request); merge `foundations` |
 | Monitoring | Missing | No uptime check, no error reporting (by design, no data leaves the browser) | A static uptime check on the Pages URL; a local error log the person can export with a bug report |
 | Documentation | Ready | README, the engine spec, the data dictionary, the decisions log, the design system, the style guide, one spec per milestone, self-audits, the session report | Eli's review of everything marked Proposed |
-| Versioning | Partial | The export carries a format version and a schema version with migrations | A visible app version on the About page |
+| Versioning | Ready | The export carries a format version and a schema version with migrations; the footer shows the app version (2026-10-04) | |
 
 ---
 

@@ -37,3 +37,11 @@ All changes are in `ui/tokens.css`, plus two selectors in `ui/components.css` th
 ## Not covered by this pass
 
 Screen reader walk-through, keyboard-only use of the dense row editor, and large text (200%) layouts. Each needs a person, not a checker.
+
+## Second audit, 2026-10-04 (readiness polish, branch `polish-oct4`)
+
+axe-core (WCAG 2.0 and 2.1 A and AA, plus best practices) on every route (Your numbers with every section and the first row of each opened, Your FI date, What's next and its Small wins and Sky tabs, Levels, What-ifs, Meaning, Risk, About, Your data and privacy), light and dark, 360 by 740 and 1280 by 900, on the built site: **0 violations on all 44 combinations, no horizontal overflow at 360.** A second pass on Your FI date with the "Something looks wrong?" drawer open and materiality set to 15% (so the rough-results label shows), light and dark, both widths: see the fix list for the one finding.
+
+**Fixed.** The footer's About link was 41 pixels wide at 360 (height was already 44); footer links now have a 44-pixel minimum width.
+
+**Judgment calls (open).** 1. The Sky's circles are SVG buttons 43 pixels wide at 360 (60 tall); they are keyboard-reachable and have labels, and the outline alternative is full size. Widening them means fewer circles per row. 2. The two visually hidden file inputs (1 by 1) are the import controls behind visible buttons; axe does not flag them and they are not tap targets. 3. Page errors in the run were only the font request failing certificate checks inside the test container, not app errors.
