@@ -15,8 +15,6 @@ export interface FederalTaxM2Input {
   year: number;
   /** Age at the end of the year. */
   age: number;
-  /** Test-only (M2 tie-out convention 3): hold the standard deduction at its base amount, with no additional amount at 65. */
-  noAgedDeduction?: boolean;
   filingStatus: FilingStatus;
   wages: number;
   pretaxPayrollDeductions: number;
@@ -143,7 +141,7 @@ export function computeFederalTaxM2(input: FederalTaxM2Input, t: FederalTables, 
   const std = ledger.get<Record<FilingStatus, number> & { additionalAgedOrBlind: number; additionalAgedOrBlindUnmarried: number }>("fed.standardDeduction.2026");
   const unmarried = filingStatus === "single" || filingStatus === "headOfHousehold";
   const agedOne = (age: number | undefined) => (age !== undefined && age >= 65 ? (unmarried ? std.additionalAgedOrBlindUnmarried : std.additionalAgedOrBlind) : 0);
-  const aged = input.noAgedDeduction ? 0 : agedOne(input.age) + (filingStatus === "marriedJoint" ? agedOne(input.partnerAge) : 0);
+  const aged = agedOne(input.age) + (filingStatus === "marriedJoint" ? agedOne(input.partnerAge) : 0);
   const standardDeduction = std[filingStatus] + aged;
   const seniorRule = ledger.getIfApplies<SeniorDeductionRule>("fed.seniorDeduction", year);
   const senior = seniorDeduction(input.age, agi, filingStatus, seniorRule) + (filingStatus === "marriedJoint" && input.partnerAge !== undefined ? seniorDeduction(input.partnerAge, agi, filingStatus, seniorRule) : 0);

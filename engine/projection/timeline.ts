@@ -160,8 +160,7 @@ export interface TieOutSettings {
   /**
    * The M2 tie-out conventions (tests/m2-tie-out-conventions.md), test-only: health care before 65 is the stated
    * benchmark less the ACA credit on this year's MAGI (no out-of-pocket, no Medicaid), a flat amount from 65; the
-   * cash reserve counts the M1 placeholder; the Roth IRA step is used instead of the deductible IRA; premiums are
-   * settled with the year's taxes.
+   * cash reserve counts the M1 placeholder; the Roth IRA step is used instead of the deductible IRA.
    */
   m2TieOut?: { acaBenchmarkBefore65: number; from65: number; reserveHealthcarePlaceholder: { before65: number; from65: number } };
 }
@@ -856,7 +855,6 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
           longTermGains: m2s.salesGains + m2s.harvest,
           penalized: m2s.penalized,
           iraDeduction: m2s.iraDeduction + iraExtra,
-          ...(m2TieOut ? { noAgedDeduction: true } : {}),
           ...partnerFields,
           ...(partner && !separateReturns && pAge !== null && pAlive ? { partnerAge: pAge } : {}),
         },
@@ -879,7 +877,6 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
             longTermGains: 0,
             penalized: 0,
             iraDeduction: 0,
-            ...(m2TieOut ? { noAgedDeduction: true } : {}),
           },
           fed,
           ledger,
@@ -1360,11 +1357,10 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         }
         let total = taxView().total;
         pretaxWithdrawal = trial.pretaxOrdinary;
-        if (m2TieOut) {
-          // Tie-out convention 11: the premium is settled on this year's MAGI along with the taxes.
-          healthcare = healthcareFor(m2Tax(taxView()).magiAca);
-          total += healthcare.total;
-        }
+        // The marketplace premium is priced on this year's MAGI (the reconciled credit) and settles with the taxes
+        // and withdrawals (decision T4, locked 2026-10-04; M2 tie-out convention 11).
+        healthcare = healthcareFor(m2Tax(taxView()).magiAca);
+        total += healthcare.total;
         if (Math.abs(total - lastTotal) < 0.01) break;
         lastTotal = total;
       }
@@ -1374,7 +1370,6 @@ export function runTimeline(hh: CompleteHousehold, opts: TimelineOptions): Timel
         actions.push(`Convert about ${Math.round(m2s.conversion * f).toLocaleString("en-US")} from the ${conversionSource.label} to Roth.`);
       }
       if (m2s.harvest > 0) actions.push(`Harvest about ${Math.round(m2s.harvest * f).toLocaleString("en-US")} of gains at 0%.`);
-      if (!m2TieOut) healthcare = healthcareFor(m2Tax(taxesFor(0, 0, pretaxWithdrawal)).magiAca);
       if (shortfall <= 0) {
         // Cash left over after spending (Social Security, part-time pay, or forced pretax income above the need) goes to taxable.
         const drawn = [...withdrawals.values()].reduce((a, b) => a + b, 0);

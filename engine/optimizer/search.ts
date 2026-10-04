@@ -75,8 +75,9 @@ export function knobValues(hh: CompleteHousehold, knob: Knob): readonly unknown[
   }
 }
 
-function withKnob(policy: DrawdownPolicy, knob: Knob, value: unknown, hh: CompleteHousehold, year0: number): DrawdownPolicy {
+function withKnob(policy: DrawdownPolicy, knob: Knob, value: unknown, hh: CompleteHousehold, year0: number, seppStartAge: number): DrawdownPolicy {
   const birthYear = Number(hh.birthDate.slice(0, 4));
+  void birthYear;
   switch (knob) {
     case "conversionTarget":
       return { ...policy, conversionTarget: value as ConversionTarget };
@@ -87,8 +88,8 @@ function withKnob(policy: DrawdownPolicy, knob: Knob, value: unknown, hh: Comple
     case "withdrawalOrder":
       return { ...policy, withdrawalOrder: value as WithdrawalOrder };
     case "sepp":
-      // On means: start at the retirement age (or now), amortization at the 5% floor.
-      return { ...policy, sepp: value === "on" ? { startAge: Math.max(year0 - birthYear, 0), method: "fixedAmortization", interestRatePercent: 5, federalMidTermRatePercent: 4 } : null };
+      // On means: 72(t) payments from the retirement age (the fixed year's, or the baseline FI age), amortization at the 5% floor.
+      return { ...policy, sepp: value === "on" ? { startAge: seppStartAge, method: "fixedAmortization", interestRatePercent: 5, federalMidTermRatePercent: 4 } : null };
     case "ruleOf55":
       return { ...policy, ruleOf55: value as boolean };
     case "claimingAge":
@@ -130,6 +131,8 @@ export function optimize(household: Household, options: OptimizerOptions, deps: 
   const baselineFi = findFiDate(hh, band, { ...deps, policy: start });
   evaluations += 1;
   const fixedYear = options.objective === "earliestFi" ? null : options.retirementYear ?? baselineFi.retirementYear ?? year0;
+  /** The 72(t) knob starts payments at the retirement age: the fixed year's, or for earliest FI the baseline FI age (decision T5). */
+  const seppStartAge = Math.max((fixedYear ?? baselineFi.retirementYear ?? year0) - Number(hh.birthDate.slice(0, 4)), year0 - Number(hh.birthDate.slice(0, 4)));
 
   const evaluate = (policy: DrawdownPolicy, near: number | null): Candidate => {
     const d: Deps = { ...deps, policy };
@@ -184,7 +187,7 @@ export function optimize(household: Household, options: OptimizerOptions, deps: 
     for (const knob of knobs) {
       for (const value of knobValues(hh, knob)) {
         if (sameValue(value, knobValueOf(best.policy, knob))) continue;
-        const candidate = evaluate(withKnob(best.policy, knob, value, hh, year0), best.result.retirementYear);
+        const candidate = evaluate(withKnob(best.policy, knob, value, hh, year0, seppStartAge), best.result.retirementYear);
         if (candidate.score > best.score + 1e-6) {
           best = candidate;
           improved = true;
@@ -201,7 +204,7 @@ export function optimize(household: Household, options: OptimizerOptions, deps: 
     for (const va of knobValues(hh, a)) {
       for (const vb of knobValues(hh, b)) {
         if (sameValue(va, knobValueOf(best.policy, a)) && sameValue(vb, knobValueOf(best.policy, b))) continue;
-        const candidate = evaluate(withKnob(withKnob(best.policy, a, va, hh, year0), b, vb, hh, year0), best.result.retirementYear);
+        const candidate = evaluate(withKnob(withKnob(best.policy, a, va, hh, year0, seppStartAge), b, vb, hh, year0, seppStartAge), best.result.retirementYear);
         if (candidate.score > best.score + 1e-6) best = candidate;
       }
     }
