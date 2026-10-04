@@ -1,151 +1,1262 @@
 {
   "_meta": {
     "description": "Every tax and benefit rule the engine uses. The engine reads rules only from here. See docs/m2-spec.md section 6 (tripwires).",
-    "version": 1,
+    "version": 2,
     "drafted": "2026-10-02",
-    "verification": "Values were gathered from published summaries of the official sources named in each entry. Before M2 uses any entry, Claude Code must open the official source, confirm the value, replace 'url' with the official link, and set 'lastVerified'. Entries with lastVerified null are not to be used.",
+    "updated": "2026-10-04",
+    "verification": "Each entry was checked against the official document named in its source on 2026-10-03 (see docs/rules-verification-2026-10.md). 'url' is the official link and 'lastVerified' the date it was confirmed. Where a page could not be fetched from the build session, 'verification' says so and 'lastVerified' stays null. Entries with lastVerified null are not to be used for new features; M1 keeps its own sourced copies in data/tax/2026.json.",
     "statuses": "current | sunsetting | watch | stale"
   },
   "rules": [
     {
       "id": "fed.standardDeduction.2026",
       "name": "Standard deduction",
-      "value": { "single": 16100, "marriedJoint": 32200, "headOfHousehold": 24150, "marriedSeparate": 16100 },
-      "effective": [2026], "sunset": null,
-      "source": "IRS Revenue Procedure 2025-32",
-      "url": null, "lastVerified": null, "status": "current",
+      "value": {
+        "single": 16100,
+        "marriedJoint": 32200,
+        "headOfHousehold": 24150,
+        "marriedSeparate": 16100,
+        "additionalAgedOrBlind": 1650,
+        "additionalAgedOrBlindUnmarried": 2050
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRS Revenue Procedure 2025-32, section 4.14",
+      "url": "https://www.irs.gov/pub/irs-drop/rp-25-32.pdf",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "verification": "Confirmed against the revenue procedure on 2026-10-03. Section 2.08 notes the OBBBA made the higher standard deduction permanent.",
       "watch": "Next year's values published each October",
-      "affects": ["B1", "B2", "A5"]
+      "affects": [
+        "B1",
+        "B2",
+        "A5"
+      ]
+    },
+    {
+      "id": "fed.brackets.2026",
+      "name": "Federal ordinary income brackets (taxable income; marginal; rates in percent)",
+      "value": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 10
+          },
+          {
+            "from": 12400,
+            "rate": 12
+          },
+          {
+            "from": 50400,
+            "rate": 22
+          },
+          {
+            "from": 105700,
+            "rate": 24
+          },
+          {
+            "from": 201775,
+            "rate": 32
+          },
+          {
+            "from": 256225,
+            "rate": 35
+          },
+          {
+            "from": 640600,
+            "rate": 37
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 10
+          },
+          {
+            "from": 24800,
+            "rate": 12
+          },
+          {
+            "from": 100800,
+            "rate": 22
+          },
+          {
+            "from": 211400,
+            "rate": 24
+          },
+          {
+            "from": 403550,
+            "rate": 32
+          },
+          {
+            "from": 512450,
+            "rate": 35
+          },
+          {
+            "from": 768700,
+            "rate": 37
+          }
+        ],
+        "marriedSeparate": [
+          {
+            "from": 0,
+            "rate": 10
+          },
+          {
+            "from": 12400,
+            "rate": 12
+          },
+          {
+            "from": 50400,
+            "rate": 22
+          },
+          {
+            "from": 105700,
+            "rate": 24
+          },
+          {
+            "from": 201775,
+            "rate": 32
+          },
+          {
+            "from": 256225,
+            "rate": 35
+          },
+          {
+            "from": 384350,
+            "rate": 37
+          }
+        ],
+        "headOfHousehold": [
+          {
+            "from": 0,
+            "rate": 10
+          },
+          {
+            "from": 17700,
+            "rate": 12
+          },
+          {
+            "from": 67450,
+            "rate": 22
+          },
+          {
+            "from": 105700,
+            "rate": 24
+          },
+          {
+            "from": 201750,
+            "rate": 32
+          },
+          {
+            "from": 256200,
+            "rate": 35
+          },
+          {
+            "from": 640600,
+            "rate": 37
+          }
+        ]
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRS Revenue Procedure 2025-32, section 4.01, Tables 1 to 4",
+      "url": "https://www.irs.gov/pub/irs-drop/rp-25-32.pdf",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "verification": "Every threshold typed from the four tables on 2026-10-03 and matched to data/tax/2026.json (identical).",
+      "watch": "Rates made permanent by the One Big Beautiful Bill Act (2025); thresholds indexed yearly",
+      "affects": [
+        "B1",
+        "B2",
+        "E1"
+      ]
     },
     {
       "id": "fed.ltcgZeroTop.2026",
       "name": "Top of the 0% long-term capital gains bracket (taxable income)",
-      "value": { "single": 49450, "marriedJoint": 98900 },
-      "effective": [2026], "sunset": null,
-      "source": "IRS Revenue Procedure 2025-32; IRC §1(h)",
-      "url": null, "lastVerified": null, "status": "current",
-      "watch": "Values derived from summaries; confirm every filing status against the revenue procedure",
-      "affects": ["A5", "B3"]
+      "value": {
+        "single": 49450,
+        "marriedJoint": 98900,
+        "marriedSeparate": 49450,
+        "headOfHousehold": 66200
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRS Revenue Procedure 2025-32, section 4.03; IRC 1(h), 1(j)(5)",
+      "url": "https://www.irs.gov/pub/irs-drop/rp-25-32.pdf",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "verification": "Single and joint confirmed; head of household and separate added from the same table.",
+      "watch": null,
+      "affects": [
+        "A5",
+        "B3"
+      ]
     },
     {
-      "id": "fed.brackets.2026",
-      "name": "Federal ordinary income brackets",
-      "value": "Full tables to be entered from the revenue procedure",
-      "effective": [2026], "sunset": null,
-      "source": "IRS Revenue Procedure 2025-32",
-      "url": null, "lastVerified": null, "status": "current",
-      "watch": "Rates made permanent by the One Big Beautiful Bill Act (2025); thresholds indexed yearly",
-      "affects": ["B1", "B2", "E1"]
+      "id": "fed.ltcgBrackets.2026",
+      "name": "Long-term capital gains and qualified dividend brackets (taxable income; marginal; rates in percent)",
+      "value": {
+        "single": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 49450,
+            "rate": 15
+          },
+          {
+            "from": 545500,
+            "rate": 20
+          }
+        ],
+        "marriedJoint": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 98900,
+            "rate": 15
+          },
+          {
+            "from": 613700,
+            "rate": 20
+          }
+        ],
+        "marriedSeparate": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 49450,
+            "rate": 15
+          },
+          {
+            "from": 306850,
+            "rate": 20
+          }
+        ],
+        "headOfHousehold": [
+          {
+            "from": 0,
+            "rate": 0
+          },
+          {
+            "from": 66200,
+            "rate": 15
+          },
+          {
+            "from": 579600,
+            "rate": 20
+          }
+        ],
+        "stacking": "Gains sit on top of ordinary taxable income: the 0% and 15% space is what is left of each threshold after ordinary income."
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRS Revenue Procedure 2025-32, section 4.03 (maximum zero rate and maximum 15% rate amounts)",
+      "url": "https://www.irs.gov/pub/irs-drop/rp-25-32.pdf",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "verification": "Both thresholds for all four statuses typed from the table on 2026-10-03. The 20% rate above the 15% maximum is statutory (IRC 1(h)(1)(D)).",
+      "watch": "Indexed yearly",
+      "affects": [
+        "A5",
+        "B3",
+        "G1"
+      ]
     },
     {
       "id": "limits.2026",
       "name": "Contribution limits",
-      "value": { "401kElective": 24500, "catchUp50": 8000, "superCatchUp60to63": 11250, "ira": 7500, "iraCatchUp50": 1100, "hsaSelf": 4400, "hsaFamily": 8750, "hsaCatchUp55": 1000 },
-      "effective": [2026], "sunset": null,
-      "source": "IRS Notice 2025-67",
-      "url": null, "lastVerified": null, "status": "current",
+      "value": {
+        "401kElective": 24500,
+        "catchUp50": 8000,
+        "superCatchUp60to63": 11250,
+        "rothCatchUpWageThreshold": 150000,
+        "ira": 7500,
+        "iraCatchUp50": 1100,
+        "hsaSelf": 4400,
+        "hsaFamily": 8750,
+        "hsaCatchUp55": 1000
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRS Notice 2025-67 (401(k), catch-ups, IRA); IRS Revenue Procedure 2025-19 section 2.01 (HSA); IRC 223(b)(3) (HSA catch-up, statutory $1,000)",
+      "url": "https://www.irs.gov/pub/irs-drop/n-25-67.pdf",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "verification": "All values confirmed on 2026-10-03. The Roth catch-up wage threshold ($150,000 of prior-year FICA wages) was added: catch-up contributions above it must be Roth from 2026.",
       "watch": "Next year's limits published each fall. Roth catch-up requirement for higher earners begins 2026 (SECURE 2.0)",
-      "affects": ["E1", "E4", "C4"]
+      "affects": [
+        "E1",
+        "E4",
+        "C4"
+      ]
+    },
+    {
+      "id": "limits.totalAdditions.2026",
+      "name": "Total annual additions limit (employee + employer + after-tax), IRC 415(c)",
+      "value": {
+        "limit": 72000,
+        "note": "Catch-up contributions sit on top of this limit. Also capped at 100% of compensation."
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRS Notice 2025-67; IRS COLA table",
+      "url": "https://www.irs.gov/retirement-plans/cola-increases-for-dollar-limitations-on-benefits-and-contributions",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "watch": "Needed for mega backdoor Roth",
+      "affects": [
+        "E3",
+        "F1"
+      ]
+    },
+    {
+      "id": "limits.iraDeductionPhaseout.2026",
+      "name": "Traditional IRA deduction phase-out (modified AGI)",
+      "value": {
+        "coveredByWorkplacePlan": {
+          "single": [
+            81000,
+            91000
+          ],
+          "headOfHousehold": [
+            81000,
+            91000
+          ],
+          "marriedJoint": [
+            129000,
+            149000
+          ],
+          "marriedSeparate": [
+            0,
+            10000
+          ]
+        },
+        "notCoveredButSpouseIs": {
+          "marriedJoint": [
+            242000,
+            252000
+          ]
+        },
+        "notCoveredNoSpouseCovered": "fully deductible at any income"
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRS Notice 2025-67",
+      "url": "https://www.irs.gov/pub/irs-drop/n-25-67.pdf",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "watch": null,
+      "affects": [
+        "E1"
+      ]
+    },
+    {
+      "id": "limits.rothIraIncome.2026",
+      "name": "Roth IRA contribution income phase-out (modified AGI)",
+      "value": {
+        "single": [
+          153000,
+          168000
+        ],
+        "headOfHousehold": [
+          153000,
+          168000
+        ],
+        "marriedJoint": [
+          242000,
+          252000
+        ],
+        "marriedSeparate": [
+          0,
+          10000
+        ]
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRS Notice 2025-67",
+      "url": "https://www.irs.gov/pub/irs-drop/n-25-67.pdf",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "watch": "Above it, use the backdoor Roth",
+      "affects": [
+        "E2"
+      ]
+    },
+    {
+      "id": "limits.457b.2026",
+      "name": "Governmental 457(b) deferral limit (IRC 457(e)(15)), separate from the 401(k)/403(b) limit",
+      "value": {
+        "limit": 24500,
+        "catchUp50": 8000,
+        "superCatchUp60to63": 11250,
+        "separateFrom402g": true
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRS Notice 2025-67 (457(e)(15) limit listed separately from the 402(g) limit); IRS COLA table",
+      "url": "https://www.irs.gov/retirement-plans/cola-increases-for-dollar-limitations-on-benefits-and-contributions",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "verification": "Amount confirmed. That the limit is separate follows from the two statutory limits being adjusted and listed separately; the IRS 457(b) topic page does not restate it.",
+      "watch": null,
+      "affects": [
+        "A7"
+      ]
     },
     {
       "id": "access.sepp72t",
       "name": "72(t) substantially equal periodic payments",
-      "value": { "methods": ["rmd", "fixedAmortization", "fixedAnnuitization"], "maxRate": "greater of 5% or 120% of the federal mid-term rate", "duration": "longer of 5 years or until age 59½", "modificationPenalty": "10% retroactively on all prior payments, plus interest", "oneTimeSwitchToRmdMethod": true },
-      "effective": ["2023-"], "sunset": null,
-      "source": "IRS Notice 2022-6; IRC §72(t)(2)(A)(iv)",
-      "url": null, "lastVerified": null, "status": "current",
+      "value": {
+        "methods": [
+          "rmd",
+          "fixedAmortization",
+          "fixedAnnuitization"
+        ],
+        "maxRate": "greater of 5% or 120% of the federal mid-term rate for either of the two months before the first payment",
+        "duration": "longer of 5 years or until age 59 and a half",
+        "modificationPenalty": "10% retroactively on all prior payments, plus interest",
+        "oneTimeSwitchToRmdMethod": true,
+        "lifeTables": "Uniform Lifetime, Single Life, or Joint and Last Survivor (Notice 2022-6 appendix)"
+      },
+      "effective": [
+        "2023-"
+      ],
+      "sunset": null,
+      "source": "IRS Notice 2022-6, sections 3.01 and 3.02; IRC 72(t)(2)(A)(iv) and 72(t)(4)",
+      "url": "https://www.irs.gov/pub/irs-drop/n-22-06.pdf",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "verification": "Methods, 5% floor, 120% mid-term rate, and modification rules confirmed in the notice text on 2026-10-03.",
       "watch": "Federal mid-term rate changes monthly",
-      "affects": ["A3"]
+      "affects": [
+        "A3"
+      ]
     },
     {
       "id": "access.ruleOf55",
       "name": "Rule of 55",
-      "value": { "age": 55, "publicSafetyAge": 50, "appliesTo": "the plan of the employer separated from, in or after the year of the birthday; not IRAs, not earlier employers' plans", "planMustAllow": true },
-      "effective": ["ongoing"], "sunset": null,
-      "source": "IRC §72(t)(2)(A)(v) and §72(t)(10)",
-      "url": null, "lastVerified": null, "status": "current", "watch": null,
-      "affects": ["A4"]
+      "value": {
+        "age": 55,
+        "publicSafetyAge": 50,
+        "appliesTo": "the qualified plan (401(k), 403(b), pension) of the employer separated from, in or after the year of the birthday; not IRAs, SEP or SIMPLE IRAs, not earlier employers' plans",
+        "planMustAllow": true
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "IRC 72(t)(2)(A)(v) and 72(t)(10); IRS exceptions table",
+      "url": "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-exceptions-to-tax-on-early-distributions",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "verification": "The IRS exceptions table confirms the separation-from-service exception applies to qualified plans only, at 55 (50 for public safety).",
+      "watch": null,
+      "affects": [
+        "A4"
+      ]
+    },
+    {
+      "id": "access.457bNoPenalty",
+      "name": "Governmental 457(b) distributions are not subject to the 10% additional tax",
+      "value": {
+        "exception": "Distributions from a governmental 457(b) plan after separation are not subject to the 10% additional tax, except amounts attributable to rollovers from another type of plan or IRA"
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "IRC 72(t)(9); IRS exceptions table",
+      "url": "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-exceptions-to-tax-on-early-distributions",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "watch": null,
+      "affects": [
+        "A7"
+      ]
     },
     {
       "id": "access.rothOrdering",
       "name": "Roth IRA ordering and five-year rules",
-      "value": { "order": ["regular contributions", "conversions, oldest first (taxable part first)", "earnings"], "conversionClock": "Separate five-year period per conversion, starting January 1 of the conversion year; penalty applies only under 59½", "earningsClock": "Five years from the first Roth IRA contribution, plus age 59½, for qualified (tax-free) earnings" },
-      "effective": ["ongoing"], "sunset": null,
-      "source": "IRS Publication 590-B, Ordering Rules for Distributions",
-      "url": null, "lastVerified": null, "status": "current", "watch": null,
-      "affects": ["A1", "A2"]
+      "value": {
+        "order": [
+          "regular contributions",
+          "conversions and rollovers, first-in first-out (taxable part of each first, then nontaxable part)",
+          "earnings"
+        ],
+        "conversionClock": "Separate five-year period per conversion, starting January 1 of the conversion year; the 10% additional tax applies to the taxable part withdrawn inside it, only under 59 and a half",
+        "earningsClock": "Five years from the first tax year a Roth IRA contribution was made, plus age 59 and a half (or death, disability, first home), for qualified (tax-free) earnings"
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "IRS Publication 590-B (2025), Roth IRAs: Ordering Rules for Distributions; Additional Tax on Early Distributions; What Are Qualified Distributions",
+      "url": "https://www.irs.gov/publications/p590b",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "watch": null,
+      "affects": [
+        "A1",
+        "A2"
+      ]
+    },
+    {
+      "id": "health.fpl.2026",
+      "name": "Federal poverty guidelines for 2025, used for coverage year 2026 premium credits",
+      "value": {
+        "guidelineYear": 2025,
+        "byHouseholdSize": {
+          "1": 15650,
+          "2": 21150,
+          "3": 26650,
+          "4": 32150,
+          "5": 37650,
+          "6": 43150,
+          "7": 48650,
+          "8": 54150
+        },
+        "eachAdditionalPerson": 5500,
+        "alaska": {
+          "byHouseholdSize": {
+            "1": 19550,
+            "2": 26430,
+            "3": 33310,
+            "4": 40190,
+            "5": 47070,
+            "6": 53950,
+            "7": 60830,
+            "8": 67710
+          },
+          "eachAdditionalPerson": 6880
+        },
+        "hawaii": {
+          "byHouseholdSize": {
+            "1": 17990,
+            "2": 24320,
+            "3": 30650,
+            "4": 36980,
+            "5": 43310,
+            "6": 49640,
+            "7": 55970,
+            "8": 62300
+          },
+          "eachAdditionalPerson": 6330
+        },
+        "note": "Premium tax credits for coverage year 2026 use the 2025 poverty guidelines (the guidelines in effect at open enrollment), confirmed by Eli on 2026-10-04. Contiguous states and DC: $15,650 for one person plus $5,500 each additional; Alaska $19,550 plus $6,880; Hawaii $17,990 plus $6,330."
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "HHS poverty guidelines for 2025, Federal Register Vol. 90 No. 11 (January 17, 2025), document 2025-01377",
+      "url": "https://www.govinfo.gov/content/pkg/FR-2025-01-17/html/2025-01377.htm",
+      "lastVerified": "2026-10-04",
+      "status": "watch",
+      "verification": "All three tables (contiguous states and DC, Alaska, Hawaii) confirmed by Eli on 2026-10-04 from the Federal Register notice. Replaces the values read from HealthCare.gov on 2026-10-03, which were the 2026 guidelines and do not apply to 2026 credits.",
+      "watch": "The 2026 guidelines (published January 2026) apply to coverage year 2027.",
+      "affects": [
+        "C1",
+        "C2"
+      ]
     },
     {
       "id": "health.acaPtc.2026",
       "name": "ACA premium tax credit",
-      "value": { "eligibleIncomePctFpl": [100, 400], "medicaidExpansionLowerBoundPctFpl": 138, "cliffAbove400": true, "requiredContributionTable": "to be entered from the IRS applicable percentage table" },
-      "effective": [2026], "sunset": null,
-      "source": "IRC §36B; IRS applicable percentage table for 2026",
-      "url": null, "lastVerified": null, "status": "watch",
+      "value": {
+        "eligibleIncomePctFpl": [
+          100,
+          400
+        ],
+        "medicaidExpansionLowerBoundPctFpl": 138,
+        "cliffAbove400": true,
+        "applicablePercentageTable": [
+          {
+            "fplFrom": 0,
+            "fplTo": 133,
+            "initial": 2.1,
+            "final": 2.1
+          },
+          {
+            "fplFrom": 133,
+            "fplTo": 150,
+            "initial": 3.14,
+            "final": 4.19
+          },
+          {
+            "fplFrom": 150,
+            "fplTo": 200,
+            "initial": 4.19,
+            "final": 6.6
+          },
+          {
+            "fplFrom": 200,
+            "fplTo": 250,
+            "initial": 6.6,
+            "final": 8.44
+          },
+          {
+            "fplFrom": 250,
+            "fplTo": 300,
+            "initial": 8.44,
+            "final": 9.96
+          },
+          {
+            "fplFrom": 300,
+            "fplTo": 400,
+            "initial": 9.96,
+            "final": 9.96
+          }
+        ],
+        "tableMeaning": "The percent of household income the household pays for the benchmark (second-lowest-cost silver) plan, interpolated linearly within each band. The credit is the benchmark premium minus that amount.",
+        "requiredContributionPercentage": 9.96
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRS Revenue Procedure 2025-25, section 3 (applicable percentage table and required contribution percentage for 2026); IRC 36B",
+      "url": "https://www.irs.gov/pub/irs-drop/rp-25-25.pdf",
+      "lastVerified": "2026-10-03",
+      "status": "watch",
+      "verification": "Table confirmed on 2026-10-03. The table stops at 400% of the poverty line, so the cliff is back for 2026 unless Congress acts.",
       "watch": "Enhanced subsidies (no cliff, lower contributions) expired 2025-12-31. Bills to restore or extend them have been introduced. Check monthly.",
-      "affects": ["C1", "C2"]
+      "affects": [
+        "C1",
+        "C2"
+      ]
     },
     {
       "id": "health.irmaa.2026",
-      "name": "Medicare IRMAA tiers",
-      "value": { "firstTierMagiAbove": { "single": 109000, "marriedJoint": 218000 }, "lookbackYears": 2, "partBStandardMonthly": 202.90, "fullTierTable": "to be entered from SSA POMS" },
-      "effective": [2026], "sunset": null,
-      "source": "SSA POMS HI 01101.020; CMS 2026 Medicare Parts A and B premiums fact sheet",
-      "url": null, "lastVerified": null, "status": "current",
+      "name": "Medicare IRMAA tiers (monthly, 2026)",
+      "value": {
+        "lookbackYears": 2,
+        "partBStandardMonthly": 202.9,
+        "partBDeductibleAnnual": 283,
+        "partAInpatientDeductible": 1736,
+        "tiers": [
+          {
+            "single": [
+              null,
+              109000
+            ],
+            "marriedJoint": [
+              null,
+              218000
+            ],
+            "partBAdjustment": 0.0,
+            "partBTotal": 202.9,
+            "partDAdjustment": 0.0
+          },
+          {
+            "single": [
+              109000,
+              137000
+            ],
+            "marriedJoint": [
+              218000,
+              274000
+            ],
+            "partBAdjustment": 81.2,
+            "partBTotal": 284.1,
+            "partDAdjustment": 14.5
+          },
+          {
+            "single": [
+              137000,
+              171000
+            ],
+            "marriedJoint": [
+              274000,
+              342000
+            ],
+            "partBAdjustment": 202.9,
+            "partBTotal": 405.8,
+            "partDAdjustment": 37.5
+          },
+          {
+            "single": [
+              171000,
+              205000
+            ],
+            "marriedJoint": [
+              342000,
+              410000
+            ],
+            "partBAdjustment": 324.6,
+            "partBTotal": 527.5,
+            "partDAdjustment": 60.4
+          },
+          {
+            "single": [
+              205000,
+              500000
+            ],
+            "marriedJoint": [
+              410000,
+              750000
+            ],
+            "partBAdjustment": 446.3,
+            "partBTotal": 649.2,
+            "partDAdjustment": 83.3
+          },
+          {
+            "single": [
+              500000,
+              null
+            ],
+            "marriedJoint": [
+              750000,
+              null
+            ],
+            "partBAdjustment": 487.0,
+            "partBTotal": 689.9,
+            "partDAdjustment": 91.0
+          }
+        ],
+        "marriedSeparate": [
+          {
+            "magi": [
+              null,
+              109000
+            ],
+            "partBAdjustment": 0.0,
+            "partDAdjustment": 0.0
+          },
+          {
+            "magi": [
+              109000,
+              391000
+            ],
+            "partBAdjustment": 446.3,
+            "partDAdjustment": 83.3
+          },
+          {
+            "magi": [
+              391000,
+              null
+            ],
+            "partBAdjustment": 487.0,
+            "partDAdjustment": 91.0
+          }
+        ],
+        "tierMeaning": "A tier applies when MAGI from two years earlier is above its lower bound and at or below its upper bound."
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "CMS fact sheet, 2026 Medicare Parts A and B Premiums and Deductibles (2025-11-14); SSA POMS HI 01101.020",
+      "url": "https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "verification": "Full Part B and Part D tables typed from the CMS fact sheet on 2026-10-03. The SSA POMS page could not be fetched from this session.",
       "watch": "New tiers each November",
-      "affects": ["C3"]
+      "affects": [
+        "C3"
+      ]
     },
     {
       "id": "ss.taxationThresholds",
-      "name": "Taxation of Social Security benefits (provisional income)",
-      "value": { "single": [25000, 34000], "marriedJoint": [32000, 44000], "maxTaxablePct": 85, "indexed": false },
-      "effective": ["ongoing"], "sunset": null,
-      "source": "IRC §86",
-      "url": null, "lastVerified": null, "status": "current", "watch": null,
-      "affects": ["B6"]
+      "name": "Taxation of Social Security benefits (provisional income base amounts)",
+      "value": {
+        "single": [
+          25000,
+          34000
+        ],
+        "headOfHousehold": [
+          25000,
+          34000
+        ],
+        "marriedJoint": [
+          32000,
+          44000
+        ],
+        "marriedSeparateLivedTogether": [
+          0,
+          0
+        ],
+        "marriedSeparateLivedApart": [
+          25000,
+          34000
+        ],
+        "inclusion": [
+          50,
+          85
+        ],
+        "maxTaxablePct": 85,
+        "indexed": false
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "IRC 86; IRS FAQ Social Security Income (base amounts); IRS Publication 915 (adjusted base amounts and 85% rule)",
+      "url": "https://www.irs.gov/faqs/social-security-income",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "verification": "Base amounts confirmed on the IRS FAQ; the $34,000 and $44,000 adjusted base amounts and the 85% maximum confirmed in Publication 915 (https://www.irs.gov/pub/irs-pdf/p915.pdf).",
+      "watch": null,
+      "affects": [
+        "B6"
+      ]
     },
     {
       "id": "fed.seniorDeduction",
       "name": "Senior deduction (age 65+)",
-      "value": { "perPerson": 6000, "phaseOutStartMagi": { "single": 75000, "marriedJoint": 150000 }, "phaseOutRate": 0.06 },
-      "effective": [2025, 2026, 2027, 2028], "sunset": 2028,
-      "source": "One Big Beautiful Bill Act (2025)",
-      "url": null, "lastVerified": null, "status": "sunsetting",
+      "value": {
+        "perPerson": 6000,
+        "phaseOutStartMagi": {
+          "single": 75000,
+          "marriedJoint": 150000
+        },
+        "phaseOutRate": 0.06,
+        "inAdditionToStandardDeduction": true
+      },
+      "effective": [
+        2025,
+        2026,
+        2027,
+        2028
+      ],
+      "sunset": 2028,
+      "source": "One Big Beautiful Bill Act (Pub. L. 119-21) section 70103 (the 6% phase-out rate); IRS newsroom summary (amount, thresholds, years)",
+      "url": "https://www.irs.gov/newsroom/one-big-beautiful-bill-act-tax-deductions-for-working-americans-and-seniors",
+      "lastVerified": "2026-10-04",
+      "status": "sunsetting",
+      "verification": "Amount, thresholds, years, and stacking confirmed on the IRS page on 2026-10-03. The 6% phase-out rate confirmed by Eli from the statute, OBBBA section 70103, on 2026-10-04.",
       "watch": "Scheduled to end after 2028 unless extended",
-      "affects": ["B7"]
+      "affects": [
+        "B7"
+      ]
     },
     {
       "id": "ss.trustFund.2026",
       "name": "Social Security trust fund outlook",
-      "value": { "oasiDepletion": "2032 Q4", "oasiPayablePct": 78, "combinedDepletion": 2034, "combinedPayablePct": 83 },
-      "effective": [2026], "sunset": null,
+      "value": {
+        "oasiDepletion": "2032 Q4",
+        "oasiPayablePct": 78,
+        "combinedDepletion": 2034,
+        "combinedPayablePct": 83
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
       "source": "2026 Social Security Trustees Report (released 2026-06-09)",
       "url": "https://www.ssa.gov/news/en/press/releases/2026-06-09.html",
-      "lastVerified": "2026-10-02", "status": "watch",
+      "lastVerified": "2026-10-02",
+      "status": "watch",
       "watch": "Next Trustees Report; any legislation changing benefits or revenue",
-      "affects": ["D4"]
+      "affects": [
+        "D4"
+      ]
     },
     {
       "id": "rmd.startAge",
       "name": "Required minimum distribution start age",
-      "value": { "bornThrough1950": 72, "born1951to1959": 73, "born1960orLater": 75 },
-      "effective": ["ongoing"], "sunset": null,
-      "source": "SECURE 2.0 Act §107",
-      "url": null, "lastVerified": null, "status": "current", "watch": null,
-      "affects": ["B5"]
+      "value": {
+        "bornThrough1950": 72,
+        "born1951to1959": 73,
+        "born1960orLater": 75,
+        "firstDeadline": "April 1 of the year after reaching the start age; later years by December 31",
+        "note1959": "SECURE 2.0 section 107 as enacted assigns both 73 and 75 to people born in 1959 (a drafting ambiguity); the engine uses 73 for 1951 to 1959 births, the reading the IRS has applied in proposed regulations. Re-check when the final regulations or a technical correction settle it."
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "SECURE 2.0 Act section 107 (Pub. L. 117-328, Division T); IRS RMD topic page",
+      "url": "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-required-minimum-distributions-rmds",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "Age 73 and the April 1 deadline confirmed on the IRS page on 2026-10-03. The birth-year rules (72 through 1950, 73 for 1951 to 1959, 75 for 1960 or later) confirmed by Eli from SECURE 2.0 section 107 on 2026-10-04, with the 1959 ambiguity noted in the value.",
+      "watch": null,
+      "affects": [
+        "B5"
+      ]
     },
     {
       "id": "fed.niit",
       "name": "Net investment income tax",
-      "value": { "rate": 0.038, "magiAbove": { "single": 200000, "marriedJoint": 250000 }, "indexed": false },
-      "effective": ["ongoing"], "sunset": null,
-      "source": "IRC §1411",
-      "url": null, "lastVerified": null, "status": "current", "watch": null,
-      "affects": ["B8"]
+      "value": {
+        "rate": 0.038,
+        "magiAbove": {
+          "single": 200000,
+          "headOfHousehold": 200000,
+          "marriedJoint": 250000,
+          "marriedSeparate": 125000
+        },
+        "indexed": false
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "IRC 1411; IRS Tax Topic 559",
+      "url": "https://www.irs.gov/taxtopics/tc559",
+      "lastVerified": "2026-10-03",
+      "status": "current",
+      "watch": null,
+      "affects": [
+        "B8"
+      ]
     },
-    { "id": "limits.totalAdditions.2026", "name": "Total annual additions limit (employee + employer + after-tax)", "value": null, "effective": [2026], "sunset": null, "source": "IRS Notice 2025-67; IRC 415(c)", "url": null, "lastVerified": null, "status": "current", "watch": "Needed for mega backdoor Roth", "affects": ["E3"] },
-    { "id": "limits.iraDeductionPhaseout.2026", "name": "Traditional IRA deduction phase-out (covered by a workplace plan)", "value": null, "effective": [2026], "sunset": null, "source": "IRS Notice 2025-67", "url": null, "lastVerified": null, "status": "current", "watch": null, "affects": ["E1"] },
-    { "id": "limits.rothIraIncome.2026", "name": "Roth IRA contribution income phase-out", "value": null, "effective": [2026], "sunset": null, "source": "IRS Notice 2025-67", "url": null, "lastVerified": null, "status": "current", "watch": "Above it, use the backdoor Roth", "affects": ["E2"] },
-    { "id": "limits.457b.2026", "name": "Governmental 457(b) limit (separate from 401(k))", "value": null, "effective": [2026], "sunset": null, "source": "IRS Notice 2025-67", "url": null, "lastVerified": null, "status": "current", "watch": null, "affects": ["A7"] }
+    {
+      "id": "ss.wageBase.2026",
+      "name": "Social Security taxable maximum (wage base)",
+      "value": {
+        "wageBase": 184500,
+        "employeeRate": 6.2,
+        "medicareRate": 1.45
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "SSA 2026 Cost-of-Living Adjustment fact sheet (announced October 24, 2025); corroborated by Thomson Reuters and Bloomberg Tax",
+      "url": "https://www.ssa.gov/news/en/cola/factsheets/2026.html",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "Wage base $184,500 confirmed by Eli on 2026-10-04 from the SSA 2026 COLA fact sheet, corroborated by Thomson Reuters and Bloomberg Tax.",
+      "watch": "New wage base each October",
+      "affects": [
+        "D2",
+        "B6"
+      ]
+    },
+    {
+      "id": "hsa.distributions",
+      "name": "HSA distributions: tax-free for qualified medical expenses (including saved receipts reimbursed later); otherwise ordinary income plus a 20% additional tax, with no additional tax from age 65",
+      "value": {
+        "nonMedicalAdditionalTaxPct": 20,
+        "noAdditionalTaxFromAge": 65,
+        "receiptsReimbursableLater": true
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "IRS Publication 969 (2025), Distributions From an HSA: Additional tax and Exceptions; Recordkeeping",
+      "url": "https://www.irs.gov/publications/p969",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "The 20% additional tax, its end at 65 (or disability or death), and the recordkeeping rule for later reimbursement confirmed in the publication on 2026-10-04.",
+      "watch": null,
+      "affects": [
+        "A6",
+        "C4"
+      ]
+    },
+    {
+      "id": "ss.spousalAndSurvivor",
+      "name": "Social Security spousal and survivor benefits",
+      "value": {
+        "spousal": {
+          "maxShareOfWorkerPia": 50,
+          "requiresWorkerClaimed": true,
+          "delayedCreditsApply": false,
+          "reductionBeforeOwnFra": {
+            "firstMonths": 36,
+            "ratePerMonthFirst": 0.6944444444444444,
+            "ratePerMonthBeyond": 0.4166666666666667,
+            "note": "25/36 of 1% a month for the first 36 months before the spouse's full retirement age, 5/12 of 1% for each additional month; no delayed retirement credits"
+          },
+          "verification": "Confirmed by Eli on 2026-10-04 from the SSA Office of the Chief Actuary, https://www.ssa.gov/OACT/quickcalc/earlyretire.html"
+        },
+        "survivor": {
+          "maxShareOfDeceasedBenefit": 100,
+          "includesDeceasedDelayedCredits": true,
+          "earliestAge": 60,
+          "shareAtEarliestAgePct": 71.5,
+          "reducedEvenlyByMonthToOwnFra": true,
+          "takesLargerOfTwo": true,
+          "fullRetirementAgeTable": {
+            "note": "The survivor table: 65 for births through 1939, rising two months a year to 66 for 1945 to 1956, then two months a year to 67 for 1962 or later",
+            "bornThrough1939": {
+              "years": 65,
+              "months": 0
+            },
+            "1940": {
+              "years": 65,
+              "months": 2
+            },
+            "1941": {
+              "years": 65,
+              "months": 4
+            },
+            "1942": {
+              "years": 65,
+              "months": 6
+            },
+            "1943": {
+              "years": 65,
+              "months": 8
+            },
+            "1944": {
+              "years": 65,
+              "months": 10
+            },
+            "1945to1956": {
+              "years": 66,
+              "months": 0
+            },
+            "1957": {
+              "years": 66,
+              "months": 2
+            },
+            "1958": {
+              "years": 66,
+              "months": 4
+            },
+            "1959": {
+              "years": 66,
+              "months": 6
+            },
+            "1960": {
+              "years": 66,
+              "months": 8
+            },
+            "1961": {
+              "years": 66,
+              "months": 10
+            },
+            "1962orLater": {
+              "years": 67,
+              "months": 0
+            }
+          },
+          "confirmPending": true,
+          "verification": "Verified from secondary sources consistent with SSA on 2026-10-04; confirm at https://www.ssa.gov/benefits/survivors/. Plans the survivor rule changes stay flagged until Eli confirms."
+        }
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "Spousal: SSA Office of the Chief Actuary, early retirement reduction (https://www.ssa.gov/OACT/quickcalc/earlyretire.html). Survivor: SSA Benefits for Survivors (https://www.ssa.gov/benefits/survivors/), via secondary sources consistent with SSA",
+      "url": "https://www.ssa.gov/OACT/quickcalc/earlyretire.html",
+      "lastVerified": "2026-10-04",
+      "status": "watch",
+      "verification": "Spousal part confirmed by Eli on 2026-10-04 (up to 50% of the worker's PIA, reduced 25/36 of 1% a month for the first 36 months and 5/12 of 1% beyond, no delayed credits). Survivor part verified from secondary sources consistent with SSA on 2026-10-04 (up to 100% of the deceased's benefit including delayed credits, reduced evenly by month from 100% at the survivor's full retirement age to 71.5% at 60, survivor full retirement age from the survivor table); to be confirmed at ssa.gov, and the engine flags every plan the survivor rule changes until then.",
+      "watch": "Survivor schedule: confirm at https://www.ssa.gov/benefits/survivors/ (secondary sources only so far)",
+      "affects": [
+        "D3"
+      ]
+    },
+    {
+      "id": "data.returnsHistory",
+      "name": "Long-run annual US returns on stocks, bonds, and bills (M6 backtests)",
+      "value": {
+        "file": "data/returns-history.json",
+        "years": [
+          1928,
+          2025
+        ],
+        "realReturn": "(1 + nominal) / (1 + inflation) - 1",
+        "sanityCheck": "real geometric average of S&P 500 returns 1928 to 2025 = 6.78%"
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "Nominal returns: Aswath Damodaran, NYU Stern, Historical Returns on Stocks, Bonds and Bills (histretSP, updated January 5, 2026). Inflation: BLS CPI-U December index values (1982-84 = 100), December to December",
+      "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "Series supplied by Eli on 2026-10-04 from the named sources; the file carries the nominal returns, the CPI-U December levels, the inflation rates, and the computed real returns. Replaces the from-memory series of 2026-10-04 (decision Q1).",
+      "watch": "Damodaran updates each January; add the new year then",
+      "affects": [
+        "M6"
+      ]
+    },
+    {
+      "id": "fed.childTaxCredit.2026",
+      "name": "Child tax credit",
+      "value": {
+        "perChild": 2200,
+        "maxRefundable": 1700,
+        "childUnderAgeAtYearEnd": 17,
+        "phaseOutStartMagi": {
+          "single": 200000,
+          "headOfHousehold": 200000,
+          "marriedJoint": 400000,
+          "marriedSeparate": 200000
+        },
+        "phaseOutPer1000": 50
+      },
+      "effective": [
+        "2026-"
+      ],
+      "sunset": null,
+      "source": "IRC 24 as amended by P.L. 119-21 section 70102; IRS, Child Tax Credit",
+      "url": "https://www.irs.gov/credits-deductions/individuals/child-tax-credit",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "Confirmed on the IRS page on 2026-10-04: $2,200 per qualifying child, under 17 at year end, up to $1,700 refundable, full credit up to $200,000 ($400,000 joint). The $50 per $1,000 phase-out rate is from IRC 24(b)(2) and was not on the page. The engine applies the credit as nonrefundable against tax; the refundable part is not modeled (flagged where it would matter).",
+      "watch": "Indexed from 2026 under P.L. 119-21",
+      "affects": [
+        "family.ctc"
+      ]
+    },
+    {
+      "id": "fed.dependentCareCredit.2026",
+      "name": "Child and dependent care credit",
+      "value": {
+        "expenseCap": {
+          "one": 3000,
+          "twoOrMore": 6000
+        },
+        "qualifyingPersonUnderAge": 13,
+        "maxPercent": 50,
+        "minPercent": 20,
+        "phaseDown": [
+          {
+            "agiAbove": 15000,
+            "per": 2000,
+            "points": 1,
+            "floorPercent": 35
+          },
+          {
+            "agiAbove": 75000,
+            "agiAboveJoint": 150000,
+            "per": 2000,
+            "points": 1,
+            "floorPercent": 20
+          }
+        ],
+        "dependentCareFsaCap": 7500
+      },
+      "effective": [
+        "2026-"
+      ],
+      "sunset": null,
+      "source": "IRC 21 as amended by P.L. 119-21 section 70404; IRS Form 2441 instructions (2026)",
+      "url": "https://www.irs.gov/credits-deductions/individuals/child-and-dependent-care-credit-information",
+      "lastVerified": null,
+      "status": "current",
+      "verification": "The IRS page reached on 2026-10-04 confirms only the under-13 rule. The 50% maximum, the phase-down to 35% by $2,000 steps above $15,000 of AGI, the second phase-down to 20% above $75,000 ($150,000 joint), the $3,000 and $6,000 caps, and the $7,500 FSA cap are from the statute as amended in 2025 and the 2026 Form 2441 instructions, not yet confirmed at the official page. Flagged on every result that uses it.",
+      "watch": "New phase-down from 2026; confirm against the 2026 Form 2441 instructions",
+      "affects": [
+        "family.cdcc"
+      ]
+    },
+    {
+      "id": "fed.qbiDeduction.2026",
+      "name": "Qualified business income deduction (section 199A)",
+      "value": {
+        "percent": 20,
+        "qbiLessDeductibleHalfSeTax": true,
+        "limitPercentOfTaxableIncomeLessNetCapitalGain": 20,
+        "thresholdsModeled": false
+      },
+      "effective": [
+        "2026-"
+      ],
+      "sunset": null,
+      "source": "IRC 199A as amended by P.L. 119-21 section 70105; IRS, Qualified Business Income Deduction",
+      "url": "https://www.irs.gov/newsroom/qualified-business-income-deduction",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "Confirmed on the IRS page on 2026-10-04: 20% of QBI, QBI net of the deductible half of self-employment tax, limited to 20% of taxable income less net capital gain. The income thresholds where the W-2 wage and specified-service limits begin are not modeled; a result above them is flagged.",
+      "watch": "Thresholds indexed yearly; the new minimum deduction for active QBI from 2026 is not modeled",
+      "affects": [
+        "selfEmployed.qbi"
+      ]
+    },
+    {
+      "id": "fed.giftExclusion.2026",
+      "name": "Annual gift tax exclusion",
+      "value": {
+        "perDoneePerDonor": 19000
+      },
+      "effective": [
+        2026
+      ],
+      "sunset": null,
+      "source": "IRC 2503(b); IRS, Frequently asked questions on gift taxes",
+      "url": "https://www.irs.gov/businesses/small-businesses-self-employed/frequently-asked-questions-on-gift-taxes",
+      "lastVerified": "2026-10-04",
+      "status": "current",
+      "verification": "Confirmed on the IRS page on 2026-10-04: $19,000 per donee in 2026.",
+      "watch": "Indexed in $1,000 steps",
+      "affects": [
+        "familyLoan.forgiveness"
+      ]
+    },
+    {
+      "id": "fed.belowMarketLoans",
+      "name": "Below-market loans between individuals (imputed interest)",
+      "value": {
+        "deMinimisAggregate": 10000,
+        "netInvestmentIncomeLimitAggregate": 100000,
+        "note": "Above $100,000 outstanding, forgone interest at the applicable federal rate is imputed to the lender; the borrower's tax is unaffected"
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "IRC 7872(c)(2) and 7872(d)(1); IRS Publication 550",
+      "url": "https://www.irs.gov/publications/p550",
+      "lastVerified": null,
+      "status": "current",
+      "verification": "Not reached from the build session on 2026-10-04 (the statute host is blocked by the proxy). The $10,000 and $100,000 amounts are from the statute text as known; confirm at the URL. Informational only: it is the lender's tax.",
+      "watch": null,
+      "affects": [
+        "familyLoan.belowMarket"
+      ]
+    },
+    {
+      "id": "state.PA.compensation",
+      "name": "Pennsylvania taxable compensation and local earned income tax",
+      "value": {
+        "ratePercent": 3.07,
+        "retirementDeferralsTaxable": true,
+        "halfSelfEmploymentTaxDeductible": false,
+        "localEarnedIncomeTax": {
+          "defaultPercent": 1.0,
+          "base": "wages plus net profit",
+          "note": "Set by municipality and school district; 1% is the common nonresident and many resident rates; Philadelphia is higher"
+        }
+      },
+      "effective": [
+        "ongoing"
+      ],
+      "sunset": null,
+      "source": "PA Personal Income Tax Guide, Gross Compensation (elective deferrals to 401(k) plans are taxable compensation); 72 P.S. 7301; Act 32 of 2008 (local earned income tax)",
+      "url": "https://www.pa.gov/agencies/revenue/resources/tax-types-and-information/personal-income-tax.html",
+      "lastVerified": null,
+      "status": "current",
+      "verification": "pa.gov is blocked from the build session (2026-10-04). The 3.07% rate matches the Tax Foundation table already in data/tax/2026.json. The 401(k) treatment, the absence of the half-SE deduction, and the 1% local default are from the PA PIT Guide as known; confirm at the URL. Flagged on every PA result.",
+      "watch": "Local rates vary by municipality",
+      "affects": [
+        "state.PA"
+      ]
+    }
   ]
 }

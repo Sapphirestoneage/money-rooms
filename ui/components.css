@@ -318,7 +318,7 @@
 .kind-badge__pill--known { background: var(--color-known); }
 .kind-badge__pill--lookUp { background: var(--color-lookup); }
 .kind-badge__pill--roughly { background: var(--color-roughly); }
-.kind-badge__pill--computed { background: var(--color-computed); color: var(--color-ink); }
+.kind-badge__pill--computed { background: var(--color-computed); color: var(--color-computed-text); }
 .kind-badge__pill--notForMe { background: var(--color-notforme); }
 
 .badge-slot {
@@ -552,7 +552,7 @@
 
 .gentle-flag__label {
   font-weight: var(--weight-medium);
-  color: var(--color-attention);
+  color: var(--color-attention-ink);
 }
 
 /* ---- Misc ---- */
@@ -1007,4 +1007,577 @@
 
 .rows > .group-header:first-child {
   padding-top: var(--space-1);
+}
+
+/* ---- Result screen: sections, True FI, plan, strategies (M2 spec section 9) ---- */
+
+.screen-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.section-order {
+  display: inline-flex;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.section-order--center {
+  justify-content: center;
+  margin-left: 0;
+}
+
+.card__subtitle {
+  font-size: var(--text-md);
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.lock-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-ink-muted);
+  border: var(--border-width) solid var(--color-rule);
+}
+
+.unlock-list {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.unlock-list li {
+  min-height: var(--tap-target);
+  display: flex;
+  align-items: center;
+}
+
+.true-fi__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.true-fi__number {
+  font-family: var(--font-numbers);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-hero);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  color: var(--color-ink);
+}
+
+.true-fi__difference {
+  font-size: var(--text-lg);
+}
+
+.plan-steps {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.plan-steps li {
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.plan-steps li:last-child {
+  border-bottom: 0;
+}
+
+.strategy-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.strategy-row:last-of-type {
+  border-bottom: 0;
+}
+
+.strategy-row__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-medium);
+}
+
+.strategy-row__state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  border: var(--border-width) solid var(--color-rule);
+}
+
+.strategy-row__state--on {
+  color: var(--color-surface);
+  background: var(--color-brand-700);
+  border-color: var(--color-brand-700);
+}
+
+.strategy-row__effect {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.stress-list,
+.rules-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stress-list li,
+.rules-list li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.stress-list li:last-child,
+.rules-list li:last-child {
+  border-bottom: 0;
+}
+
+.rules-list__meta {
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+}
+
+.share-card {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-brand-100);
+  color: var(--color-ink);
+}
+
+.share-card p {
+  margin: 0 0 var(--space-1);
+}
+
+.field__help {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+}
+
+/* Links inside result lists are full tap targets. */
+.unlock-list a,
+.rules-list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+}
+
+/* ---- What's next (M3 spec): tabs, next cards, progress, aged lists, small wins, the Sky ---- */
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.tab {
+  min-height: var(--tap-target);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--color-ink-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.tab--active {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-brand-700);
+  font-weight: var(--weight-medium);
+}
+
+.next-card__kicker {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  margin-bottom: var(--space-1);
+}
+
+.next-card--big h2 {
+  font-size: var(--text-xl);
+}
+
+.next-card__title {
+  font-size: var(--text-md);
+  margin-bottom: var(--space-1);
+}
+
+.progress {
+  height: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-100);
+  overflow: hidden;
+  margin: var(--space-2) 0;
+}
+
+.progress--small {
+  height: var(--space-1);
+}
+
+.progress__fill {
+  height: 100%;
+  background: var(--color-brand-700);
+  border-radius: var(--radius-pill);
+  transition: width var(--duration-normal) var(--easing);
+}
+
+.aged-list {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aged-list li {
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.aged-list li:last-child {
+  border-bottom: 0;
+}
+
+.wins-total__number {
+  font-family: var(--font-numbers);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  margin-bottom: var(--space-2);
+}
+
+.sky-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sky {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.sky--animated .sky-circle {
+  transition: transform var(--duration-normal) var(--easing);
+}
+
+.sky-circle {
+  cursor: pointer;
+}
+
+.sky-circle:focus {
+  outline: none;
+}
+
+.sky-circle:focus .sky-circle__ring,
+.sky-circle:hover .sky-circle__ring {
+  stroke-width: 5;
+}
+
+.sky-circle__center {
+  fill: var(--color-brand-100);
+  stroke: var(--color-brand-700);
+  stroke-width: 2;
+}
+
+.sky-circle__ring {
+  fill: var(--color-surface);
+  stroke-width: 3;
+}
+
+.sky-circle__ring--known { stroke: var(--color-known); }
+.sky-circle__ring--lookUp { stroke: var(--color-lookup); }
+.sky-circle__ring--roughly { stroke: var(--color-roughly); }
+.sky-circle__ring--computed { stroke: var(--color-computed); }
+.sky-circle__ring--notForMe { stroke: var(--color-notforme); }
+.sky-circle__ring--missing { stroke: var(--color-attention); stroke-dasharray: 4 4; }
+.sky-circle__ring--aged { stroke: var(--color-attention); }
+
+.sky-circle__fill {
+  fill: var(--color-brand-300);
+}
+
+.sky-circle__label {
+  fill: var(--color-ink);
+  font-size: var(--text-xs);
+  font-family: var(--font-sans);
+}
+
+.sky-circle__label--center {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.sky-details,
+.sky-outline {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-5);
+}
+
+.sky-outline {
+  list-style: none;
+  padding-left: 0;
+}
+
+.sky-outline__item {
+  min-height: var(--tap-target);
+  padding: var(--space-1) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.sky-outline__item--1 { padding-left: var(--space-5); }
+.sky-outline__item--2 { padding-left: var(--space-7); }
+
+.sky-outline__label {
+  font-weight: var(--weight-medium);
+}
+
+.mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+/* ---- What-ifs: timing curve, comparison table ---- */
+
+.timing-curve {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  height: 96px;
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.timing-curve__bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.timing-curve__fill {
+  width: 100%;
+  background: var(--color-brand-300);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  min-height: 2px;
+}
+
+.timing-curve__age {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.timing-curve__marker {
+  position: absolute;
+  top: -4px;
+  color: var(--color-attention-ink);
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.compare-table th,
+.compare-table td {
+  text-align: left;
+  padding: var(--space-2) var(--space-1);
+  border-bottom: var(--border-width) solid var(--color-rule);
+  vertical-align: top;
+}
+
+.compare-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar__nav {
+  flex-wrap: wrap;
+}
+
+/* A wide table scrolls inside its card; the page itself never scrolls sideways. */
+.table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.timing-curve {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* ---- Meaning: ratio rows, verdicts ---- */
+
+.ratio-row {
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.ratio-row:last-child {
+  border-bottom: 0;
+}
+
+.ratio-row__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ratio-row__value {
+  margin-left: auto;
+  font-family: var(--font-numbers);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
+}
+
+.verdict {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  border: var(--border-width) solid var(--color-rule);
+  color: var(--color-ink-muted);
+  margin-left: auto;
+}
+
+.verdict--applies {
+  color: var(--color-surface);
+  background: var(--color-brand-700);
+  border-color: var(--color-brand-700);
+}
+
+.verdict--unlearn {
+  color: var(--color-surface);
+  background: var(--color-attention-ink);
+  border-color: var(--color-attention-ink);
+}
+
+.compare-table__you td {
+  font-weight: var(--weight-bold);
+  background: var(--color-brand-100);
+}
+
+/* Site footer: the trust links, on every screen. */
+.sitefooter {
+  max-width: var(--content-width);
+  margin: var(--space-7) auto var(--space-6);
+  padding: var(--space-4) var(--space-4) 0;
+  border-top: var(--border-width) solid var(--color-rule);
+  font-size: var(--text-sm);
+}
+
+.sitefooter nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.sitefooter a {
+  color: var(--color-ink-muted);
+  min-height: var(--tap-target);
+  min-width: var(--tap-target);
+  padding: 0 var(--space-1);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Backup nudge (design system 5): a quiet card above the screen, never a modal. */
+.backup-nudge {
+  margin-top: var(--space-4);
+  border-left: 3px solid var(--color-attention);
+}
+
+/* Progress history table on the result screen. */
+/* The 72(t) commitment beside the plan (decision A2) */
+.commitment {
+  margin-block: var(--space-4);
+  padding-block: var(--space-3);
+  border-top: var(--border-width) solid var(--color-rule);
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+}
+
+.history-table th,
+.history-table td {
+  text-align: right;
+  padding: var(--space-1) var(--space-2);
+  border-bottom: var(--border-width) solid var(--color-rule);
+}
+
+.history-table th:first-child,
+.history-table td:first-child {
+  text-align: left;
+}
+
+/* Safety features (decision A16): the quick-exit button and the passcode curtain */
+.quick-exit {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 50;
+  min-height: var(--tap-target);
+  box-shadow: var(--shadow-card, none);
+}
+
+.curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--color-surface);
+}
+
+.curtain__card {
+  width: min(100%, 28rem);
 }

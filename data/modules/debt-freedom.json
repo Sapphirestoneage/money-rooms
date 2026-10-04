@@ -1,0 +1,102 @@
+{
+  "id": "debt-freedom",
+  "name": "Debt freedom",
+  "job": "answers: when I will be debt free, in what order, and what each order costs in interest and in peace",
+  "reads": [
+    "asOf",
+    "self.birthDate",
+    "accounts[].balance",
+    "accounts[].rate",
+    "accounts[].promo",
+    "accounts[].minimumPaymentAnnual",
+    "accounts[].stress",
+    "accounts[].name",
+    "accounts[].preset"
+  ],
+  "adds": {
+    "fields": [],
+    "cards": [
+      {
+        "id": "debt-freedom.levelCard",
+        "level": 2,
+        "screen": "#/levels"
+      }
+    ],
+    "lenses": [],
+    "metrics": [
+      "debtFreeMonth",
+      "priceOfPeace",
+      "hundredMore",
+      "promoWarning"
+    ],
+    "items": [],
+    "screens": [
+      "#/m/debt-freedom"
+    ],
+    "concepts": [
+      {
+        "screen": "#/levels",
+        "concept": "the debt-free date as a milestone"
+      },
+      {
+        "screen": "#/m/debt-freedom",
+        "concept": "the price of peace"
+      }
+    ]
+  },
+  "placement": {
+    "level": 2,
+    "tier": "easy",
+    "pack": "debt-freedom",
+    "screen": "#/levels"
+  },
+  "unlock": {
+    "kind": "hasDebt",
+    "excludeMortgage": false,
+    "text": "A debt exists."
+  },
+  "engine": {
+    "capabilities": [
+      "payoffMethods",
+      "promoRates",
+      "stressRating"
+    ],
+    "coreChanges": [
+      "core change: the payoff simulation charges a promo rate through its end month instead of the rate after (engine/whatifs/payoff.ts, decision A8)",
+      "core change: the Levels screen shows a module's card in its level's section (ui/modules/index.ts)"
+    ]
+  },
+  "flag": "beta",
+  "killCriteria": {
+    "measure": "share of households with a debt that open the room within 30 days of it unlocking",
+    "threshold": "under 20% after 90 days of beta",
+    "action": "merge the debt-free date into the What-ifs payoff card and remove the room"
+  },
+  "tests": {
+    "goldenHousehold": "tests/households/debt-freedom-golden.json",
+    "acceptance": [
+      "tests/modules/debt-freedom.test.ts"
+    ]
+  },
+  "files": [
+    "engine/modules/debt-freedom.ts",
+    "ui/modules/debt-freedom.ts"
+  ],
+  "copy": [],
+  "checklist": {
+    "spec": "docs/packs/debt-freedom.md",
+    "decision": "A7",
+    "axe": {
+      "date": "2026-10-04",
+      "routes": [
+        "#/m/debt-freedom"
+      ]
+    },
+    "docs": [
+      "docs/packs/debt-freedom.md",
+      "docs/decisions.md",
+      "docs/module-contract.md"
+    ]
+  },
+  "replaces": []
+}

@@ -1,0 +1,244 @@
+{
+  "_meta": {
+    "description": "Everything under the clearly-trivial line, played as cards (docs/m3-spec.md section 10). Every value is a range and an estimate; the engine personalizes where it can. Only legitimate, within-terms-of-service ideas.",
+    "version": 1,
+    "updated": "2026-10-04",
+    "status": "Proposed, not reviewed by Eli. Dollar ranges are placeholders to be checked."
+  },
+  "categories": [
+    {
+      "id": "subscriptions",
+      "label": "Subscriptions"
+    },
+    {
+      "id": "phoneInternet",
+      "label": "Phone and internet"
+    },
+    {
+      "id": "bankingFees",
+      "label": "Banking fees"
+    },
+    {
+      "id": "insurance",
+      "label": "Insurance shopping"
+    },
+    {
+      "id": "rewards",
+      "label": "Cash back and rewards"
+    },
+    {
+      "id": "household",
+      "label": "Household plans"
+    },
+    {
+      "id": "free",
+      "label": "Free alternatives"
+    }
+  ],
+  "wins": [
+    {
+      "id": "sub.audit",
+      "category": "subscriptions",
+      "title": "One forgotten subscription, cancelled",
+      "estimate": [
+        60,
+        240
+      ],
+      "minutes": 10,
+      "personalize": {
+        "spendingCategory": "subscriptions",
+        "share": [
+          0.1,
+          0.3
+        ]
+      }
+    },
+    {
+      "id": "sub.annual",
+      "category": "subscriptions",
+      "title": "A monthly subscription at its annual price",
+      "estimate": [
+        20,
+        60
+      ],
+      "minutes": 5
+    },
+    {
+      "id": "sub.share",
+      "category": "subscriptions",
+      "title": "A service's household plan instead of separate ones",
+      "estimate": [
+        40,
+        120
+      ],
+      "minutes": 10,
+      "note": "Only where the service's own terms allow a shared household plan."
+    },
+    {
+      "id": "phone.plan",
+      "category": "phoneInternet",
+      "title": "A lower-cost carrier on the same network",
+      "estimate": [
+        120,
+        480
+      ],
+      "minutes": 30,
+      "personalize": {
+        "spendingCategory": "phone",
+        "share": [
+          0.2,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "phone.internet",
+      "category": "phoneInternet",
+      "title": "The internet provider's current new-customer price",
+      "estimate": [
+        60,
+        240
+      ],
+      "minutes": 15
+    },
+    {
+      "id": "bank.fees",
+      "category": "bankingFees",
+      "title": "A bank account with no monthly fee",
+      "estimate": [
+        60,
+        180
+      ],
+      "minutes": 20
+    },
+    {
+      "id": "bank.hysa",
+      "category": "bankingFees",
+      "title": "Savings in a high-yield account",
+      "estimate": [
+        50,
+        400
+      ],
+      "minutes": 15,
+      "personalize": {
+        "cashBalance": true,
+        "ratePointsGained": 0.03
+      }
+    },
+    {
+      "id": "bank.overdraft",
+      "category": "bankingFees",
+      "title": "Overdraft coverage off, so the fee never happens",
+      "estimate": [
+        0,
+        100
+      ],
+      "minutes": 5
+    },
+    {
+      "id": "ins.auto",
+      "category": "insurance",
+      "title": "Two quotes for auto insurance",
+      "estimate": [
+        100,
+        400
+      ],
+      "minutes": 30,
+      "personalize": {
+        "spendingCategory": "insurance",
+        "share": [
+          0.05,
+          0.2
+        ]
+      }
+    },
+    {
+      "id": "ins.renters",
+      "category": "insurance",
+      "title": "A renters insurance quote (or a check that the current one is not overpriced)",
+      "estimate": [
+        0,
+        100
+      ],
+      "minutes": 15
+    },
+    {
+      "id": "rewards.card",
+      "category": "rewards",
+      "title": "A no-fee cash-back card on the spending that already happens",
+      "estimate": [
+        100,
+        400
+      ],
+      "minutes": 20,
+      "note": "Only if the balance is paid in full every month.",
+      "personalize": {
+        "spendingShare": 0.015
+      }
+    },
+    {
+      "id": "rewards.grocery",
+      "category": "rewards",
+      "title": "The grocery store's loyalty program",
+      "estimate": [
+        50,
+        200
+      ],
+      "minutes": 5,
+      "personalize": {
+        "spendingCategory": "food",
+        "share": [
+          0.02,
+          0.04
+        ]
+      }
+    },
+    {
+      "id": "home.energy",
+      "category": "household",
+      "title": "The utility's budget or off-peak plan",
+      "estimate": [
+        30,
+        150
+      ],
+      "minutes": 15,
+      "personalize": {
+        "spendingCategory": "utilities",
+        "share": [
+          0.03,
+          0.1
+        ]
+      }
+    },
+    {
+      "id": "home.bulk",
+      "category": "household",
+      "title": "The five most-used things, bought in bulk",
+      "estimate": [
+        50,
+        200
+      ],
+      "minutes": 20
+    },
+    {
+      "id": "free.library",
+      "category": "free",
+      "title": "The library for books, audiobooks, and streaming",
+      "estimate": [
+        50,
+        200
+      ],
+      "minutes": 10
+    },
+    {
+      "id": "free.gym",
+      "category": "free",
+      "title": "A gym covered by the health plan or employer",
+      "estimate": [
+        0,
+        300
+      ],
+      "minutes": 10
+    }
+  ]
+}

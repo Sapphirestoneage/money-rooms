@@ -13,5 +13,7 @@ export default defineConfig({
   test: {
     include: ["engine/**/*.test.ts", "tests/**/*.test.ts", "ui/**/*.test.ts"],
     environment: "node",
+    // The optimizer and ratio tests run whole plan searches; the GitHub runner is about twice as slow as a laptop.
+    testTimeout: 20000,
   },
 });

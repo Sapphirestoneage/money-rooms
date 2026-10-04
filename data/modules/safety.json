@@ -1,0 +1,69 @@
+{
+  "id": "safety",
+  "name": "Safety features",
+  "job": "answers: how to use this quietly and leave fast, and how to take my numbers out or wipe them",
+  "reads": [],
+  "adds": {
+    "fields": [],
+    "cards": [
+      {
+        "id": "privacy.safety",
+        "level": 1,
+        "screen": "#/privacy"
+      }
+    ],
+    "lenses": [],
+    "metrics": [],
+    "items": [],
+    "screens": [],
+    "concepts": [
+      {
+        "screen": "#/privacy",
+        "concept": "a quick exit, a discreet mode, and a passcode curtain"
+      }
+    ]
+  },
+  "placement": {
+    "level": 1,
+    "tier": "easy",
+    "screen": "#/privacy"
+  },
+  "unlock": {
+    "kind": "always",
+    "text": "Always."
+  },
+  "engine": {
+    "capabilities": [],
+    "coreChanges": [
+      "core change: the shell shows the quick-exit button and the passcode curtain and swaps the title in discreet mode (ui/main.ts, decision A16)"
+    ]
+  },
+  "flag": "beta",
+  "killCriteria": {
+    "measure": "share of people who turn on any of the three",
+    "threshold": "under 5% after 90 days of beta",
+    "action": "keep quick exit, drop the passcode"
+  },
+  "tests": {
+    "goldenHousehold": null,
+    "acceptance": [
+      "ui/store.test.ts"
+    ]
+  },
+  "files": [
+    "ui/modules/safety.ts"
+  ],
+  "copy": [],
+  "checklist": {
+    "spec": "docs/packs/divorce.md",
+    "decision": "A16",
+    "axe": {
+      "date": "2026-10-04",
+      "routes": []
+    },
+    "docs": [
+      "docs/decisions.md"
+    ]
+  },
+  "replaces": []
+}

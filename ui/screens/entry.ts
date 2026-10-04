@@ -23,6 +23,7 @@ import {
   assetFromPreset,
   debtFromPreset,
   debtsNeedingRate,
+  emptyPerson,
   estimatedMinimumPaymentAnnual,
   getAccountPreset,
   householdFromExample,
@@ -39,6 +40,7 @@ import {
   resolveAssumptions,
   userValue,
   type Account,
+  type AccountOwner,
   type AccountPresetKey,
   type AnnualDeduction,
   type Cadence,
@@ -58,6 +60,12 @@ import {
   type StateCode,
   type Value,
   type WorkplaceAccountType,
+  type WorkplacePlan,
+  type YesNoUnknown,
+  drawdownUnlockItems,
+  familyLoans,
+  type PaymentFlexibility,
+  type PossibleForgiveness,
 } from "../../engine";
 import { collapsibleSection } from "../components/collapsible-section";
 import { confirmPanel } from "../components/confirm-panel";
@@ -65,10 +73,12 @@ import { denseRow, denseRowEditor } from "../components/dense-row";
 import { gentleFlag } from "../components/gentle-flag";
 import { groupHeader } from "../components/group-header";
 import { kindBadge, type EditableKind } from "../components/kind-badge";
+import { toggleButton } from "../components/toggle-button";
 import { moneyInput, type MoneyInputOptions } from "../components/money-input";
 import { presetPicker } from "../components/preset-picker";
 import { clear, el, rowId, uid } from "../dom";
 import { MONTH_NAMES, amountForInput, dollars, parseMoney, percent } from "../format";
+import { activeModule } from "../modules/index";
 import type { Store } from "../store";
 import { templateCard } from "./template-card";
 import { transferCard } from "./transfer-card";
@@ -185,7 +195,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
   const cadenceMemory = new Map<string, Cadence>(Object.entries(prefs.cadence) as [string, Cadence][]);
   const rememberCadence = (key: string, c: Cadence): void => {
     cadenceMemory.set(key, c);
-    ctx.store.savePrefs({ cadence: Object.fromEntries(cadenceMemory) });
+    ctx.store.savePrefs({ ...ctx.store.loadPrefs(), cadence: Object.fromEntries(cadenceMemory) });
   };
   /** A field to put the cursor in after the next refresh (a row that was just added). */
   let pendingFocusKey: string | null = null;
@@ -240,6 +250,31 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       },
     });
 
+  /** The entry mode (M3 spec section 12): express (the whole form), guided (one section at a time), or dump (paste everything). Remembered. */
+  type EntryMode = "express" | "guided" | "dump";
+  const modeOf = (x: string | undefined): EntryMode => (x === "guided" || x === "dump" ? x : "express");
+  let entryMode: EntryMode = modeOf(ctx.store.loadPrefs().entryMode);
+  let guidedIndex = 0;
+  const setMode = (m: EntryMode) => {
+    entryMode = m;
+    ctx.store.savePrefs({ ...ctx.store.loadPrefs(), entryMode: m });
+    if (m === "guided") {
+      const first = firstSectionNeedingAttention(h());
+      guidedIndex = first ? ENTRY_SECTION_ORDER.indexOf(first) : 0;
+      openSections.clear();
+      openSections.add(ENTRY_SECTION_ORDER[guidedIndex]!);
+    }
+    schedule();
+  };
+  const ENTRY_SECTION_ORDER: EntrySectionId[] = ["about", "income", "spending", "accounts", "debts"];
+  const modeSwitch = (): HTMLElement =>
+    el(
+      "div",
+      { class: "mode-switch", role: "group", "aria-label": "How to enter your numbers" },
+      el("span", { class: "muted" }, "Enter your numbers:"),
+      ...(["guided", "express", "dump"] as EntryMode[]).map((m) => toggleButton(m === "guided" ? "One at a time" : m === "express" ? "All on one form" : "Paste everything", entryMode === m, () => setMode(m))),
+    );
+
   /** Which sections are open. On arrival, only the first one that needs attention. */
   const openSections = new Set<EntrySectionId>();
   {
@@ -285,20 +320,43 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       });
 
     clear(root);
+    const allSections: [EntrySectionId, string, () => (HTMLElement | null)[]][] = [
+      ["about", "About you", aboutYou],
+      ["income", "Income", income],
+      ["spending", "Spending", spending],
+      ["accounts", "Accounts", () => accounts("asset")],
+      ["debts", "Debts", () => accounts("debt")],
+    ];
+    let sectionNodes: (HTMLElement | null)[];
+    if (entryMode === "guided") {
+      const [id, title, body] = allSections[Math.min(guidedIndex, allSections.length - 1)]!;
+      openSections.add(id);
+      sectionNodes = [
+        el("p", { class: "muted" }, `Step ${guidedIndex + 1} of ${allSections.length}`),
+        section(id, title, body()),
+        el(
+          "div",
+          { class: "row-actions" },
+          el("button", { type: "button", class: "button button--quiet", disabled: guidedIndex === 0, onClick: () => { guidedIndex = Math.max(0, guidedIndex - 1); schedule(); } }, "Back"),
+          el("button", { type: "button", class: "button", disabled: guidedIndex >= allSections.length - 1, onClick: () => { guidedIndex = Math.min(allSections.length - 1, guidedIndex + 1); openSections.add(allSections[guidedIndex]![0]); schedule(); } }, "Next"),
+        ),
+      ];
+    } else {
+      sectionNodes = allSections.map(([id, title, body]) => section(id, title, body()));
+    }
     const parts: (HTMLElement | null)[] = [
       el("h1", { class: "screen-title" }, "Your numbers"),
       el("p", { class: "lede" }, "Five answers give you a first FI date. Everything else sharpens it. Every question has an \"I don't\" answer."),
+      modeSwitch(),
       ctx.store.isPersistent()
         ? null
         : gentleFlag("This browser is not keeping what you enter (a private window does this). Your numbers will be gone when you close it. Export a file below to keep them."),
-      section("about", "About you", aboutYou()),
-      section("income", "Income", income()),
-      section("spending", "Spending", spending()),
-      section("accounts", "Accounts", accounts("asset")),
-      section("debts", "Debts", accounts("debt")),
+      ...(entryMode === "dump" ? [templateCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace })] : []),
+      ...sectionNodes,
       sharpeners(),
+      planDetails(),
       examples(),
-      templateCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
+      ...(entryMode === "dump" ? [] : [templateCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace })]),
       transferCard({ household: () => ctx.household, store: ctx.store, replace: ctx.replace }),
       footer(),
     ];
@@ -362,26 +420,175 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         field("State", state),
         field("Filing status", filing, kindBadge(h().self.filingStatus.confidence)),
       ),
+      ...partnerBlock(years),
+      ...householdExtras(),
+    ];
+  }
+
+  /** Dependents (dictionary 9.14), the home (9.15), and the local tax rate, each while its module is active (beta). */
+  function householdExtras(): HTMLElement[] {
+    const out: HTMLElement[] = [];
+    const thisYear = parseYearMonth(asOf().slice(0, 7)).year;
+    const childYears: { value: string; label: string }[] = [];
+    for (let y = thisYear; y >= thisYear - 25; y--) childYears.push({ value: String(y), label: String(y) });
+    if (activeModule("dependents", ctx)) {
+      const rows = (h().dependents ?? []).map((d, n) => {
+        fieldScope = `dep-${d.id}`;
+        const born = parseYearMonth(d.birthDate.value);
+        const setBirth = () => { d.birthDate = userValue(`${year.value}-${month.value}`, asOf()); ctx.save(); schedule(); };
+        const month = select(MONTH_NAMES.map((name, i) => ({ value: String(i + 1).padStart(2, "0"), label: name })), String(born.month).padStart(2, "0"), setBirth, "Month");
+        const year = select(childYears, String(born.year), setBirth, "Year");
+        const lives = select([{ value: "yes", label: "Lives with me more than half the year" }, { value: "no", label: "Lives elsewhere most of the year" }], d.livesWithYou.value ? "yes" : "no", (v: "yes" | "no") => { d.livesWithYou = userValue(v === "yes", asOf()); ctx.save(); schedule(); });
+        const age = thisYear - born.year;
+        return el(
+          "div",
+          { class: "field-grid", "data-editor": `dep-${d.id}` },
+          field(`Child ${n + 1}: birth month`, month),
+          field("Birth year", year, kindBadge(d.birthDate.confidence)),
+          field("Where they live", lives),
+          el("p", { class: "muted" }, `About ${age} this year. ${age < 17 ? "Counts for the child tax credit until the year they turn 17." : "Past the child tax credit."} ${age < 13 ? "Childcare counts for the dependent care credit until 13." : ""}`),
+          el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet button--small", onClick: () => { h().dependents = (h().dependents ?? []).filter((x) => x.id !== d.id); ctx.save(); schedule(); } }, "Remove")),
+        );
+      });
+      out.push(
+        el(
+          "details",
+          { class: "card", open: (h().dependents?.length ?? 0) > 0 },
+          el("summary", { class: "card__summary" }, el("h3", {}, "Children and dependents"), el("span", { class: "lock-badge" }, "Beta")),
+          el("div", { class: "stack card__details-body" }, el("p", { class: "muted" }, "A child under 17 changes your return by the child tax credit; childcare for a child under 13 by the dependent care credit; a child living with you by head of household. Each ends on the child's age, and the plan shows the year."), ...rows, el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: () => { const id = rowId("dep"); (h().dependents ??= []).push({ id, birthDate: userValue(`${thisYear - 8}-01`, asOf(), "roughly"), livesWithYou: userValue(true, asOf()) }); pendingEditor = `dep-${id}`; ctx.save(); schedule(); } }, "Add a child"))),
+        ),
+      );
+    }
+    if (activeModule("home", ctx)) {
+      fieldScope = "home";
+      const home = h().home;
+      const value = el("input", { class: "input input--money", type: "text", inputmode: "decimal", placeholder: "0", autocomplete: "off", value: home ? amountForInput(home.value.value) : "" });
+      value.addEventListener("change", () => {
+        const v = parseMoney(value.value);
+        if (v === null || v <= 0) delete h().home;
+        else h().home = { ...(h().home ?? {}), value: { value: v, asOf: asOf(), source: "user", confidence: "roughly" } };
+        ctx.save();
+        schedule();
+      });
+      const reserve = el("input", { class: "input", type: "number", min: 0, max: 5, step: 0.25, value: home?.maintenanceReservePercent?.value ?? 1, disabled: !home });
+      reserve.addEventListener("change", () => { if (h().home) { h().home!.maintenanceReservePercent = userValue(Number(reserve.value), asOf()); ctx.save(); schedule(); } });
+      out.push(
+        el(
+          "details",
+          { class: "card", open: !!home },
+          el("summary", { class: "card__summary" }, el("h3", {}, "Your home"), el("span", { class: "lock-badge" }, "Beta")),
+          el("div", { class: "stack card__details-body" }, el("p", { class: "muted" }, "A home you own. It is kept out of your FI number and the net worth chart; its upkeep, a percent of its value a year, is counted as spending. Property tax and insurance stay in your spending rows."), el("div", { class: "field-grid" }, field("Value today, roughly", value, home ? kindBadge(home.value.confidence) : null), field("Upkeep reserve (% of value a year)", reserve))),
+        ),
+      );
+    }
+    if (activeModule("dependents", ctx) || activeModule("home", ctx)) {
+      fieldScope = "local";
+      const local = el("input", { class: "input", type: "number", min: 0, max: 5, step: 0.05, value: h().self.localTaxPercent?.value ?? "", placeholder: h().self.state?.value === "PA" ? "1 (the common rate)" : "0" });
+      local.addEventListener("change", () => { if (local.value === "") delete h().self.localTaxPercent; else h().self.localTaxPercent = userValue(Number(local.value), asOf()); ctx.save(); schedule(); });
+      out.push(el("div", { class: "field-grid" }, field("Local earned income tax (% of wages and net profit)", local, null, el("p", { class: "field__help" }, "Pennsylvania municipalities levy one (1% is common; Philadelphia is higher). Blank means the state's default."))));
+    }
+    return out;
+  }
+
+  /** Households of two (docs/household-two-spec.md 2.7): add a partner, their birth month, HSA, and claiming age; remove asks first. */
+  let confirmRemovePartner = false;
+  function partnerBlock(years: { value: string; label: string }[]): HTMLElement[] {
+    const partner = h().partner;
+    if (!partner) {
+      const married = h().self.filingStatus.value === "marriedJoint" || h().self.filingStatus.value === "marriedSeparate";
+      return [
+        el(
+          "div",
+          { class: "row-actions" },
+          el("button", { type: "button", class: "button button--quiet", onClick: () => { h().partner = emptyPerson(asOf()); ctx.save(); schedule(); } }, "Add a partner"),
+          married ? el("p", { class: "notice" }, "The filing status is married. Adding your partner lets the plan use both ages, both earnings records, and both Social Security benefits.") : null,
+        ),
+      ];
+    }
+    fieldScope = "partner";
+    const born = partner.birthDate ? parseYearMonth(partner.birthDate.value) : null;
+    const birthBadge = badgeSlot(() => partner.birthDate, () => undefined, false);
+    const setBirth = () => {
+      if (birthMonth.value && birthYear.value) partner.birthDate = userValue(`${birthYear.value}-${birthMonth.value}`, asOf());
+      else delete partner.birthDate;
+      ctx.save();
+      birthBadge.refresh();
+    };
+    const birthMonth = select(MONTH_NAMES.map((name, i) => ({ value: String(i + 1).padStart(2, "0"), label: name })), born ? String(born.month).padStart(2, "0") : undefined, setBirth, "Month");
+    const birthYear = select(years, born ? String(born.year) : undefined, setBirth, "Year");
+    const hsa = select([{ value: "no", label: "No" }, { value: "yes", label: "Yes, a high-deductible health plan" }], partner.hsaEligible.value ? "yes" : "no", (v) => { partner.hsaEligible = userValue(v === "yes", asOf()); ctx.save(); });
+    const fra = born ? loadSocialSecurityParams().normalRetirementAge(born.year).years : 67;
+    const claimOptions = [{ value: "default", label: `Full retirement age (${fra})` }, ...[62, 63, 64, 65, 66, 67, 68, 69, 70].map((a) => ({ value: String(a), label: `Age ${a}` }))];
+    const claim = select(claimOptions, partner.socialSecurity.claimingAge ? String(partner.socialSecurity.claimingAge.value.years) : "default", (v) => {
+      if (v === "default") delete partner.socialSecurity.claimingAge;
+      else partner.socialSecurity.claimingAge = userValue({ years: Number(v), months: 0 }, asOf());
+      ctx.save();
+    });
+    const partnerIncome = partner.income.kind === "rows" ? partner.income.rows.length : 0;
+    const remove = confirmRemovePartner
+      ? confirmPanel({
+          sentence: partnerIncome > 0 ? `Removing your partner also removes their ${partnerIncome === 1 ? "income stream" : `${partnerIncome} income streams`}. Accounts marked as theirs become yours.` : "Removing your partner takes their ages and benefits out of the plan. Accounts marked as theirs become yours.",
+          confirmLabel: "Remove partner",
+          cancelLabel: "Keep partner",
+          onConfirm: () => {
+            delete h().partner;
+            if (h().accounts.kind === "rows") for (const a of (h().accounts as { kind: "rows"; rows: Account[] }).rows) if (a.owner === "partner") a.owner = "self";
+            confirmRemovePartner = false;
+            ctx.save();
+            schedule();
+          },
+          onCancel: () => { confirmRemovePartner = false; schedule(); },
+        })
+      : el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: () => { confirmRemovePartner = true; schedule(); } }, "Remove partner"));
+    return [
+      el("h3", { class: "card__subheading" }, "Your partner"),
+      el(
+        "div",
+        { class: "field-grid" },
+        field("Partner's birth month", birthMonth, birthBadge.node),
+        field("Partner's birth year", birthYear),
+        field("Partner HSA eligible", hsa),
+        field("Partner's Social Security claiming age", claim),
+      ),
+      el("p", { class: "notice" }, "Add your partner's jobs in the Income section and mark whose they are. Each account can be marked yours, your partner's, or joint."),
+      remove,
     ];
   }
 
   // ---- Income ----------------------------------------------------------------
+  /** Which person a stream belongs to (households of two). */
+  const personOfStream = (id: string): "self" | "partner" => {
+    const p = h().partner;
+    return p && p.income.kind === "rows" && p.income.rows.some((r) => r.id === id) ? "partner" : "self";
+  };
+  const streamsOf = (who: "self" | "partner"): IncomeStream[] => {
+    const person = who === "partner" ? h().partner : h().self;
+    return person && person.income.kind === "rows" ? person.income.rows : [];
+  };
+  const setStreams = (who: "self" | "partner", rows: IncomeStream[]) => {
+    const person = who === "partner" ? h().partner : h().self;
+    if (!person) return;
+    person.income = rows.length ? { kind: "rows", rows } : who === "self" ? { kind: "unanswered" } : { kind: "none", asOf: asOf() };
+  };
   function income(): HTMLElement[] {
     const answer = h().self.income;
     const body = el("div", { class: "rows" });
+    const partnerRows = streamsOf("partner");
 
-    if (answer.kind === "none") {
+    if (answer.kind === "none" && partnerRows.length === 0) {
       body.append(el("p", { class: "empty-state" }, "No income right now. That counts as answered."));
-    } else if (answer.kind === "unanswered" || answer.rows.length === 0) {
+    } else if ((answer.kind !== "rows" || answer.rows.length === 0) && partnerRows.length === 0) {
       body.append(el("p", { class: "empty-state" }, "No income yet. Add your first stream."));
     } else {
-      for (const s of answer.rows) {
+      const listed = [...(answer.kind === "rows" ? answer.rows : []), ...partnerRows];
+      for (const s of listed) {
         if (openRow === s.id) {
           body.append(streamEditor(s));
           continue;
         }
         const missing = incomeState(s) === "missing";
         const detail: string[] = [];
+        if (personOfStream(s.id) === "partner") detail.push("partner's");
         if (s.start && s.start > asOf().slice(0, 7)) detail.push(`starts ${shortMonth(s.start)}`);
         if (s.end.kind === "date") detail.push(`through ${shortMonth(s.end.date)}`);
         else if (s.end.kind === "age") detail.push(`until age ${s.end.age}`);
@@ -398,9 +605,8 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       }
     }
 
-    const addType = select(INCOME_TYPES.map((t) => ({ value: t.type, label: t.label })), undefined, (type: IncomeType) => {
-      const inc = h().self.income;
-      const rows = inc.kind === "rows" ? inc.rows : [];
+    const addStream = (who: "self" | "partner", type: IncomeType) => {
+      const rows = streamsOf(who);
       const stream: IncomeStream = {
         id: rowId("income"),
         type,
@@ -409,17 +615,20 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         end: type === "unemployment" ? { kind: "date", date: addMonths(asOf().slice(0, 7), 5) } : { kind: "retirement" },
       };
       if (type === "salary" || type === "hourly") stream.payFrequency = { ...userValue("biweekly" as const, asOf()), confidence: "roughly" };
-      h().self.income = { kind: "rows", rows: [...rows, stream] };
+      setStreams(who, [...rows, stream]);
       openRow = stream.id;
       pendingFocusKey = `${stream.id}|${type === "unemployment" ? "Benefit amount" : "Gross pay"}`;
       ctx.save();
       schedule();
-    }, "Add income");
+    };
+    const addType = select(INCOME_TYPES.map((t) => ({ value: t.type, label: t.label })), undefined, (type: IncomeType) => addStream("self", type), "Add income");
     addType.setAttribute("aria-label", "Add income");
+    const addPartner = h().partner ? select(INCOME_TYPES.map((t) => ({ value: t.type, label: t.label })), undefined, (type: IncomeType) => addStream("partner", type), "Add partner's income") : null;
+    addPartner?.setAttribute("aria-label", "Add partner's income");
 
     const none = el("button", { type: "button", class: "button button--quiet", onClick: () => { h().self.income = { kind: "none", asOf: asOf() }; ctx.save(); schedule(); } }, "I don't have income right now");
 
-    return [body, el("div", { class: "row-actions" }, addType, answer.kind !== "none" ? none : null)];
+    return [body, el("div", { class: "row-actions" }, addType, addPartner, answer.kind !== "none" ? none : null)];
   }
 
   function streamEditor(s: IncomeStream): HTMLElement {
@@ -431,7 +640,18 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     const isUnemployment = s.type === "unemployment";
 
     const grossBadge = badgeSlot(() => (s.grossAnnual.value > 0 ? s.grossAnnual : undefined), (v) => { s.grossAnnual = v; });
-    const fields: HTMLElement[] = [
+    const fields: HTMLElement[] = [];
+    if (h().partner) {
+      const who = personOfStream(s.id);
+      fields.push(field("Whose income", select([{ value: "self", label: "Mine" }, { value: "partner", label: "My partner's" }], who, (v: "self" | "partner") => {
+        if (v === who) return;
+        setStreams(who, streamsOf(who).filter((r) => r.id !== s.id));
+        setStreams(v, [...streamsOf(v), s]);
+        ctx.save();
+        schedule();
+      })));
+    }
+    fields.push(
       money({
         label: isUnemployment ? "Benefit amount" : "Gross pay",
         annual: s.grossAnnual.value || null,
@@ -447,7 +667,7 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
           grossBadge.refresh();
         },
       }),
-    ];
+    );
 
     if (isWage) {
       fields.push(field("Pay frequency", select(PAY_FREQUENCIES, s.payFrequency?.value ?? "biweekly", (v: PayFrequency) => { s.payFrequency = userValue(v, asOf()); ctx.save(); })));
@@ -645,10 +865,8 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
     }
 
     return editorShell(s.id, s.label ? `${s.label} (${typeLabel.toLowerCase()})` : typeLabel, fields, [], () => {
-      const inc = h().self.income;
-      if (inc.kind !== "rows") return;
-      const rows = inc.rows.filter((r) => r.id !== s.id);
-      h().self.income = rows.length ? { kind: "rows", rows } : { kind: "unanswered" };
+      const who = personOfStream(s.id);
+      setStreams(who, streamsOf(who).filter((r) => r.id !== s.id));
       ctx.save();
     });
   }
@@ -947,6 +1165,12 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
 
     const fields: HTMLElement[] = [field(a.side === "asset" ? "Balance" : "Balance owed", balanceInput, balanceBadge.node)];
     const flags: HTMLElement[] = [];
+    if (h().partner) {
+      // Dictionary 9.4: retirement accounts are never joint.
+      const retirement = a.side === "asset" && (a.taxBucket.value === "pretax" || a.taxBucket.value === "roth" || a.taxBucket.value === "hsa");
+      const owners: { value: AccountOwner; label: string }[] = [{ value: "self", label: "Mine" }, { value: "partner", label: "My partner's" }, ...(retirement ? [] : [{ value: "joint" as const, label: "Joint" }])];
+      fields.push(field("Whose account", select(owners, a.owner ?? "self", (v: AccountOwner) => { a.owner = v; ctx.save(); })));
+    }
 
     if (a.side === "asset") {
       const quick = loadQuickAllocations();
@@ -978,6 +1202,16 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
       rate.addEventListener("change", () => schedule());
       fields.push(field("Interest rate (% a year)", rate, rateBadge.node));
       if (needsRate) flags.push(gentleFlag("This debt needs its interest rate before a plan can run. It is on your statement or in your lender's app."));
+
+      // Family loans (dictionary 9.16, module family-loans, beta): what a loan from family carries that a bank loan does not.
+      if (a.preset === "family" && activeModule("family-loans", ctx)) {
+        const flex = select([{ value: "fixed", label: "Fixed, like a bank's" }, { value: "flexible", label: "Flexible: can come down when needed" }, { value: "pausable", label: "Can pause without penalty" }], a.paymentFlexibility?.value ?? "fixed", (v: PaymentFlexibility) => { a.paymentFlexibility = userValue(v, asOf()); ctx.save(); schedule(); });
+        const forgive = select([{ value: "unknown", label: "Unknown" }, { value: "none", label: "No, it will be repaid in full" }, { value: "possible", label: "Possibly, some or all" }], a.possibleForgiveness?.value ?? "unknown", (v: PossibleForgiveness) => { a.possibleForgiveness = userValue(v, asOf()); ctx.save(); schedule(); });
+        const lenders = select([1, 2, 3, 4].map((n) => ({ value: String(n), label: n === 1 ? "One person" : `${n} people` })), String(a.lenders?.value ?? 1), (v: string) => { a.lenders = userValue(Number(v), asOf()); ctx.save(); schedule(); });
+        const stress = select([1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: n === 1 ? "1, barely on my mind" : n === 5 ? "5, it weighs on me" : String(n) })), String(a.stress?.value ?? 3), (v: string) => { a.stress = userValue(Number(v), asOf()); ctx.save(); schedule(); });
+        fields.push(field("The payment is", flex), field("Might it be forgiven?", forgive), field("Who lent it", lenders), field("How much it weighs on you", stress));
+        for (const view of familyLoans(h()).filter((v) => v.accountId === a.id)) for (const f of view.flags) flags.push(gentleFlag(f));
+      }
 
       // A 0% rate is usually a promo: ask when it ends and what the rate is after.
       if ((!needsRate && a.rate.value === 0) || a.promo) {
@@ -1137,6 +1371,93 @@ export function entryScreen(ctx: EntryContext): HTMLElement {
         field("Social Security in your plan", zero),
       ),
       el("p", { class: "notice" }, "Plan-to age. How long your plan needs to last. Running out at 88 is far worse than leaving some behind at 95, so this is set longer than average on purpose. You can change it."),
+    );
+  }
+
+  // ---- Plan details (Level 4: the drawdown inputs, M2 spec section 7) ------------
+  /** The one workplace plan the level-two questions describe (dictionary 9.2). Created on the first answer. */
+  const workplacePlan = (): WorkplacePlan => {
+    const existing = h().plans?.[0];
+    if (existing) return existing;
+    const incomeAnswer = h().self.income;
+    const employer = incomeAnswer.kind === "rows" ? incomeAnswer.rows.find((r) => r.type === "salary" || r.type === "hourly") : undefined;
+    const plan: WorkplacePlan = {
+      id: rowId("plan"),
+      employerIncomeId: employer?.id ?? "",
+      planType: "401k",
+      ruleOf55Allowed: userValue("unknown" as YesNoUnknown, asOf()),
+      megaBackdoorAllowed: userValue("unknown" as YesNoUnknown, asOf()),
+      rothOffered: userValue(true, asOf()),
+    };
+    h().plans = [plan];
+    return plan;
+  };
+  const drawdown = () => (h().drawdown ??= {});
+
+  function planDetails(): HTMLElement {
+    fieldScope = "plan";
+    const items = drawdownUnlockItems(h());
+    const accountsAnswer = h().accounts;
+    const accounts: Account[] = accountsAnswer.kind === "rows" ? accountsAnswer.rows : [];
+    const incomeRows: IncomeStream[] = h().self.income.kind === "rows" ? (h().self.income as { kind: "rows"; rows: IncomeStream[] }).rows : [];
+    const fields: HTMLElement[] = [];
+    const yesNo: { value: YesNoUnknown; label: string }[] = [{ value: "unknown", label: "Not sure yet" }, { value: "yes", label: "Yes" }, { value: "no", label: "No" }];
+
+    for (const a of accounts) {
+      if (a.side !== "asset") continue;
+      const name = a.name?.value ?? getAccountPreset(a.preset).label;
+      if (a.taxBucket.value === "taxable") {
+        const badge = badgeSlot(() => a.costBasis, (v) => { a.costBasis = v; });
+        fields.push(field(`Cost basis of ${name}`, money({ label: `Cost basis of ${name}`, annual: a.costBasis?.value ?? null, cadences: ["year"], onChange: (v) => { if (v === null) delete a.costBasis; else a.costBasis = userValue(v, asOf(), a.costBasis?.confidence === "known" ? "known" : "roughly"); ctx.save(); badge.refresh(); }, placeholder: "What you paid in" }), badge.node, el("p", { class: "field__help" }, "What you put in, as against what it is worth now. On your brokerage statement, often as \"cost basis\". Blank means 70% of the balance, roughly.")));
+      }
+      if (a.taxBucket.value === "roth") {
+        const badge = badgeSlot(() => a.rothBasis, (v) => { a.rothBasis = v; });
+        fields.push(field(`Contributions so far to ${name}`, money({ label: `Contributions so far to ${name}`, annual: a.rothBasis?.value ?? null, cadences: ["year"], onChange: (v) => { if (v === null) delete a.rothBasis; else a.rothBasis = userValue(v, asOf(), a.rothBasis?.confidence === "known" ? "known" : "roughly"); ctx.save(); badge.refresh(); }, placeholder: "Total put in" }), badge.node, el("p", { class: "field__help" }, "Regular contributions come out first, tax and penalty free. Blank means half the balance, roughly.")));
+      }
+      if (a.taxBucket.value === "hsa") {
+        const badge = badgeSlot(() => a.savedReceipts, (v) => { a.savedReceipts = v; });
+        fields.push(field(`Saved medical receipts for ${name}`, money({ label: `Saved medical receipts for ${name}`, annual: a.savedReceipts?.value ?? null, cadences: ["year"], onChange: (v) => { if (v === null) delete a.savedReceipts; else a.savedReceipts = userValue(v, asOf()); ctx.save(); badge.refresh(); }, placeholder: "0" }), badge.node, el("p", { class: "field__help" }, "Medical costs you paid out of pocket and kept the receipts for. They can be reimbursed from the HSA later, tax free.")));
+      }
+    }
+
+    const hasRoth = accounts.some((a) => a.side === "asset" && a.taxBucket.value === "roth");
+    if (hasRoth) {
+      const thisYear = parseYearMonth(asOf().slice(0, 7)).year;
+      const years = [{ value: "", label: "Not sure (five years ago)" }, ...Array.from({ length: 40 }, (_, i) => thisYear - i).map((y) => ({ value: String(y), label: String(y) }))];
+      fields.push(field("Year of your first Roth contribution", select(years, drawdown().firstRothYear ? String(drawdown().firstRothYear!.value) : "", (v) => { if (v === "") delete drawdown().firstRothYear; else drawdown().firstRothYear = userValue(Number(v), asOf()); ctx.save(); })));
+    }
+
+    const hasWorkplace = accounts.some((a) => a.side === "asset" && (a.preset === "trad401k" || a.preset === "roth401k")) || incomeRows.some((s) => s.preTaxDeductions?.some(isWorkplaceContribution));
+    if (hasWorkplace) {
+      const plan = h().plans?.[0];
+      fields.push(field("Does your workplace plan allow the rule of 55?", select(yesNo, plan?.ruleOf55Allowed.value ?? "unknown", (v) => { workplacePlan().ruleOf55Allowed = userValue(v, asOf()); ctx.save(); }), null, el("p", { class: "field__help" }, "Leaving an employer in or after the year you turn 55 can allow penalty-free withdrawals from that employer's plan. Your plan's summary says whether it allows them.")));
+      fields.push(field("Is it a governmental 457(b)?", select([{ value: "401k", label: "No, a 401(k) or 403(b)" }, { value: "457bGovernmental", label: "Yes, a governmental 457(b)" }], plan?.planType === "457bGovernmental" ? "457bGovernmental" : "401k", (v) => { workplacePlan().planType = v === "457bGovernmental" ? "457bGovernmental" : "401k"; ctx.save(); })));
+      fields.push(field("Does it allow after-tax contributions you can convert (mega backdoor)?", select(yesNo, plan?.megaBackdoorAllowed.value ?? "unknown", (v) => { workplacePlan().megaBackdoorAllowed = userValue(v, asOf()); ctx.save(); })));
+      const sep = el("input", { class: "input", type: "number", min: 18, max: 80, step: 1, value: plan?.separationAge?.value ?? "", placeholder: "At retirement" });
+      sep.addEventListener("input", () => { const v = Number(sep.value); const pl = workplacePlan(); if (sep.value === "" || !(v >= 18 && v <= 80)) delete pl.separationAge; else pl.separationAge = userValue(v, asOf()); ctx.save(); });
+      fields.push(field("Age you expect to leave this employer", sep, null, el("p", { class: "field__help" }, "Blank means when you stop working.")));
+    }
+
+    const heir = el("input", { class: "input", type: "number", min: 0, max: 60, step: 1, value: drawdown().heirTaxRatePercent?.value ?? "", placeholder: "22" });
+    const heirBadge = badgeSlot(() => drawdown().heirTaxRatePercent, (v) => { drawdown().heirTaxRatePercent = v; });
+    heir.addEventListener("input", () => { const v = Number(heir.value); if (heir.value === "" || !(v >= 0 && v <= 60)) delete drawdown().heirTaxRatePercent; else drawdown().heirTaxRatePercent = userValue(v, asOf(), "roughly"); ctx.save(); heirBadge.refresh(); });
+    fields.push(field("Expected heir tax rate (percent)", heir, heirBadge.node, el("p", { class: "field__help" }, "Pretax money left behind is taxed at your heirs' rate, usually within ten years. Blank means 22%, roughly.")));
+
+    const size = el("input", { class: "input", type: "number", min: 1, max: 12, step: 1, value: drawdown().acaHouseholdSize?.value ?? "", placeholder: "1" });
+    const sizeBadge = badgeSlot(() => drawdown().acaHouseholdSize, (v) => { drawdown().acaHouseholdSize = v; });
+    size.addEventListener("input", () => { const v = Number(size.value); if (size.value === "" || !(v >= 1 && v <= 12)) delete drawdown().acaHouseholdSize; else drawdown().acaHouseholdSize = userValue(v, asOf()); ctx.save(); sizeBadge.refresh(); });
+    fields.push(field("People on your health plan", size, sizeBadge.node, el("p", { class: "field__help" }, "Sets the poverty line the marketplace credit is measured against. Blank means 1.")));
+
+    const medicaid = drawdown().medicaidExpansionState;
+    fields.push(field("Is your state a Medicaid expansion state?", select([{ value: "unknown", label: "Not sure yet" }, { value: "yes", label: "Yes" }, { value: "no", label: "No" }], medicaid ? (medicaid.value ? "yes" : "no") : "unknown", (v) => { if (v === "unknown") delete drawdown().medicaidExpansionState; else drawdown().medicaidExpansionState = userValue(v === "yes", asOf(), "roughly"); ctx.save(); }), null, el("p", { class: "field__help" }, "In an expansion state, income under 138% of the poverty line means Medicaid instead of a marketplace credit. Most states have expanded; HealthCare.gov lists them.")));
+
+    const left = items.length;
+    return el(
+      "details",
+      { class: "card", id: "plan-details" },
+      el("summary", { class: "card__summary" }, el("h2", {}, left ? `Plan details (${left} to go for your True FI number)` : "Plan details")),
+      el("p", { class: "muted card__details-body" }, "How your money comes out matters as much as how it goes in. These unlock the True FI number on the result screen. Roughly is fine; not having an account type counts as done."),
+      el("div", { class: "field-grid card__details-body" }, ...fields),
     );
   }
 

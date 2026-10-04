@@ -1,20 +1,26 @@
 /**
- * Entry point for the Money Rooms UI. Two screens, a hash router, local storage.
- * Screens read the engine. They never calculate.
+ * Entry point for the Money Rooms UI: the screens, a hash router, local storage.
+ * Screens read the engine. They never calculate. Module screens (docs/module-contract.md)
+ * are reached only through the registry: a route a manifest owns renders that module's
+ * screen when the module is active for this household.
  */
 
-import type { Household } from "../engine";
+import pkg from "../package.json";
+import { emptyHousehold, type Household } from "../engine";
+import { backupNudge } from "./components/backup-nudge";
 import { sharedDrawer } from "./components/trace-drawer";
 import { clear, el } from "./dom";
+import { applyModuleShell, moduleCards, moduleCurtain, moduleForRoute } from "./modules/index";
+import { CORE_ROUTES, routeForHash } from "./routes";
 import { entryScreen } from "./screens/entry";
+import { levelsScreen } from "./screens/levels";
+import { meaningScreen } from "./screens/meaning";
+import { nextScreen } from "./screens/next";
 import { resultScreen } from "./screens/result";
-import { browserStore } from "./store";
-
-type Route = "entry" | "result";
-
-function currentRoute(): Route {
-  return window.location.hash === "#/result" ? "result" : "entry";
-}
+import { riskScreen } from "./screens/risk";
+import { aboutScreen, privacyScreen } from "./screens/trust";
+import { whatIfsScreen } from "./screens/whatifs";
+import { browserStore, todayIso } from "./store";
 
 function boot(): void {
   const app = document.getElementById("app");
@@ -32,23 +38,70 @@ function boot(): void {
 
   const drawer = sharedDrawer();
 
-  const nav = el("nav", { class: "topbar__nav", "aria-label": "Screens" }, el("a", { href: "#/entry" }, "Your numbers"), el("a", { href: "#/result" }, "Your FI date"));
+  const nav = el("nav", { class: "topbar__nav", "aria-label": "Screens" }, ...CORE_ROUTES.filter((r) => r.nav).map((r) => el("a", { href: r.route }, r.label)));
   const topbar = el("header", { class: "topbar" }, el("a", { class: "topbar__brand", href: "#/entry" }, "Money Rooms"), nav);
   document.body.prepend(topbar);
 
+  const nudge = el("div", {});
   const main = el("div", {});
-  app.append(main);
+  app.append(nudge, main);
+  const footer = el(
+    "footer",
+    { class: "sitefooter" },
+    el("nav", { "aria-label": "About this app" }, el("a", { href: "#/about" }, "About"), el("a", { href: "#/privacy" }, "Your data and privacy")),
+    el("p", { class: "muted" }, `Educational, not individualized financial, tax, or legal advice. Your numbers stay in this browser. Version ${pkg.version}.`),
+  );
+  app.after(footer);
+  const reset = () => {
+    store.clear();
+    store.clearSnapshot();
+    store.savePrefs({ cadence: {} });
+    household = emptyHousehold(todayIso());
+  };
+  const goToEntry = () => { window.location.hash = "#/entry"; };
 
   function render(): void {
-    const route = currentRoute();
+    const hash = window.location.hash;
+    const route = routeForHash(hash);
+    // The top bar marks the screen whose route the hash sits under.
+    const current = route.nav ? route.route : route.parent && CORE_ROUTES.some((r) => r.route === route.parent && r.nav) ? route.parent : null;
     for (const a of nav.querySelectorAll("a")) {
-      if (a.getAttribute("href") === `#/${route}`) a.setAttribute("aria-current", "page");
+      if (a.getAttribute("href") === current) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     }
     drawer.close();
     clear(main);
-    if (route === "result") {
-      main.append(resultScreen({ household, goToEntry: () => { window.location.hash = "#/entry"; }, drawer }));
+    clear(nudge);
+    if (route.route !== "#/about" && route.route !== "#/privacy") {
+      const card = backupNudge(() => household, store, render);
+      if (card) nudge.append(card);
+    }
+    const ctx = { household, store, save, goToEntry, drawer };
+    if (route.moduleId) {
+      const found = moduleForRoute(route.route, ctx);
+      if (found === "inactive" || found === null || !found.ui.screen) {
+        main.append(
+          el("h1", { class: "screen-title" }, "Not available yet"),
+          el("p", {}, found === "inactive" ? "This room is in beta or has not unlocked for your numbers yet. Beta rooms can be turned on under About." : "There is no screen at this address."),
+          el("p", {}, el("a", { href: "#/about" }, "About Money Rooms")),
+        );
+      } else main.append(found.ui.screen(ctx, route.route));
+    } else if (route.route === "#/about") {
+      main.append(aboutScreen({ store, onChange: render }));
+    } else if (route.route === "#/privacy") {
+      main.append(privacyScreen({ store, reset, goToEntry: () => { goToEntry(); render(); }, moduleCards: () => moduleCards("#/privacy", ctx) }));
+    } else if (route.route === "#/result") {
+      main.append(resultScreen({ household, store, goToEntry, drawer }));
+    } else if (route.route === "#/risk") {
+      main.append(riskScreen({ household, store, save, goToEntry, drawer }));
+    } else if (route.route === "#/meaning") {
+      main.append(meaningScreen({ household, store, goToEntry, drawer }));
+    } else if (route.route === "#/whatifs") {
+      main.append(whatIfsScreen({ household, store, save, goToEntry, drawer }));
+    } else if (route.route === "#/levels") {
+      main.append(levelsScreen({ household, store, save, goToEntry, drawer }));
+    } else if (route.route.startsWith("#/next")) {
+      main.append(nextScreen({ household, store, save, goToEntry, goToResult: () => { window.location.hash = "#/result"; }, drawer }));
     } else {
       main.append(entryScreen({
         household,
@@ -61,8 +114,14 @@ function boot(): void {
     window.scrollTo(0, 0);
   }
 
-  window.addEventListener("hashchange", render);
-  render();
+  // Module shell effects (docs/module-contract.md section 5): applied after every render; a curtain, when a module wants one, shows first.
+  const shellCtx = () => ({ household, store, save, goToEntry, drawer });
+  const renderAll = () => { render(); applyModuleShell(shellCtx()); };
+
+  window.addEventListener("hashchange", renderAll);
+  const curtain = moduleCurtain(shellCtx(), () => { curtain?.remove(); renderAll(); });
+  if (curtain) document.body.append(curtain);
+  else renderAll();
 }
 
 boot();

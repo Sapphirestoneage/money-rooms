@@ -20,6 +20,8 @@ export interface YearContext {
   fraction?: number;
   /** The first month this row covers: 1, or the plan month in year 0. Defaults to 1. */
   startMonth?: number;
+  /** Dependents' ages at the end of the year, by id, for end rules that watch a child's age. */
+  dependentAges?: Readonly<Record<string, number>>;
 }
 
 export interface StreamYear {
@@ -49,7 +51,7 @@ export interface YearIncome {
 
 /** The growth type an income type looks up in the assumption set. Rental (Later) uses "other". */
 export function growthTypeFor(type: IncomeType): IncomeGrowthType {
-  return type === "rental" || type === "unemployment" ? "other" : type;
+  return type === "rental" || type === "unemployment" || type === "childSupport" || type === "alimony" ? "other" : type;
 }
 
 export function endReached(end: EndRule | undefined, ctx: YearContext): boolean {
@@ -61,6 +63,10 @@ export function endReached(end: EndRule | undefined, ctx: YearContext): boolean 
       return ctx.age >= end.age;
     case "date":
       return ctx.year >= parseYearMonth(end.date).year;
+    case "dependentAge": {
+      const a = ctx.dependentAges?.[end.dependentId];
+      return a !== undefined && a >= end.age;
+    }
   }
 }
 
@@ -129,6 +135,8 @@ export function incomeForYear(streams: readonly IncomeStream[], ctx: YearContext
         out.selfEmploymentNet += net;
         break;
       case "allowance":
+      case "childSupport":
+      case "alimony":
         out.nonTaxable += gross;
         break;
       case "unemployment":

@@ -646,7 +646,7 @@ export function exportTemplate(h: Household): string {
       }
       if (s.businessExpensesAnnual) row("income", item, "business_expenses", s.businessExpensesAnnual.value, "year", s.businessExpensesAnnual);
       if (s.start) row("income", item, "start", s.start, "", known(at));
-      const end = s.end.kind === "retirement" ? "retirement" : s.end.kind === "age" ? `age:${s.end.age}` : s.end.date;
+      const end = s.end.kind === "retirement" ? "retirement" : s.end.kind === "age" ? `age:${s.end.age}` : s.end.kind === "dependentAge" ? `dependentAge:${s.end.dependentId}:${s.end.age}` : s.end.date;
       row("income", item, "end", end, "", known(at));
     }
   }
@@ -660,7 +660,7 @@ export function exportTemplate(h: Household): string {
       row("spending", item, "category", r.category, "", known(r.annual.asOf));
       row("spending", item, "amount", r.annual.value, "year", r.annual);
       if (r.start) row("spending", item, "start", r.start, "", known(r.annual.asOf));
-      if (r.end) row("spending", item, "end", r.end.kind === "retirement" ? "retirement" : r.end.kind === "age" ? `age:${r.end.age}` : r.end.date, "", known(r.annual.asOf));
+      if (r.end) row("spending", item, "end", r.end.kind === "retirement" ? "retirement" : r.end.kind === "age" ? `age:${r.end.age}` : r.end.kind === "dependentAge" ? `dependentAge:${r.end.dependentId}:${r.end.age}` : r.end.date, "", known(r.annual.asOf));
     }
   }
 

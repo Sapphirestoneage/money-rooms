@@ -16,8 +16,8 @@ export function headlineResult(result: ProjectionResult, onTap: () => void): HTM
     const short = likely.neverFundedShortfall;
     return el(
       "section",
-      { class: "headline", "aria-label": "Your FI date" },
-      el("div", { class: "headline__kicker" }, "Your FI date"),
+      { class: "headline", "aria-label": "Your FI date, as you're set up today" },
+      el("div", { class: "headline__kicker" }, "Your FI date, as you're set up today"),
       el("div", { class: "headline__number-row" }, el("button", { type: "button", class: "headline__number", onClick: onTap }, "Not yet"), kindBadge("computed")),
       el(
         "p",
@@ -36,14 +36,15 @@ export function headlineResult(result: ProjectionResult, onTap: () => void): HTM
 
   return el(
     "section",
-    { class: "headline", "aria-label": "Your FI date" },
-    el("div", { class: "headline__kicker" }, "Your FI date"),
+    { class: "headline", "aria-label": "Your FI date, as you're set up today" },
+    el("div", { class: "headline__kicker" }, "Your FI date, as you're set up today"),
     el(
       "div",
       { class: "headline__number-row" },
       el("button", { type: "button", class: "headline__number", onClick: onTap, "aria-label": `${age(likely.fiAge ?? 0)}. Tap to see what moves it.` }, age(likely.fiAge ?? 0)),
       kindBadge("computed"),
     ),
-    el("div", { class: "headline__range-row" }, el("p", { class: "headline__range" }, `Likely in ${likely.retirementYear}. ${range}`), kindBadge("computed")),
+    el("div", { class: "headline__range-row" }, el("p", { class: "headline__range" }, `Likely in ${likely.retirementYear}. ${range}`),
+    el("p", { class: "headline__note muted" }, "This is your plan as it stands: the usual withdrawal order and no extra strategies. The True FI number below shows what a tuned plan changes."), kindBadge("computed")),
   );
 }

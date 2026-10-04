@@ -1,0 +1,72 @@
+{
+  "id": "home",
+  "name": "Home as an asset",
+  "job": "answers: what my home costs to keep and why it is not in my FI number",
+  "reads": [
+    "home",
+    "spending[].category"
+  ],
+  "adds": {
+    "fields": [
+      "home"
+    ],
+    "cards": [],
+    "lenses": [],
+    "metrics": [
+      "homeReserveAnnual"
+    ],
+    "items": [],
+    "screens": [],
+    "concepts": [
+      {
+        "screen": "#/entry",
+        "concept": "the home is kept out of the FI number; its upkeep is spending"
+      }
+    ]
+  },
+  "placement": {
+    "level": 1,
+    "tier": "easy",
+    "pack": "home",
+    "screen": "#/entry"
+  },
+  "unlock": {
+    "kind": "always",
+    "text": "Always; it does nothing until a home is entered."
+  },
+  "engine": {
+    "capabilities": [
+      "homeReserve"
+    ],
+    "coreChanges": [
+      "core change: the timeline adds the home's upkeep reserve to every year's spending and flags that the home is not counted (engine/projection/timeline.ts, decision A10)"
+    ]
+  },
+  "flag": "beta",
+  "killCriteria": {
+    "measure": "share of homeowners who enter the home",
+    "threshold": "under 30% after 90 days of beta",
+    "action": "keep the reserve as a spending category hint and drop the fields"
+  },
+  "tests": {
+    "goldenHousehold": "tests/households/rosa.json",
+    "acceptance": [
+      "tests/rosa.test.ts"
+    ]
+  },
+  "files": [],
+  "copy": [],
+  "checklist": {
+    "spec": "docs/packs/home.md",
+    "decision": "A10",
+    "axe": {
+      "date": "2026-10-04",
+      "routes": []
+    },
+    "docs": [
+      "docs/data-dictionary.md",
+      "docs/decisions.md"
+    ]
+  },
+  "replaces": []
+}

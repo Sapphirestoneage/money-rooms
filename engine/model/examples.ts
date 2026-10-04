@@ -46,6 +46,29 @@ export interface ExampleAccount {
   minPaymentMonthly?: number;
   actualPaymentMonthly?: number;
   stress?: number;
+  /** A promo rate on a debt: the rate now, the last month it applies (YYYY-MM), and the rate after. */
+  promo?: { rate: number; endDate: string; rateAfter: number };
+  /** A display name for the account. */
+  name?: string;
+  /** Family loans (dictionary 9.16). */
+  paymentFlexibility?: "fixed" | "flexible" | "pausable";
+  possibleForgiveness?: "unknown" | "none" | "possible";
+  lenders?: number;
+}
+
+export interface ExampleDependent {
+  id: string;
+  label?: string;
+  birthDate: string;
+  /** Defaults to true. */
+  livesWithYou?: boolean;
+}
+
+export interface ExampleHome {
+  value: number;
+  maintenanceReservePercent?: number;
+  propertyTaxAnnual?: number;
+  insuranceAnnual?: number;
 }
 
 export interface ExampleHouseholdFile {
@@ -59,8 +82,13 @@ export interface ExampleHouseholdFile {
     hsaEligible?: boolean;
     savingsStrategy?: SavingsStrategy;
     income: ExampleIncome[];
-    spending: { category: string; annual: number }[];
+    /** `end` as parseEndRule reads it: "retirement", "age:N", "YYYY-MM", or "dependentAge:<id>:N". */
+    spending: { category: string; annual: number; label?: string; end?: string }[];
     accounts: ExampleAccount[];
+    dependents?: ExampleDependent[];
+    home?: ExampleHome;
+    /** Local earned income tax, percent (dictionary 9.15). */
+    localTaxPercent?: number;
   };
   expected?: unknown;
   notes?: string;
@@ -73,6 +101,12 @@ export function parseEndRule(s: string | undefined): EndRule {
     const age = Number(s.slice(4));
     if (!Number.isFinite(age)) throw new Error(`Bad end rule "${s}"`);
     return { kind: "age", age };
+  }
+  if (s.startsWith("dependentAge:")) {
+    const [, dependentId, ageText] = s.split(":");
+    const age = Number(ageText);
+    if (!dependentId || !Number.isFinite(age)) throw new Error(`Bad end rule "${s}"`);
+    return { kind: "dependentAge", dependentId, age };
   }
   if (isYearMonth(s)) return { kind: "date", date: s };
   throw new Error(`Bad end rule "${s}"`);
@@ -109,7 +143,7 @@ export function householdFromExample(file: ExampleHouseholdFile, asOf: IsoDate):
   });
   h.self.income = income.length ? { kind: "rows", rows: income } : { kind: "none", asOf };
 
-  const spending: SpendingRow[] = i.spending.map((r, n) => ({ id: `spend-${n}-${r.category}`, category: r.category, annual: userValue(r.annual, asOf, "roughly") }));
+  const spending: SpendingRow[] = i.spending.map((r, n) => ({ id: `spend-${n}-${r.category}`, category: r.category, annual: userValue(r.annual, asOf, "roughly"), ...(r.label ? { label: r.label } : {}), ...(r.end ? { end: parseEndRule(r.end) } : {}) }));
   h.spending = spending.length ? { kind: "rows", rows: spending } : { kind: "none", asOf };
 
   const accounts: Account[] = i.accounts.map((a) => {
@@ -124,9 +158,30 @@ export function householdFromExample(file: ExampleHouseholdFile, asOf: IsoDate):
       ...(a.actualPaymentMonthly !== undefined ? { actualPaymentAnnual: userValue(annualFromMonthly(a.actualPaymentMonthly), asOf) } : {}),
     }, asOf);
     if (a.stress !== undefined) debt.stress = userValue(a.stress, asOf);
+    if (a.promo) {
+      if (!isYearMonth(a.promo.endDate)) throw new Error(`Debt "${a.id}" promo endDate must be YYYY-MM`);
+      debt.promo = { rate: userValue(a.promo.rate, asOf), endDate: userValue(a.promo.endDate, asOf), rateAfter: userValue(a.promo.rateAfter, asOf) };
+    }
+    if (a.name) debt.name = userValue(a.name, asOf);
+    if (a.paymentFlexibility) debt.paymentFlexibility = userValue(a.paymentFlexibility, asOf);
+    if (a.possibleForgiveness) debt.possibleForgiveness = userValue(a.possibleForgiveness, asOf);
+    if (a.lenders !== undefined) debt.lenders = userValue(a.lenders, asOf);
     return debt;
   });
   h.accounts = accounts.length ? { kind: "rows", rows: accounts } : { kind: "none", asOf };
+  if (i.dependents?.length) {
+    h.dependents = i.dependents.map((d) => {
+      if (!isYearMonth(d.birthDate)) throw new Error(`Dependent "${d.id}" birthDate must be YYYY-MM`);
+      return { id: d.id, birthDate: userValue(d.birthDate, asOf), livesWithYou: userValue(d.livesWithYou ?? true, asOf), ...(d.label ? { label: userValue(d.label, asOf) } : {}) };
+    });
+  }
+  if (i.home) {
+    h.home = { value: userValue(i.home.value, asOf, "roughly") };
+    if (i.home.maintenanceReservePercent !== undefined) h.home.maintenanceReservePercent = userValue(i.home.maintenanceReservePercent, asOf);
+    if (i.home.propertyTaxAnnual !== undefined) h.home.propertyTaxAnnual = userValue(i.home.propertyTaxAnnual, asOf);
+    if (i.home.insuranceAnnual !== undefined) h.home.insuranceAnnual = userValue(i.home.insuranceAnnual, asOf);
+  }
+  if (i.localTaxPercent !== undefined) h.self.localTaxPercent = userValue(i.localTaxPercent, asOf);
 
   return h;
 }

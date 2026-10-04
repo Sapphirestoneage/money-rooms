@@ -1,0 +1,86 @@
+{
+  "id": "hard-season",
+  "name": "Hard season",
+  "job": "answers: what comes first when things are hard, with the rest paused",
+  "reads": [
+    "hardSeason",
+    "accounts",
+    "spending",
+    "self",
+    "resilience",
+    "asOf"
+  ],
+  "adds": {
+    "fields": [
+      "hardSeason"
+    ],
+    "cards": [
+      {
+        "id": "next.hardSeason",
+        "level": 1,
+        "screen": "#/next"
+      }
+    ],
+    "lenses": [],
+    "metrics": [
+      "stabilityItems"
+    ],
+    "items": [],
+    "screens": [],
+    "concepts": [
+      {
+        "screen": "#/next",
+        "concept": "stability first, the rest paused"
+      }
+    ]
+  },
+  "placement": {
+    "level": 1,
+    "tier": "easy",
+    "screen": "#/next"
+  },
+  "unlock": {
+    "kind": "always",
+    "text": "Always; the suggestion appears when a debt weighs 4 or more or a shock leaves under three months."
+  },
+  "engine": {
+    "capabilities": [
+      "runway",
+      "staircase",
+      "shockTests",
+      "flexiblePayments"
+    ],
+    "coreChanges": [
+      "core change: the result screen pauses the optimizer sections and What's next shows stability items only while hard season is on (ui/screens/result.ts, ui/screens/next.ts, decision A15)"
+    ]
+  },
+  "flag": "beta",
+  "killCriteria": {
+    "measure": "share of people who turn it on after the suggestion, and turn it off again within 90 days",
+    "threshold": "under 10% turn it on",
+    "action": "keep the suggestion as a flag and drop the mode"
+  },
+  "tests": {
+    "goldenHousehold": "tests/households/rosa.json",
+    "acceptance": [
+      "tests/modules/messy.test.ts"
+    ]
+  },
+  "files": [
+    "engine/modules/hard-season.ts"
+  ],
+  "copy": [],
+  "checklist": {
+    "spec": "docs/packs/divorce.md",
+    "decision": "A15",
+    "axe": {
+      "date": "2026-10-04",
+      "routes": []
+    },
+    "docs": [
+      "docs/data-dictionary.md",
+      "docs/decisions.md"
+    ]
+  },
+  "replaces": []
+}

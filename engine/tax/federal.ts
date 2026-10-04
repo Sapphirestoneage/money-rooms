@@ -19,6 +19,9 @@ export interface FederalTaxInput {
   otherOrdinaryIncome: number;
   /** Dollars withdrawn early that owe the 10% penalty. */
   earlyWithdrawals: number;
+  /** Households of two: the partner's wages and net self-employment, so payroll taxes are capped per person. Blank for one person. */
+  partnerWages?: number;
+  partnerSelfEmploymentNet?: number;
 }
 
 export interface FederalTaxResult {
@@ -50,16 +53,28 @@ export function computeSelfEmploymentTax(
   return { tax: socialSecurity + medicare, base };
 }
 
-export function computeFederalTax(input: FederalTaxInput, t: FederalTables): FederalTaxResult {
-  const { filingStatus, wages } = input;
+/** Payroll taxes for one person: FICA on wages and self-employment tax, each capped at that person's wage base. */
+export function payrollTaxesForPerson(wages: number, selfEmploymentNet: number, t: FederalTables): { socialSecurityTax: number; medicareTax: number; se: { tax: number; base: number } } {
   const fica = t.fica;
+  return {
+    socialSecurityTax: (Math.min(wages, fica.socialSecurityWageBase) * fica.socialSecurityRate) / 100,
+    medicareTax: (wages * fica.medicareRate) / 100,
+    se: computeSelfEmploymentTax(selfEmploymentNet, wages, t),
+  };
+}
 
-  // FICA on wages (employee share). M1 applies it to full wages.
-  const socialSecurityTax = (Math.min(wages, fica.socialSecurityWageBase) * fica.socialSecurityRate) / 100;
-  const medicareTax = (wages * fica.medicareRate) / 100;
+export function computeFederalTax(input: FederalTaxInput, t: FederalTables): FederalTaxResult {
+  const { filingStatus } = input;
+  const fica = t.fica;
+  const wages = input.wages + (input.partnerWages ?? 0);
 
-  // Self-employment tax, coordinated with wages for the Social Security cap.
-  const se = computeSelfEmploymentTax(input.selfEmploymentNet, wages, t);
+  // FICA on wages (employee share), capped per person. M1 applies it to full wages.
+  const own = payrollTaxesForPerson(input.wages, input.selfEmploymentNet, t);
+  const partner = input.partnerWages !== undefined || input.partnerSelfEmploymentNet !== undefined ? payrollTaxesForPerson(input.partnerWages ?? 0, input.partnerSelfEmploymentNet ?? 0, t) : null;
+  const socialSecurityTax = own.socialSecurityTax + (partner?.socialSecurityTax ?? 0);
+  const medicareTax = own.medicareTax + (partner?.medicareTax ?? 0);
+  const se = { tax: own.se.tax + (partner?.se.tax ?? 0), base: own.se.base + (partner?.se.base ?? 0) };
+  const selfEmploymentNet = input.selfEmploymentNet + (input.partnerSelfEmploymentNet ?? 0);
 
   // Additional Medicare tax on combined earned income above the threshold.
   const earned = wages + se.base;
@@ -70,7 +85,7 @@ export function computeFederalTax(input: FederalTaxInput, t: FederalTables): Fed
   const halfSe = t.selfEmployment.halfDeductibleFromIncome ? se.tax / 2 : 0;
   const agi =
     Math.max(0, wages - input.pretaxPayrollDeductions) +
-    input.selfEmploymentNet -
+    selfEmploymentNet -
     halfSe +
     input.otherOrdinaryIncome;
 
