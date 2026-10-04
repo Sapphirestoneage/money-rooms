@@ -3,7 +3,9 @@
  * the data lives, and how to take it out or delete it). Plain text, no numbers.
  */
 
+import { loadModules } from "../../engine";
 import { confirmPanel } from "../components/confirm-panel";
+import { toggleButton } from "../components/toggle-button";
 import { el } from "../dom";
 import type { Store } from "../store";
 
@@ -14,7 +16,35 @@ export interface TrustContext {
   goToEntry(): void;
 }
 
-export function aboutScreen(): HTMLElement {
+export interface AboutContext {
+  store: Store;
+  /** Called after the beta setting changes, so the shell re-renders. */
+  onChange(): void;
+}
+
+/** Every module, its flag, and its job, with the beta switch (docs/module-contract.md section 4). Collapsed by default. */
+function modulesSection(ctx: AboutContext): HTMLElement {
+  const beta = ctx.store.loadPrefs().beta === true;
+  const flagText = { on: "On", beta: "Beta", off: "Off" } as const;
+  return el(
+    "details",
+    { class: "card" },
+    el("summary", { class: "card__summary" }, el("h2", {}, "Modules and beta features")),
+    el(
+      "div",
+      { class: "stack card__details-body" },
+      el("p", { class: "muted" }, "Everything beyond the core is a module with a manifest that says what it reads, what it adds, and when it shows. Modules marked Beta appear only while the switch below is on."),
+      toggleButton(beta ? "Beta modules are on" : "Beta modules are off", beta, (next) => { ctx.store.savePrefs({ ...ctx.store.loadPrefs(), beta: next }); ctx.onChange(); }),
+      el(
+        "ul",
+        { class: "aged-list" },
+        ...loadModules().map((m) => el("li", {}, el("strong", {}, m.name), ` (${m.core ? "core" : flagText[m.flag]}): ${m.job.replace(/^answers: /, "answers ")}. Shows when: ${m.unlock.text.replace(/\.$/, "").toLowerCase()}.`)),
+      ),
+    ),
+  );
+}
+
+export function aboutScreen(ctx: AboutContext): HTMLElement {
   return el(
     "div",
     {},
@@ -34,6 +64,7 @@ export function aboutScreen(): HTMLElement {
       el("p", {}, "Everything is calculated in your browser from the numbers you enter. Each number carries its own date and how sure you are of it (known, look it up, roughly). The engine runs a year-by-year plan from today to your plan-to age, finds the earliest year the plan stays funded, and shows what moves it."),
       el("p", {}, el("a", { href: "#/privacy" }, "Where your data lives"), "."),
     ),
+    modulesSection(ctx),
   );
 }
 

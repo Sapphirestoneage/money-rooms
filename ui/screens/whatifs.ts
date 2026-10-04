@@ -27,6 +27,7 @@ import { kindBadge } from "../components/kind-badge";
 import type { Drawer } from "../components/trace-drawer";
 import { clear, el, rowId } from "../dom";
 import { dollars, dollarsShort, yearWord } from "../format";
+import { activeModule } from "../modules/index";
 import type { Store } from "../store";
 
 export interface WhatIfsContext {
@@ -209,6 +210,7 @@ export function whatIfsScreen(ctx: WhatIfsContext): HTMLElement {
       el("div", { class: "field" }, el("label", {}, "Extra a month toward debts, on top of the minimums"), extra),
       table,
       payoff ? el("p", {}, `The price of peace: the peace-first order costs ${dollars(payoff.priceOfPeace)} more in interest than the avalanche and saves ${Math.round(payoff.peaceGained)} stress-months. `, kindBadge("computed")) : null,
+      activeModule("debt-freedom", ctx) ? el("p", {}, el("a", { href: "#/m/debt-freedom" }, "The Debt freedom room"), ": each debt's own month, the promo-end warnings, and the stress ratings.") : null,
       el("p", { class: "muted" }, "Stress is the 1 to 5 rating on each debt (3 when not rated). Stress-months add up each debt's rating for every month it is still owed."),
     );
   }

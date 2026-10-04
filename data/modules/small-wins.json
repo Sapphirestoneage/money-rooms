@@ -1,0 +1,25 @@
+{
+  "id": "small-wins",
+  "name": "Small wins",
+  "job": "answers: which small moves under the trivial line add up to something worth an evening",
+  "reads": ["spending[].annual", "spending[].category", "accounts[].balance", "accounts[].taxBucket", "smallWins"],
+  "adds": {
+    "fields": ["smallWins"],
+    "cards": [{ "id": "next.winsPromotion", "level": 1, "screen": "#/next" }],
+    "lenses": [],
+    "metrics": ["smallWinsTotal"],
+    "items": [],
+    "screens": ["#/next/wins"],
+    "concepts": [{ "screen": "#/next/wins", "concept": "the running total of small wins and its promotion to the main path" }]
+  },
+  "placement": { "level": 1, "tier": "easy", "screen": "#/next" },
+  "unlock": { "kind": "always", "text": "Always; the estimates personalize once spending and balances are in." },
+  "engine": { "capabilities": ["smallWins"], "coreChanges": [] },
+  "flag": "on",
+  "killCriteria": { "measure": "share of people who mark at least one win done or not-for-me within 30 days of first seeing the tab", "threshold": "under 10% after 90 days", "action": "fold the wins into the Rough numbers card and remove the tab" },
+  "tests": { "goldenHousehold": "tests/households/maya.json", "acceptance": ["engine/flow/flow.test.ts", "tests/wording.test.ts"] },
+  "files": ["engine/flow/small-wins.ts"],
+  "copy": ["data/small-wins.json"],
+  "checklist": { "spec": "docs/m3-spec.md", "decision": "S1", "axe": { "date": "2026-10-04", "routes": ["#/next/wins"] }, "docs": ["docs/m3-spec.md", "docs/data-dictionary.md"] },
+  "replaces": []
+}

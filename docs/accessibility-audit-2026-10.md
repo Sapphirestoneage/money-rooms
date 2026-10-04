@@ -45,3 +45,7 @@ axe-core (WCAG 2.0 and 2.1 A and AA, plus best practices) on every route (Your n
 **Fixed.** The footer's About link was 41 pixels wide at 360 (height was already 44); footer links now have a 44-pixel minimum width.
 
 **Judgment calls (open).** 1. The Sky's circles are SVG buttons 43 pixels wide at 360 (60 tall); they are keyboard-reachable and have labels, and the outline alternative is full size. Widening them means fewer circles per row. 2. The two visually hidden file inputs (1 by 1) are the import controls behind visible buttons; axe does not flag them and they are not tap targets. 3. Page errors in the run were only the font request failing certificate checks inside the test container, not app errors.
+
+## Third pass, 2026-10-04 (answers batch, Part 2: the module system)
+
+axe-core through Playwright on the built site with the Debt freedom golden household loaded and the beta switch on, light and dark, 360px and 1280px: the Debt freedom room (`#/m/debt-freedom`), About with the modules section open, Levels with the module's card, What-ifs with the link to the room, and What's next. 20 combinations, **0 violations**. With the beta switch off, the room's route shows the "Not available yet" notice, the Levels card is gone, and the Small wins tab (a module flagged on) stays. The room's table has a scrollable region with a label; every stress select is labeled with its debt's name; the Beta badge is text, not color alone.

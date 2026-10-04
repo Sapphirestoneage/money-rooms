@@ -10,7 +10,10 @@ import { describe, expect, it } from "vitest";
 import items from "../data/items.json";
 import ratios from "../data/ratios.json";
 import wins from "../data/small-wins.json";
-import { adviceTranslator, defaultDeps, defaultPolicy, findFiDate, householdFromExample, optimize, planText, requireComplete, resolveAssumptions, resolveBand, type ExampleHouseholdFile } from "../engine";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { adviceTranslator, debtFreedomView, defaultDeps, defaultPolicy, findFiDate, householdFromExample, loadModules, optimize, planText, requireComplete, resolveAssumptions, resolveBand, type ExampleHouseholdFile } from "../engine";
+import golden from "./households/debt-freedom-golden.json";
 import maya from "./households/maya.json";
 
 /** Modal instructions anywhere, and imperative verbs at the start of a sentence or title. */
@@ -55,6 +58,25 @@ describe("content files describe, never instruct", () => {
   it("item reasons", () => {
     const text = (items as { items: { why?: string }[] }).items.flatMap((i) => (i.why ? [i.why] : []));
     expect(offenders(text)).toEqual([]);
+  });
+  it("every module's copy files, read through the registry (docs/module-contract.md section 7)", () => {
+    const strings: string[] = [];
+    // Prose keys only: ids, kinds, tiers, and field paths are not sentences.
+    const PROSE = ["title", "note", "why", "sentence", "idea", "label", "text", "summary", "body", "whereToFind"];
+    const collect = (x: unknown, key: string | null) => {
+      if (typeof x === "string") { if (key && PROSE.includes(key)) strings.push(x); }
+      else if (Array.isArray(x)) x.forEach((v) => collect(v, key));
+      else if (x && typeof x === "object") for (const [k, v] of Object.entries(x)) collect(v, k);
+    };
+    for (const m of loadModules()) for (const file of m.copy) collect(JSON.parse(readFileSync(join(import.meta.dirname, "..", file), "utf8")), null);
+    expect(strings.length).toBeGreaterThan(10);
+    expect(offenders(strings)).toEqual([]);
+  });
+  it("the Debt freedom room's sentences", () => {
+    const g = householdFromExample(golden as ExampleHouseholdFile, "2026-10-01");
+    const sentences = [...debtFreedomView(g, { extraMonthly: 250 }).sentences, ...debtFreedomView(g).sentences];
+    expect(sentences.length).toBeGreaterThan(5);
+    expect(offenders(sentences)).toEqual([]);
   });
   it("the Advice Translator's own sentences (its quoted statements are the advice under examination and are exempt)", () => {
     const own = adviceTranslator(h).map((v) => v.sentence);

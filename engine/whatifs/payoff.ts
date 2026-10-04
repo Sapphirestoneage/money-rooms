@@ -7,7 +7,7 @@
 
 import blocksFile from "../../data/scenario-blocks.json";
 import type { DebtAccount, Household } from "../model";
-import { getAccountPreset } from "../model";
+import { getAccountPreset, monthsBetween, yearMonthOf } from "../model";
 
 export type PayoffMethod = "avalanche" | "snowball" | "peaceFirst";
 
@@ -18,6 +18,8 @@ export interface PayoffDebt {
   ratePercent: number;
   minimumMonthly: number;
   stress: number;
+  /** A promo rate still running: the rate charged for the first `monthsRemaining` months of the simulation (decision A8). */
+  promo?: { ratePercent: number; monthsRemaining: number };
 }
 
 export interface PayoffPlan {
@@ -44,7 +46,13 @@ export function payoffDebts(h: Household): PayoffDebt[] {
   if (h.accounts.kind !== "rows") return [];
   return h.accounts.rows
     .filter((a): a is DebtAccount => a.side === "debt" && (a.balance.value ?? 0) > 0)
-    .map((a) => ({ id: a.id, label: a.name?.value ?? getAccountPreset(a.preset).label, balance: a.balance.value ?? 0, ratePercent: a.promo ? a.promo.rateAfter.value : a.rate.value, minimumMonthly: a.minimumPaymentAnnual.value / 12, stress: a.stress?.value ?? blocksFile.payoff.stressDefault }));
+    .map((a) => {
+      const d: PayoffDebt = { id: a.id, label: a.name?.value ?? getAccountPreset(a.preset).label, balance: a.balance.value ?? 0, ratePercent: a.promo ? a.promo.rateAfter.value : a.rate.value, minimumMonthly: a.minimumPaymentAnnual.value / 12, stress: a.stress?.value ?? blocksFile.payoff.stressDefault };
+      // The promo holds through its end month; month 1 of the simulation is the as-of month.
+      const monthsRemaining = a.promo ? monthsBetween(yearMonthOf(h.asOf), a.promo.endDate.value) + 1 : 0;
+      if (a.promo && monthsRemaining > 0) d.promo = { ratePercent: a.promo.rate.value, monthsRemaining };
+      return d;
+    });
 }
 
 /** The order each method pays debts in. Peace-first searches every order for the fewest stress-months (debts are few). */
@@ -86,7 +94,8 @@ export function simulate(debts: readonly PayoffDebt[], order: readonly string[],
       const b = balances.get(d.id)!;
       if (b <= 0) continue;
       stressMonths += d.stress;
-      const i = (b * d.ratePercent) / 100 / 12;
+      const rate = d.promo && month <= d.promo.monthsRemaining ? d.promo.ratePercent : d.ratePercent;
+      const i = (b * rate) / 100 / 12;
       interest += i;
       const pay = Math.min(b + i, d.minimumMonthly, budget);
       balances.set(d.id, b + i - pay);

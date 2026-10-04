@@ -1,6 +1,6 @@
 # Debt freedom pack
 
-**Status: Proposed, not reviewed by Eli.** Drafted 2026-10-04. Docs only.
+**Status: Proposed, not reviewed by Eli.** Drafted 2026-10-04. **Built 2026-10-04 as the first module, flag beta** (`data/modules/debt-freedom.json`, `engine/modules/debt-freedom.ts`, `ui/modules/debt-freedom.ts`, decision A7). Built in this version: the three payoff orders with their debt-free dates and each debt's own month, the price of peace, what $100 more a month buys, the promo-end warning, the stress rating on each debt (the question in section 4), and the debt-free date as a Level 2 card. Not yet built: the refinance block, income-driven student loans, mortgage early payoff versus investing. The payoff simulation now charges a promo rate through its end month (decision A8); the avalanche ranks by the rate after the promo. Golden household: `tests/households/debt-freedom-golden.json`; acceptance tests 1 and 2 are in `tests/modules/debt-freedom.test.ts`.
 
 ---
 

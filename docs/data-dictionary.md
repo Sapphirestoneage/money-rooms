@@ -560,3 +560,9 @@ Stored under `risk`: `successThresholdPercent` (Goal, default 90) and `guardrail
 ### 9.12 Progress history (Proposed, `docs/history-spec.md`)
 
 Stored under `history` as a list of snapshots, one per date: `date`, `fiYear` by band, `fiAge.likely`, `netWorth`, `savingsRatePercent`, `fiNumber` (25 times spending), `conventions`. The one allowed exception to "never persist a derived value": a past date's results cannot be derived again once the inputs change. Taken by the result screen, at most once a day, capped at 400 (the first is always kept). In the export; removed by delete.
+
+### 9.13 Debt stress rating and module manifests (Proposed, 2026-10-04, answers batch)
+
+**`accounts[].stress`** (debt accounts): how much the debt weighs on the person, 1 (barely on my mind) to 5 (it weighs on me). Kind: decision. Default 3 (`data/scenario-blocks.json`, `payoff.stressDefault`). Used by the peace-first payoff order (M5, decision D10) and the Debt freedom room, which is where it is entered. The field has been in the model since M5; this entry records it in the dictionary.
+
+**Module manifests** (`data/modules/<id>.json`) are not household fields. They describe what a feature reads from this dictionary and what it adds (`docs/module-contract.md`). A module adds a field only by proposing it here first and then listing it in its manifest's `adds.fields`. The beta switch that shows beta modules is a display preference in the browser, not a household field.

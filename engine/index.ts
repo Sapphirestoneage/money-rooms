@@ -29,3 +29,4 @@ export * from "./whatifs";
 export * from "./meaning";
 export * from "./risk";
 export * from "./history";
+export * from "./modules";

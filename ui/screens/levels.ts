@@ -38,6 +38,7 @@ import { kindBadge } from "../components/kind-badge";
 import type { Drawer } from "../components/trace-drawer";
 import { clear, el, rowId } from "../dom";
 import { dollars, dollarsShort, monthWord } from "../format";
+import { moduleLevelCards } from "../modules/index";
 import type { Store } from "../store";
 
 export interface LevelsContext {
@@ -98,7 +99,8 @@ export function levelsScreen(ctx: LevelsContext): HTMLElement {
       root.append(gentleFlag("Level 1 first: a few answers are still needed before the levels have numbers to work with.", { label: "Go to your numbers", onClick: ctx.goToEntry }));
       return;
     }
-    root.append(resilienceCard(), milestonesCard(), legacyCard());
+    // Each level's section: the core's card, then any active module's card for that level (docs/module-contract.md).
+    root.append(resilienceCard(), ...moduleLevelCards(2, ctx), milestonesCard(), ...moduleLevelCards(3, ctx), legacyCard(), ...moduleLevelCards(5, ctx));
   }
 
   // ---- Level 2 -------------------------------------------------------------------

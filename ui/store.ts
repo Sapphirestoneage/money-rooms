@@ -49,6 +49,8 @@ export interface DisplayPrefs {
   lastExportAt?: string;
   /** The backup nudge stays quiet until this date after "Not now". */
   backupSnoozedUntil?: string;
+  /** True when modules flagged beta show (docs/module-contract.md section 4). */
+  beta?: boolean;
 }
 
 export interface Store {
@@ -137,6 +139,7 @@ export function browserStore(storage: Storage | null, today: () => IsoDate = tod
       if (typeof p.lastRefreshFiYear === "number") out.lastRefreshFiYear = p.lastRefreshFiYear;
       if (typeof p.lastExportAt === "string") out.lastExportAt = p.lastExportAt;
       if (typeof p.backupSnoozedUntil === "string") out.backupSnoozedUntil = p.backupSnoozedUntil;
+      if (typeof p.beta === "boolean") out.beta = p.beta;
       return out;
     },
     savePrefs: (p) => void write(PREFS_KEY, p),

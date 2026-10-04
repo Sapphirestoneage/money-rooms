@@ -33,6 +33,7 @@ import { toggleButton } from "../components/toggle-button";
 import type { Drawer } from "../components/trace-drawer";
 import { clear, el, svg } from "../dom";
 import { dollars, dollarsShort, monthWord } from "../format";
+import { activeModule } from "../modules/index";
 import type { Store } from "../store";
 
 export interface NextContext {
@@ -93,12 +94,14 @@ export function nextScreen(ctx: NextContext): HTMLElement {
     render();
   };
 
+  const winsOn = () => activeModule("small-wins", ctx);
   function render(): void {
     clear(root);
+    if (tab === "wins" && !winsOn()) tab = "next";
     const tabs = el(
       "div",
       { class: "tabs", role: "tablist", "aria-label": "What's next" },
-      ...(["next", "wins", "sky"] as Tab[]).map((t) =>
+      ...(["next", "wins", "sky"] as Tab[]).filter((t) => t !== "wins" || winsOn()).map((t) =>
         el("button", { type: "button", role: "tab", class: `tab${t === tab ? " tab--active" : ""}`, "aria-selected": t === tab ? "true" : "false", onClick: () => goTo(t) }, t === "next" ? "Next" : t === "wins" ? "Small wins" : "The Sky"),
       ),
     );
@@ -133,7 +136,7 @@ export function nextScreen(ctx: NextContext): HTMLElement {
     if (allRough.length) out.push(roughCard(allRough, rough));
     const wins = smallWins(h(), h().smallWins ?? {});
     const total = smallWinsTotal(wins, report.fiNumber !== null ? report.lines.materialShare * report.fiNumber : null, report.dollarsPerMonth);
-    if (total.promote) out.push(el("section", { class: "card" }, el("div", { class: "card__title" }, el("h2", {}, "Your small wins add up")), el("p", {}, `The open small wins add up to about ${dollars(total.openAnnual)} a year. Worth an evening?`), el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: () => goTo("wins") }, "Open small wins"))));
+    if (total.promote && winsOn()) out.push(el("section", { class: "card" }, el("div", { class: "card__title" }, el("h2", {}, "Your small wins add up")), el("p", {}, `The open small wins add up to about ${dollars(total.openAnnual)} a year. Worth an evening?`), el("div", { class: "row-actions" }, el("button", { type: "button", class: "button button--quiet", onClick: () => goTo("wins") }, "Open small wins"))));
     out.push(settingsCard());
     return out;
   }

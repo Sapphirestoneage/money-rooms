@@ -24,6 +24,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | M2 tie-out | Both plans tie out (Plan B: one recorded workpaper cell) | `m2-tieout` | (see git log) |
 | Readiness polish | Done (wording, rough results, worker, axe, report link, version) | `polish-oct4` | (see git log) |
 | Answers | Issue 4 cell corrected (Plan B 300 of 300), 72(t) card, worker for bands and backtests, 9-step search | `answers-oct4` | (see git log) |
+| Module system | Contract, registry, flags, complexity budget, checklist gate; Debt freedom as the first module (beta); Small wins as a manifest | `modules-oct4` | (see git log) |
 
 **The phases in plain English** (each has a self-audit or spec with the detail).
 
@@ -44,7 +45,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 
 ## 2. Maya tie-out (M1 conventions mode)
 
-After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after closing the M2 tie-out on `m2-tieout`. Full suite: 55 files, 553 tests, all passing. M2 tie-out: Plan A 280 of 280; Plan B 300 of 300 after Eli corrected the 2045 penalty cell (answers batch, A1).
+After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after closing the M2 tie-out on `m2-tieout`. Full suite: 59 files, 596 tests, all passing. M2 tie-out: Plan A 280 of 280; Plan B 300 of 300 after Eli corrected the 2045 penalty cell (answers batch, A1).
 
 ## 3. Proposed specs written (review first)
 
@@ -193,6 +194,8 @@ From `docs/readiness.md`, in order:
 **Where I stopped:** every phase, 0 to 13, is complete and pushed; the last branch is `review-oct4`, which carries the final report. Nothing was merged to `main`. The branch chain, each from the one before: `prep-oct4`, `m2-engine`, `m2-optimizer`, `m3-flow`, `levels`, `m5-whatifs`, `m4-meaning`, `m6-risk`, `household-two`, `packs-specs`, `foundations`, `coaching-specs`, `feature-register`, `readiness`. Merging `readiness` into `main` brings everything; reviewing the Proposed specs in section 3 and the decisions in section 4 first is the order the build assumed.
 
 **Answers batch (branch `answers-oct4`, 2026-10-04):** the Plan B 2045 penalty cell corrected at Eli's direction (Plan B 300 of 300, A1); 72(t) stays in the default search and every plan that uses it shows the commitment card beside the plan, the rule from `access.sepp72t` and the best plan without the payments with the difference in estate and FI date (`engine/optimizer/sepp-commitment.ts`, A2, locked); one shared engine worker now runs the result screen's three-band FI search, the optimizer with its toggles, stress test, and commitment, and the Risk screen's backtests and sturdy dates, each with a staged note (`ui/workers/engine.worker.ts`, `ui/workers/client.ts`, A3, locked); the most-spending search runs 9 bisection steps and the screen shows the result to the nearest $100 (A4, locked; Maya's test takes 1.9 seconds instead of 3.7). Measured on the built site: the FI date paints in 0.7, 0.9, and 1.0 seconds at 1x, 4x, and 6x CPU throttle (1.4 and 1.9 at 4x and 6x before); the Risk screen finishes every replay in under 3 seconds with the page responsive.
+
+**Module system (branch `modules-oct4`, 2026-10-04):** `docs/module-contract.md` and a registry (`engine/modules/registry.ts`) that validates every manifest in `data/modules/` and answers which modules are active for a household (flag off, beta, on; unlock condition); the router, the Levels screen, and What's next reach modules only through it, and a beta switch lives in a collapsed section on About with every module's flag and job (A5). `docs/complexity-budget.md` with five rules enforced by `tests/complexity-budget.test.ts`, and a route table (`ui/routes.ts`) so taps from home are counted (A6). `docs/module-checklist.md` enforced by `tests/module-checklist.test.ts`: a module flagged on that lacks an item fails CI. The Debt freedom pack is the first module, flag beta: the three payoff orders with debt-free dates and each debt's own month, the price of peace, what $100 more buys, the promo-end warning, the stress rating, and the debt-free date as a Level 2 card; its golden household has hand-checked payoff dates (A7). The payoff simulation now charges a promo rate through its end month (A8, a core change the manifest names). Small wins is re-registered as a manifest with no code change beyond the gate. Full suite 59 files, 596 tests; Maya ties out under M1 and both M2 plans; axe 0 violations on the new screens.
 
 **What is next, in the order the readiness audit gives:** the M2 workpaper (yours), the two unverified data items, protect `main` and merge the CI gate, five timed people, the attorney questions. The leftover `preflight-check` branch and the branch protection on `main` are still the two fixes from the preflight that the session could not make.
 
