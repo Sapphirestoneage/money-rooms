@@ -98,7 +98,7 @@
     "tolerance": "FI age exact; dollars within 1%. Checkpoint rows: flows within $10, balances within 0.5%.",
     "conventions": "tests/tie-out-conventions.md",
     "m2TieOut": {
-      "status": "Tied out 2026-10-04 against maya-m2-planA.csv (280 of 280 cells) and maya-m2-planB.csv (299 of 300; the 2045 penalty cell is a recorded workpaper issue, docs/audits/m2-tie-out-reconciliation.md issue 4)",
+      "status": "Tied out 2026-10-04 against maya-m2-planA.csv (280 of 280 cells) and maya-m2-planB.csv (300 of 300, after Eli corrected the 2045 penalty cell; docs/audits/m2-tie-out-reconciliation.md issue 4)",
       "conventions": "tests/m2-tie-out-conventions.md",
       "retireAt": 41,
       "planA": {

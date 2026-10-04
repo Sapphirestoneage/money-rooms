@@ -478,7 +478,7 @@ export function resultScreen(ctx: ResultContext): HTMLElement {
       optimized.objective === "earliestFi"
         ? best.result.fiAge === null ? "Never fully funded in the likely band." : `Earliest FI in the likely band: age ${best.result.fiAge} (${best.result.retirementYear}).`
         : optimized.objective === "mostSpending"
-          ? `Sustainable spending: about ${dollars(best.sustainableSpending ?? 0)} a year, retiring in ${optimized.retirementYear}.`
+          ? `Sustainable spending: about ${dollars(Math.round((best.sustainableSpending ?? 0) / 100) * 100)} a year, retiring in ${optimized.retirementYear}.`
           : optimized.objective === "leastLifetimeTax"
             ? `Lifetime taxes: ${dollars(best.headline)}, down from ${dollars(optimized.baseline.headline)} with no strategies.`
             : `Estate after heirs' taxes: ${dollars(best.headline)}, up from ${dollars(optimized.baseline.headline)} with no strategies.`;

@@ -22,6 +22,8 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 | 13 Readiness audit | Done (docs only) | `readiness` | (see git log) |
 | Review | Done (answers applied, data verified) | `review-oct4` | (see git log) |
 | M2 tie-out | Both plans tie out (Plan B: one recorded workpaper cell) | `m2-tieout` | (see git log) |
+| Readiness polish | Done (wording, rough results, worker, axe, report link, version) | `polish-oct4` | (see git log) |
+| Answers | Issue 4 cell corrected (Plan B 300 of 300), 72(t) card, worker for bands and backtests, 9-step search | `answers-oct4` | (see git log) |
 
 **The phases in plain English** (each has a self-audit or spec with the detail).
 
@@ -42,7 +44,7 @@ Updated after every commit. Read sections 3 and 4 first: they are what needs you
 
 ## 2. Maya tie-out (M1 conventions mode)
 
-After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after closing the M2 tie-out on `m2-tieout`. Full suite: 52 files, 539 tests, all passing. M2 tie-out: Plan A 280 of 280; Plan B 299 of 300 (one recorded workpaper cell).
+After every engine change: FI age 42 for all three strategies, 580 of 580 cells matching in both checkpoint files. Last run: after closing the M2 tie-out on `m2-tieout`. Full suite: 52 files, 539 tests, all passing. M2 tie-out: Plan A 280 of 280; Plan B 300 of 300 after Eli corrected the 2045 penalty cell (answers batch, A1).
 
 ## 3. Proposed specs written (review first)
 

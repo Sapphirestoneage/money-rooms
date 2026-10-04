@@ -7,7 +7,7 @@
 | File | Status | Headlines |
 |---|---|---|
 | Plan A (default policy) | **Ties out.** 280 of 280 cells within tolerance | FI age 41 (retire 2042); assets at retirement $810,124; lifetime taxes and penalties $495,177; estate at 95 $269,880 (workpaper $269,878); one year earlier fails at 65 |
-| Plan B (conversions to the 200% ACA target, Roth layers before the 401(k)) | **Ties out** on 299 of 300 cells; the one cell that differs is a workpaper issue (issue 4), recorded, not edited | FI age 41 (retire 2042); lifetime taxes and penalties $528,352 (workpaper $528,351); estate $870,529 (workpaper $870,524); one year earlier fails at 68 |
+| Plan B (conversions to the 200% ACA target, Roth layers before the 401(k)) | **Ties out.** 300 of 300 cells within tolerance (299 until Eli corrected the 2045 penalty cell on 2026-10-04, issue 4) | FI age 41 (retire 2042); lifetime taxes and penalties $528,352 (workpaper $528,351); estate $870,529 (workpaper $870,524); one year earlier fails at 68 |
 
 Eli revised both workpapers on 2026-10-04 after the first round (issue 1 was a workpaper error: his reference model now sizes conversions jointly with the year's withdrawals and never withdraws a conversion in the year it is made; issue 2 was decided for the law: the $2,050 additional standard deduction at 65 applies in the app and the tie-out). The earlier status and passes are kept below as the record.
 
@@ -40,7 +40,7 @@ The `m2TieOut` setting: health care before 65 as the benchmark less the ACA cred
 
 ## Workpaper issues for review
 
-Issues 1 and 2 were resolved at Eli's review of 2026-10-04 (1: workpaper error, revised; 2: follow the law, done in the app and the tie-out, convention 3 revised). Issue 3 fell away with the revision. Issue 4 is open.
+Issues 1 and 2 were resolved at Eli's review of 2026-10-04 (1: workpaper error, revised; 2: follow the law, done in the app and the tie-out, convention 3 revised). Issue 3 fell away with the revision. Issue 4 was confirmed by Eli as a transcription slip on 2026-10-04 and the cell corrected (3,354 to 4,712), an authorized change of an expected value; Plan B is 300 of 300.
 
 4. **Plan B, 2045 `penalty`.** Workpaper $3,354; engine $4,712. The engine's figure is 10% of the $33,544 of unseasoned conversions plus the $13,574 drawn from the 401(k) before 60 (conventions 5 and 6). The workpaper's $3,354 is 10% of the conversions alone. Two cells in the workpaper itself agree with the engine: the same row's `taxes_retired` $7,853 equals federal $1,576 plus state $1,565 plus a penalty of $4,712, and the 2046 row's penalty $4,712 is 10% of $29,393 from the 401(k) plus $17,725 of conversions. So the 2045 penalty cell looks like a transcription slip in the one cell; the row's balances already carry the full penalty. The test records this cell and asserts everything else.
 

@@ -145,11 +145,12 @@ export function optimize(household: Household, options: OptimizerOptions, deps: 
     const asBand = (t: ReturnType<typeof runFor>): BandResult => ({ band: "likely", funded: isFunded(t), retirementYear: fixedYear, fiAge: fixedYear === null ? null : fixedYear - Number(hh.birthDate.slice(0, 4)), timeline: t, oneYearEarlier: null, neverFundedShortfall: t.firstShortfall });
     if (options.objective === "mostSpending") {
       // The most spending that stays funded at the fixed retirement year: bisection on the spending scale.
+      // Nine steps resolve the scale to 2.5 / 512, about $200 on $40,000 of spending; the screen shows it to the nearest $100 (decision A4).
       let lo = 0.5;
       let hi = 3;
       let best: ReturnType<typeof runFor> | null = null;
       let bestScale = 0;
-      for (let i = 0; i < 14; i++) {
+      for (let i = 0; i < 9; i++) {
         const mid = (lo + hi) / 2;
         const t = runFor(hh, band, { ...d, spendingScale: mid }, fixedYear!);
         evaluations += 1;

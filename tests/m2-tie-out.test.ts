@@ -41,12 +41,11 @@ describe("M2 tie-out, Plan B (conversions to the 200% ACA target, Roth layers be
     expect(within1Percent(t.lifetimeTaxes, 528_351)).toBe(true);
     expect(fi.oneYearEarlier?.age).toBe(68);
   });
-  it("every checkpoint cell matches within tolerance, except the one recorded workpaper cell (2045 penalty; reconciliation log issue 4)", () => {
+  it("every checkpoint cell matches within tolerance (the 2045 penalty cell was corrected by Eli on 2026-10-04, reconciliation log issue 4)", () => {
     const { checked, differences } = compareM2(M2_FILES[1]!.file, t);
     expect(checked).toBe(300);
-    // The workpaper's 2045 penalty ($3,354) covers only the unseasoned conversions; its own taxes cell ($7,853) and its 2046 row
-    // penalize the 401(k) draw too, as conventions 5 and 6 say. The engine's $4,712 is 10% of $33,544 plus $13,574.
-    expect(differences.map((d) => `${d.year} ${d.column}`)).toEqual(["2045 penalty"]);
-    expect(differences[0]!.actual).toBeCloseTo(4712, 0);
+    // The workpaper's 2045 penalty first read $3,354 (10% of the unseasoned conversions alone). Its own taxes cell ($7,853) and its
+    // 2046 row penalize the 401(k) draw too, as conventions 5 and 6 say, so Eli corrected the cell to $4,712 (10% of $33,544 plus $13,574).
+    expect(differences).toEqual([]);
   });
 });
