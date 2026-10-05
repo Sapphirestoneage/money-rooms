@@ -18,7 +18,7 @@ Work-in-progress limit: **2** cards in progress at once. A card moves right only
 
 ## Cards
 
-1. **Foundation.** The data foundation (`app/core`: statuses, metadata, summary-or-detail, the metrics registry, the assumptions drawer, schema and migration, ledger, hub, sandbox), client files (picker, export and import, snapshots, undo, the commit guard), the household templates, the docs, and tests. *Ready for review, 2026-10-05.*
+1. **Foundation.** The data foundation (`app/core`: statuses, metadata, summary-or-detail, the metrics registry, the assumptions drawer, schema and migration, ledger, hub, sandbox), client files (picker, export and import, snapshots, undo, the commit guard), the household templates, the docs, and tests (88 under `app/tests`, `npm run app:test`). *Ready for review, 2026-10-05.* Sign-off needs Eli's expected answers in the two templates (DONE.md line 4) before the planets in card 2 can tie out.
 2. **Sun + Income + Spending + one-pager v0.** The hub with the core facts; the Income and Spending planets through all five stations; a first one-page plan with their outputs and the DRAFTT scorecard rows they feed.
 3. **Debt.** Debts with promo rates and stress ratings; payoff order by rate and by stress; debt-free date; freed cash flow by month. Reuses `engine/whatifs/payoff.ts`.
 4. **Safety Net.** The Rule of 5 target, runway at full spending, DRAFTT, and FAT; the monthly amount to close the gap. Reuses `engine/levels/resilience.ts`.
