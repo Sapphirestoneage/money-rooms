@@ -1,0 +1,14 @@
+{
+  "_meta": {
+    "description": "The assumptions drawer's three cases (DATA_MODEL.md section 4). Values start from the v2 assumption sets (data/assumption-sets.json: worst, likely, best) and are proposed placeholders, not sourced rules. Real percent per year.",
+    "status": "Proposed, not reviewed by Eli",
+    "updated": "2026-10-05"
+  },
+  "active": "likely",
+  "dollars": "real",
+  "cases": {
+    "unrealistic": { "label": "Unrealistic (the rosy case)", "returnRealPercent": { "stocks": 7, "bonds": 3, "cash": 1 }, "inflationPercent": 2, "incomeGrowthRealPercent": 2, "planToAge": 90 },
+    "likely": { "label": "Likely", "returnRealPercent": { "stocks": 5, "bonds": 1.5, "cash": 0 }, "inflationPercent": 2.5, "incomeGrowthRealPercent": 1, "planToAge": 95 },
+    "realistic": { "label": "Realistic (the cautious case)", "returnRealPercent": { "stocks": 3, "bonds": 0.5, "cash": -0.5 }, "inflationPercent": 3, "incomeGrowthRealPercent": 0, "planToAge": 100 }
+  }
+}
