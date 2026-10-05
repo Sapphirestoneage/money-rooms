@@ -10,3 +10,9 @@ Thumbs.db
 my-*.csv
 household-*.csv
 private/
+
+# Money Rooms v1 client files never enter the repo (app/docs/DATA_MODEL.md section 6). The pre-commit hook refuses them too.
+/clients/
+clients/
+*.client.json
+dist-app/

@@ -1,0 +1,42 @@
+{
+  "_template": {
+    "description": "Household A: a fictional household of one. Eli fills in the inputs and the expected answers; the tests tie each planet's published outputs to the expected values. Every input is a status plus a value: use status 'none' for a genuine zero and 'notApplicable' for something this household does not have. Expected values left null are not asserted yet.",
+    "neverCommitRealClients": "This file is a template with made-up numbers. Real client files live outside the repo.",
+    "statuses": ["empty", "unknown", "rough", "entered", "verified", "none", "notApplicable"]
+  },
+  "label": "Household A (one person)",
+  "asOf": "2026-10-01",
+  "household": {
+    "people": [{ "id": "self", "role": "self", "birthDate": { "status": "entered", "value": "1990-06" } }],
+    "filingStatus": { "status": "entered", "value": "single" },
+    "state": { "status": "entered", "value": "NY" },
+    "localTaxPercent": { "status": "none" }
+  },
+  "income": [
+    { "id": "job", "personId": "self", "label": "Salary", "type": "salary", "grossMonthly": { "status": "entered", "value": null }, "takeHomeMonthly": { "status": "empty" }, "stability": { "status": "entered", "value": "steady" } }
+  ],
+  "spending": {
+    "accommodation": { "total": { "status": "rough", "value": null }, "lines": [] },
+    "food": { "total": { "status": "rough", "value": null }, "lines": [] },
+    "transportation": { "total": { "status": "rough", "value": null }, "lines": [] },
+    "everythingElse": { "total": { "status": "rough", "value": null }, "lines": [] }
+  },
+  "debts": [
+    { "id": "card", "label": "Credit card", "kind": "card", "balance": { "status": "entered", "value": null }, "ratePercent": { "status": "entered", "value": null }, "minimumMonthly": { "status": "entered", "value": null }, "actualMonthly": { "status": "entered", "value": null }, "stressRating": { "status": "entered", "value": 3 }, "flexibility": { "status": "entered", "value": "fixed" } }
+  ],
+  "accounts": [
+    { "id": "checking", "label": "Checking", "taxBucket": "cash", "liquidityTier": "now", "balance": { "status": "entered", "value": null }, "annualContribution": { "status": "none" }, "employerMatchAnnual": { "status": "none" } },
+    { "id": "k401", "label": "401(k)", "taxBucket": "pretax", "liquidityTier": "penalized", "balance": { "status": "entered", "value": null }, "annualContribution": { "status": "entered", "value": null }, "employerMatchAnnual": { "status": "entered", "value": null } }
+  ],
+  "safetyNet": { "incomeStability": { "status": "entered", "value": "steady" }, "monthsToClose": { "status": "rough", "value": 12 } },
+  "expected": {
+    "_note": "Hand-computed by Eli. Tolerances: dollars within $5, months within 0.1, percents within 0.1 point, dates exact.",
+    "sun": { "ageSelf": null },
+    "income": { "monthlyGross": null, "monthlyTakeHome": null, "incomeType": "salary", "stabilityFlag": "steady" },
+    "spending": { "monthlyBaseline": null, "fatFloor": null },
+    "debt": { "totalDebt": null, "monthlyDebtService": null, "debtFreeDate": null },
+    "safetyNet": { "ruleOfFiveTargetMonths": null, "ruleOfFiveTargetDollars": null, "runwayAtFullSpending": null, "runwayAtFat": null, "monthlyToCloseGap": null },
+    "investments": { "balancesByTaxBucket": { "cash": null, "pretax": null }, "annualContributions": null, "remainingRoom401k": null },
+    "taxes": { "estimatedAnnualTax": null, "effectiveRate": null, "marginalRate": null }
+  }
+}
