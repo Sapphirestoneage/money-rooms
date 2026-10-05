@@ -16,10 +16,11 @@ export class Hub {
   publish(planet: Planet, outputs: Record<string, Published>): void {
     const map = new Map<string, Published>();
     for (const [key, value] of Object.entries(outputs)) {
-      if (value.id !== key && !value.id.endsWith(`.${key}`) && value.id !== `${planet}.${key}`) {
-        // A planet publishes its own metrics only: the result's id must be the key or namespaced to the planet.
-        throw new Error(`${planet} cannot publish ${key} from metric ${value.id}.`);
-      }
+      // A planet publishes its own metrics only: the result's id is the key, or "<planet>.<key>".
+      const dot = value.id.indexOf(".");
+      const namespace = dot >= 0 ? value.id.slice(0, dot) : planet;
+      const name = dot >= 0 ? value.id.slice(dot + 1) : value.id;
+      if (namespace !== planet || name !== key) throw new Error(`${planet} cannot publish ${key} from metric ${value.id}.`);
       map.set(key, value);
     }
     this.outputs.set(planet, map);
