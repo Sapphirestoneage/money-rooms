@@ -41,3 +41,15 @@ Eli is the product owner. He has an accounting and audit background and is learn
 ## Writing in the UI
 
 Follow `docs/style-guide.md`. Never use em dashes in any user-facing text or in docs. Use commas, parentheses, or hyphens.
+
+## Working in /app (Money Rooms v1, the coach edition)
+
+The folder `/app` is the coach-operated v1, separate from the v2 code at the repo root. These rules apply to every session that touches it, on top of everything above.
+
+1. Read this file and every document in `/app/docs` first (`README.md`, `ARCHITECTURE.md`, `DATA_MODEL.md`, `CONTRACTS.md`, `DONE.md`, `BOARD.md`, `DECISIONS.md`, `PARKING_LOT.md`).
+2. Never store client data in the repo. Nothing under `/clients` and nothing matching `*.client.json` is committed; the pre-commit hook refuses it. Test households are fictional templates.
+3. Never import another planet's internals. A planet reads published outputs from the hub and writes only its own facts, through the Ledger.
+4. Never edit a module marked frozen unless a test is failing or `/app/docs/DECISIONS.md` records a decision to reopen it.
+5. Stay on the current card in `/app/docs/BOARD.md` (work-in-progress limit 2). Put new ideas in `/app/docs/PARKING_LOT.md`, not in the code.
+6. Batch questions for Eli at the end of the session, never mid-task.
+7. Update `/app/docs/BOARD.md` and `/app/docs/DECISIONS.md` at the end of every session.
